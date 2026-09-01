@@ -31,6 +31,7 @@ model Organization {
   journalEntries JournalEntry[]
   ratePlans    RatePlan[]
   announcements Announcement[]
+  gatePassScans GatePassScan[]
 
   @@map("organizations")
 }
@@ -70,6 +71,7 @@ model User {
   createdAt  DateTime @default(now())
 
   gatePassesCreated GatePass[]
+  gatePassScans     GatePassScan[]
   announcements     Announcement[]
   homeowner         Homeowner?
   paymentsSubmitted Payment[] @relation("PaymentSubmittedBy")
@@ -309,7 +311,25 @@ model GatePass {
   status      GatePassStatus @default(ACTIVE)
   createdAt   DateTime @default(now())
 
+  scans GatePassScan[]
+
   @@index([propertyId])
   @@index([status])
   @@map("gate_passes")
+}
+
+model GatePassScan {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  gatePassId   String?
+  gatePass     GatePass? @relation(fields: [gatePassId], references: [id])
+  code         String   // exactly what the guard entered
+  result       String   // VALID | EXPIRED | NOT_YET_VALID | REVOKED | NOT_FOUND
+  scannedById  String
+  scannedBy    User     @relation(fields: [scannedById], references: [id])
+  scannedAt    DateTime @default(now())
+
+  @@index([orgId, scannedAt])
+  @@map("gate_pass_scans")
 }

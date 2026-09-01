@@ -23,3 +23,22 @@ export function effectiveGatePassStatus(pass: {
   }
   return pass.status;
 }
+
+export type GatePassVerdict =
+  | "VALID"
+  | "EXPIRED"
+  | "NOT_YET_VALID"
+  | "REVOKED";
+
+/** The guard-facing verdict: is this pass good to let the visitor in *right now*? */
+export function validateGatePass(
+  pass: { status: GatePassStatus; validFrom: Date; validUntil: Date },
+  now: Date = new Date()
+): GatePassVerdict {
+  if (pass.status === "REVOKED") return "REVOKED";
+  if (pass.status === "EXPIRED") return "EXPIRED";
+  const t = now.getTime();
+  if (t < pass.validFrom.getTime()) return "NOT_YET_VALID";
+  if (t > pass.validUntil.getTime()) return "EXPIRED";
+  return "VALID";
+}

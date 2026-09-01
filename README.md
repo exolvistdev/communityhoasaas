@@ -28,7 +28,7 @@ walkthrough of the admin app.
 | Settings — HOA name, billing due-day, rate plans, GCash/Maya payment details | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Homeowner portal (§4.4) — balance, history, Pay Now, gate-pass request, announcements | ✅ |
-| Guard portal (§4.5) | ⏳ next |
+| Guard portal (§4.5) — pass-code validation with valid/expired/revoked verdicts + scan log | ✅ |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
 portal) and submit the reference; an admin confirms it in **Reconciliation**,
@@ -88,7 +88,7 @@ app/
   statements/         printable Statement of Account (kept outside the sidebar chrome)
   accept-invite/      set-password page for invited users
   portal/             homeowner portal — balance, Pay Now, gate-pass request, announcements
-  guard/              placeholder guard portal (next milestone)
+  guard/              guard portal — enter a pass code, get a valid/expired/revoked verdict
   login/  auth/
 lib/
   prisma.ts           Prisma singleton

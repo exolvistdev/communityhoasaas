@@ -86,8 +86,13 @@ Read-only audit view.
 ## 7. Gate passes
 
 Create a pass for a visitor (property, name, validity window) — a short code is
-generated to share with them. List / filter / revoke. The guard validates the
-code from the guard portal.
+generated to share with them. List / filter / revoke. Homeowners can also create
+passes for their own unit from the portal.
+
+**Guard portal** (`/guard`, guard accounts only): a single screen where the guard
+types the visitor's code and gets a big **Valid / Expired / Not-yet-valid /
+Revoked / No-match** verdict with the visitor name, unit, and window, plus a list
+of their recent checks. Every check is logged.
 
 ## 8. Announcements
 

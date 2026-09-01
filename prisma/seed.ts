@@ -135,6 +135,7 @@ async function resetDemoOrg() {
     where: { invoice: { property: { orgId } } },
   });
   await prisma.invoice.deleteMany({ where: { property: { orgId } } });
+  await prisma.gatePassScan.deleteMany({ where: { orgId } });
   await prisma.gatePass.deleteMany({ where: { property: { orgId } } });
   await prisma.announcement.deleteMany({ where: { orgId } });
   await prisma.homeowner.deleteMany({ where: { property: { orgId } } });
@@ -337,15 +338,65 @@ async function main() {
   const firstProperty = await prisma.property.findFirstOrThrow({
     where: { orgId: org.id, unitNumber: "Blk 1 Lot 1" },
   });
-  await prisma.gatePass.create({
+  const lot2 = await prisma.property.findFirstOrThrow({
+    where: { orgId: org.id, unitNumber: "Blk 1 Lot 2" },
+  });
+  const guard = await prisma.user.findFirstOrThrow({
+    where: { orgId: org.id, role: "GUARD" },
+  });
+  const HOUR = 60 * 60 * 1000;
+
+  // Known codes so the guard portal is demoable: VALID, EXPIRED, REVOKED.
+  const validPass = await prisma.gatePass.create({
     data: {
-      code: generateGatePassCode(),
+      code: "VALID123",
       propertyId: firstProperty.id,
       createdById: admin.id,
       visitorName: "Lalamove Rider",
-      validFrom: new Date(),
-      validUntil: new Date(Date.now() + 2 * 60 * 60 * 1000),
+      validFrom: new Date(Date.now() - HOUR),
+      validUntil: new Date(Date.now() + 4 * HOUR),
     },
+  });
+  await prisma.gatePass.create({
+    data: {
+      code: "EXPIRED9",
+      propertyId: firstProperty.id,
+      createdById: admin.id,
+      visitorName: "Grab Driver",
+      validFrom: new Date(Date.now() - 6 * HOUR),
+      validUntil: new Date(Date.now() - 2 * HOUR),
+    },
+  });
+  await prisma.gatePass.create({
+    data: {
+      code: "REVOKED7",
+      propertyId: lot2.id,
+      createdById: admin.id,
+      visitorName: "Unknown Contractor",
+      validFrom: new Date(Date.now() - HOUR),
+      validUntil: new Date(Date.now() + 4 * HOUR),
+      status: "REVOKED",
+    },
+  });
+  await prisma.gatePassScan.createMany({
+    data: [
+      {
+        orgId: org.id,
+        gatePassId: validPass.id,
+        code: "VALID123",
+        result: "VALID",
+        scannedById: guard.id,
+        scannedAt: new Date(Date.now() - 40 * 60 * 1000),
+      },
+      {
+        orgId: org.id,
+        gatePassId: null,
+        code: "ZZZZ999",
+        result: "NOT_FOUND",
+        scannedById: guard.id,
+        scannedAt: new Date(Date.now() - 25 * 60 * 1000),
+      },
+    ],
   });
 
   await prisma.announcement.createMany({

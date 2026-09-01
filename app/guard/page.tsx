@@ -1,25 +1,36 @@
+import { prisma } from "@/lib/prisma";
 import { requirePortalRole } from "@/lib/rbac";
-
-export const metadata = { title: "Guard portal · HOA SaaS" };
+import { GuardScanner } from "./GuardScanner";
+import type { ScanResult } from "./actions";
 
 export default async function GuardHome() {
-  const { org, user } = await requirePortalRole("GUARD");
+  const { user, org } = await requirePortalRole("GUARD");
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 text-center">
-      <div className="text-xs uppercase tracking-wide text-gray-400">
-        {org.name}
-      </div>
-      <h1 className="mt-1 text-xl font-semibold text-gray-900">Guard portal</h1>
-      <p className="mt-2 text-sm text-gray-500">
-        Hi {user.fullName.split(" ")[0]} — the gate-pass validation screen
-        (Wireframe Brief §4.5) is coming in the next release.
-      </p>
-      <form action="/auth/signout" method="post" className="mt-6">
-        <button className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm hover:bg-gray-50">
-          Sign out
-        </button>
-      </form>
-    </main>
-  );
+  const scans = await prisma.gatePassScan.findMany({
+    where: { orgId: org.id, scannedById: user.id },
+    include: {
+      gatePass: {
+        select: {
+          visitorName: true,
+          validFrom: true,
+          validUntil: true,
+          property: { select: { unitNumber: true } },
+        },
+      },
+    },
+    orderBy: { scannedAt: "desc" },
+    take: 8,
+  });
+
+  const initialRecent: ScanResult[] = scans.map((s) => ({
+    code: s.code,
+    verdict: s.result as ScanResult["verdict"],
+    visitorName: s.gatePass?.visitorName,
+    unitNumber: s.gatePass?.property.unitNumber,
+    validFrom: s.gatePass?.validFrom.toISOString(),
+    validUntil: s.gatePass?.validUntil.toISOString(),
+    scannedAt: s.scannedAt.toISOString(),
+  }));
+
+  return <GuardScanner initialRecent={initialRecent} />;
 }
