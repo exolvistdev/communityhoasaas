@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { generateInviteLink } from "@/lib/invites";
+import { logAudit } from "@/lib/audit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -40,6 +41,10 @@ export async function setPropertyArchived(
   });
 
   revalidateProperty(id);
+  await logAudit({
+    action: archived ? "property.archive" : "property.restore",
+    target: property.unitNumber,
+  });
   return { ok: true };
 }
 

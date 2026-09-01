@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { postPaymentReceived } from "@/lib/ledger";
+import { logAudit } from "@/lib/audit";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -21,6 +22,7 @@ async function findPending(id: string) {
   const { org } = await getCurrentOrgContext();
   return prisma.payment.findFirst({
     where: { id, status: "PENDING", invoice: { property: { orgId: org.id } } },
+    include: { invoice: { include: { property: { select: { unitNumber: true } } } } },
   });
 }
 
@@ -39,6 +41,11 @@ export async function confirmPayment(id: string): Promise<Result> {
   await postPaymentReceived(id); // posts the ledger entry + recalculates status
 
   revalidate();
+  await logAudit({
+    action: "payment.confirm",
+    target: payment.invoice.property.unitNumber,
+    detail: `${payment.method} ₱${payment.amount}`,
+  });
   return { ok: true };
 }
 
@@ -65,5 +72,10 @@ export async function rejectPayment(
   });
 
   revalidate();
+  await logAudit({
+    action: "payment.reject",
+    target: payment.invoice.property.unitNumber,
+    detail: reason ?? undefined,
+  });
   return { ok: true };
 }

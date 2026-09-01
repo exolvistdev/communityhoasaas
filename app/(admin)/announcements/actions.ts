@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -107,5 +108,6 @@ export async function deleteAnnouncement(id: string): Promise<Result> {
   await prisma.announcement.delete({ where: { id } });
 
   revalidate();
+  await logAudit({ action: "announcement.delete", target: existing.title });
   return { ok: true };
 }

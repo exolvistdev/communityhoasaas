@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { generateGatePassCode } from "@/lib/gatepass";
+import { logAudit } from "@/lib/audit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -77,6 +78,7 @@ export async function revokeGatePass(id: string): Promise<Result> {
 
   const pass = await prisma.gatePass.findFirst({
     where: { id, property: { orgId: org.id } },
+    include: { property: { select: { unitNumber: true } } },
   });
   if (!pass) return { ok: false, error: "Gate pass not found" };
   if (pass.status === "REVOKED")
@@ -90,5 +92,9 @@ export async function revokeGatePass(id: string): Promise<Result> {
   revalidatePath("/gate-passes");
   revalidatePath(`/properties/${pass.propertyId}`);
   revalidatePath("/dashboard");
+  await logAudit({
+    action: "gatepass.revoke",
+    target: `${pass.visitorName} · ${pass.property.unitNumber}`,
+  });
   return { ok: true };
 }

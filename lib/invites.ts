@@ -1,14 +1,5 @@
-import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-function siteOrigin() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  const h = headers();
-  const origin = h.get("origin");
-  if (origin) return origin;
-  const host = h.get("host");
-  return host ? `http://${host}` : "http://localhost:3000";
-}
+import { siteOrigin } from "@/lib/url";
 
 export type InviteLinkResult =
   | { ok: true; authId: string; actionLink: string | null }
@@ -55,13 +46,33 @@ export async function generateInviteLink(
   }
 
   // best-effort email (no-op without SMTP)
-  admin.auth.admin
-    .inviteUserByEmail(email, { redirectTo })
-    .catch(() => {});
+  admin.auth.admin.inviteUserByEmail(email, { redirectTo }).catch(() => {});
 
   return {
     ok: true,
     authId: data.user.id,
     actionLink: data.properties?.action_link ?? null,
   };
+}
+
+export type RecoveryLinkResult =
+  | { ok: true; actionLink: string | null }
+  | { ok: false; error: string };
+
+/**
+ * Generate a password-recovery link for an existing account, without relying
+ * on Supabase sending the email (no SMTP dependency) — the caller shows the
+ * link for the admin to copy/send.
+ */
+export async function generateRecoveryLink(
+  email: string
+): Promise<RecoveryLinkResult> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: { redirectTo: `${siteOrigin()}/reset-password` },
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, actionLink: data.properties?.action_link ?? null };
 }

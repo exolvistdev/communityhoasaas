@@ -10,6 +10,8 @@ import {
   postInvoiceVoided,
   postPaymentReceived,
 } from "@/lib/ledger";
+import { logAudit } from "@/lib/audit";
+import { periodLabel } from "@/lib/format";
 
 const periodSchema = z
   .string()
@@ -72,6 +74,12 @@ export async function generateMonthlyInvoices(
 
   revalidatePath("/billing");
   revalidatePath("/dashboard");
+  if (created > 0)
+    await logAudit({
+      action: "invoice.generate",
+      target: periodLabel(period),
+      detail: `${created} invoice${created === 1 ? "" : "s"}`,
+    });
   return { ok: true, created };
 }
 
@@ -101,6 +109,7 @@ export async function recordPayment(
 
   const invoice = await prisma.invoice.findFirst({
     where: { id: invoiceId, property: { orgId: org.id } },
+    include: { property: { select: { unitNumber: true } } },
   });
   if (!invoice) return { ok: false, error: "Invoice not found" };
   if (invoice.status === "VOID")
@@ -121,6 +130,11 @@ export async function recordPayment(
 
   revalidatePath("/billing");
   revalidatePath("/dashboard");
+  await logAudit({
+    action: "payment.record",
+    target: invoice.property.unitNumber,
+    detail: `${method} ₱${amount}`,
+  });
   return { ok: true };
 }
 
@@ -144,7 +158,7 @@ export async function voidInvoice(
   const { org } = await getCurrentOrgContext();
   const invoice = await prisma.invoice.findFirst({
     where: { id, property: { orgId: org.id } },
-    include: { payments: true },
+    include: { payments: true, property: { select: { unitNumber: true } } },
   });
   if (!invoice) return { ok: false, error: "Invoice not found" };
   if (invoice.status === "VOID")
@@ -176,5 +190,10 @@ export async function voidInvoice(
   revalidatePath("/dashboard");
   revalidatePath("/ledger");
   revalidatePath(`/properties/${invoice.propertyId}`);
+  await logAudit({
+    action: "invoice.void",
+    target: `${invoice.property.unitNumber}${invoice.period ? ` · ${periodLabel(invoice.period)}` : ""}`,
+    detail: parsed.data.reason,
+  });
   return { ok: true };
 }

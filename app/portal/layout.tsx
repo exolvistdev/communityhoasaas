@@ -22,11 +22,19 @@ export default async function PortalLayout({
               {property ? property.unitNumber : user.fullName}
             </div>
           </Link>
-          <form action="/auth/signout" method="post">
-            <button className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/account"
+              className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
+            >
+              Account
+            </Link>
+            <form action="/auth/signout" method="post">
+              <button className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-md px-4 py-5">{children}</main>

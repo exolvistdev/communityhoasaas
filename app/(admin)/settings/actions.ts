@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -52,6 +53,7 @@ export async function updateOrgSettings(input: unknown): Promise<Result> {
   });
 
   revalidateAll();
+  await logAudit({ action: "settings.update", detail: parsed.data.name });
   return { ok: true };
 }
 
@@ -89,6 +91,7 @@ export async function updatePaymentSettings(input: unknown): Promise<Result> {
 
   revalidatePath("/settings");
   revalidatePath("/portal");
+  await logAudit({ action: "settings.payments_update" });
   return { ok: true };
 }
 
@@ -126,6 +129,7 @@ export async function createRatePlan(
   });
 
   revalidateAll();
+  await logAudit({ action: "rateplan.create", target: plan.name });
   return {
     ok: true,
     plan: { id: plan.id, name: plan.name, monthlyRate: Number(plan.monthlyRate) },
@@ -161,6 +165,11 @@ export async function updateRatePlan(
   });
 
   revalidateAll();
+  await logAudit({
+    action: "rateplan.update",
+    target: parsed.data.name,
+    detail: `₱${plan.monthlyRate} → ₱${parsed.data.monthlyRate}`,
+  });
   return { ok: true };
 }
 
@@ -180,6 +189,12 @@ export async function reapplyRatePlan(
   });
 
   revalidateAll();
+  if (res.count > 0)
+    await logAudit({
+      action: "rateplan.reapply",
+      target: plan.name,
+      detail: `${res.count} propert${res.count === 1 ? "y" : "ies"}`,
+    });
   return { ok: true, updated: res.count };
 }
 
@@ -204,5 +219,10 @@ export async function deleteRatePlan(
   });
 
   revalidateAll();
+  await logAudit({
+    action: "rateplan.delete",
+    target: plan.name,
+    detail: detached > 0 ? `${detached} propert${detached === 1 ? "y" : "ies"} detached` : undefined,
+  });
   return { ok: true, detached };
 }

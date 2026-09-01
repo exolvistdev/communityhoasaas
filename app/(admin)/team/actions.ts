@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateInviteLink } from "@/lib/invites";
+import { generateInviteLink, generateRecoveryLink } from "@/lib/invites";
+import { logAudit } from "@/lib/audit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -51,6 +52,7 @@ export async function inviteMember(
   });
 
   revalidatePath("/team");
+  await logAudit({ action: "team.invite", target: `${fullName} (${role})` });
   return { ok: true, actionLink: invite.actionLink };
 }
 
@@ -93,6 +95,11 @@ export async function updateMemberRole(
     data: { role: parsedRole.data },
   });
   revalidatePath("/team");
+  await logAudit({
+    action: "team.role_change",
+    target: target.fullName,
+    detail: `${target.role} → ${parsedRole.data}`,
+  });
   return { ok: true };
 }
 
@@ -126,6 +133,10 @@ export async function removeMember(userId: string): Promise<Result> {
   }
 
   revalidatePath("/team");
+  await logAudit({
+    action: "team.remove",
+    target: `${target.fullName} (${target.role})`,
+  });
   return { ok: true };
 }
 
@@ -146,6 +157,26 @@ export async function resendInvite(
   const invite = await generateInviteLink(target.email, target.fullName);
   if (!invite.ok) return invite;
   return { ok: true, actionLink: invite.actionLink };
+}
+
+export async function sendResetLink(
+  userId: string
+): Promise<Result<{ actionLink: string | null }>> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const { org } = await getCurrentOrgContext();
+  const target = await prisma.user.findFirst({
+    where: { id: userId, orgId: org.id },
+  });
+  if (!target) return { ok: false, error: "Member not found" };
+  if (!target.acceptedAt)
+    return { ok: false, error: "They haven't accepted their invite yet — resend the invite instead" };
+
+  const recovery = await generateRecoveryLink(target.email);
+  if (!recovery.ok) return recovery;
+  await logAudit({ action: "team.reset_link_sent", target: target.fullName });
+  return { ok: true, actionLink: recovery.actionLink };
 }
 
 function countAdmins(orgId: string) {

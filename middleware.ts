@@ -11,9 +11,11 @@ const PROTECTED = [
   "/gate-passes",
   "/announcements",
   "/team",
+  "/audit",
   "/settings",
   "/guard",
   "/portal",
+  "/account",
 ];
 
 export async function middleware(request: NextRequest) {

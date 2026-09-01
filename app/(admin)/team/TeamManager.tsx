@@ -7,6 +7,7 @@ import {
   inviteMember,
   removeMember,
   resendInvite,
+  sendResetLink,
   updateMemberRole,
 } from "./actions";
 
@@ -85,7 +86,7 @@ export function TeamManager({
       {error && <p className="text-sm text-red-600">{error}</p>}
       {link && (
         <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
-          <p className="font-medium">Invite created.</p>
+          <p className="font-medium">Link generated.</p>
           <p className="mt-1 break-all">
             Send them this link to set a password:
           </p>
@@ -200,12 +201,19 @@ export function TeamManager({
                   )}
                 </td>
                 <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                  {!m.accepted && (
+                  {!m.accepted ? (
                     <button
                       onClick={() => act(() => resendInvite(m.id))}
                       className="text-xs text-gray-500 underline hover:text-gray-900"
                     >
                       Invite link
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => act(() => sendResetLink(m.id))}
+                      className="text-xs text-gray-500 underline hover:text-gray-900"
+                    >
+                      Reset link
                     </button>
                   )}
                   {m.id !== selfId && (

@@ -32,8 +32,25 @@ model Organization {
   ratePlans    RatePlan[]
   announcements Announcement[]
   gatePassScans GatePassScan[]
+  auditEvents   AuditEvent[]
 
   @@map("organizations")
+}
+
+model AuditEvent {
+  id        String   @id @default(uuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  actorName String   // snapshot — survives the actor later being removed
+  action    String   // "invoice.void", "property.archive", "team.remove", …
+  target    String?  // human label, e.g. "Blk 1 Lot 3 · Sept 2026"
+  detail    String?  // reason / extra context
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+  @@map("audit_events")
 }
 
 model RatePlan {
@@ -76,6 +93,7 @@ model User {
   homeowner         Homeowner?
   paymentsSubmitted Payment[] @relation("PaymentSubmittedBy")
   paymentsConfirmed Payment[] @relation("PaymentConfirmedBy")
+  auditEvents       AuditEvent[]
 
   @@index([orgId])
   @@map("users")

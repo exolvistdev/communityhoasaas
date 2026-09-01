@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { href: "/gate-passes", label: "Gate passes" },
   { href: "/announcements", label: "Announcements" },
   { href: "/team", label: "Team", show: (r) => can(r, "team:write") },
+  { href: "/audit", label: "Audit log", show: (r) => r === "ADMIN" },
   { href: "/settings", label: "Settings", show: (r) => can(r, "settings:write") },
 ];
 

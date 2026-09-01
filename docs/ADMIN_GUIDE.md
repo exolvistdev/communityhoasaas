@@ -114,6 +114,27 @@ or remove them; the last admin can't be removed or demoted.
 HOA name, invoice due day, rate plans, and payment details (GCash / Maya / bank /
 cash instructions).
 
+## 11. Account (every role)
+
+Everyone gets a small `/account` page (linked from the name in the header):
+change your display name and password; homeowners can also update their own
+contact phone/email (separate from their login email).
+
+## 12. Forgot password
+
+`/login` → "Forgot password?" sends a self-service reset email (depends on the
+Supabase project's mail settings). Without email configured, an admin can go to
+**Team** and click **Reset link** on any accepted member to generate a link to
+copy and send them directly — no SMTP required, same mechanism as invites.
+
+## 13. Gate activity & audit log (admin)
+
+- **Gate passes → Activity** tab: every code check any guard has made — time,
+  code, visitor/unit, result, which guard.
+- **Audit log** (admin only): who did what — invoice generation/void, payment
+  record/confirm/reject, property archive/restore, rate-plan and settings
+  changes, gate-pass revocations, announcement deletions, and all team changes.
+
 ## What homeowners see
 
 A homeowner you've invited (from a property's People section) signs in and gets
