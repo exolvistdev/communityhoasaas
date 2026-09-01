@@ -35,7 +35,19 @@ export function RequestGatePassForm() {
         </button>
         {code && (
           <p className="mt-2 text-center text-sm text-green-700">
-            Created — code <span className="font-mono font-semibold">{code}</span>
+            Created — code{" "}
+            <a
+              href={`/pass/${code}`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono font-semibold underline"
+            >
+              {code}
+            </a>
+            <br />
+            <span className="text-xs text-gray-500">
+              Open it to get a QR / link to send your visitor.
+            </span>
           </p>
         )}
       </div>

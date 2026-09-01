@@ -1,4 +1,5 @@
-import { getCurrentOrgContext } from "@/lib/tenant";
+import { requireStaff } from "@/lib/rbac";
+import { statementViewerOrg } from "@/lib/statement-access";
 import {
   buildStatement,
   buildStatementsForOrg,
@@ -41,7 +42,6 @@ function toCsv(statements: Statement[]) {
 }
 
 export async function GET(request: Request) {
-  const { org } = await getCurrentOrgContext();
   const url = new URL(request.url);
   const propertyId = url.searchParams.get("propertyId");
   const range = parseStatementRange({
@@ -53,13 +53,17 @@ export async function GET(request: Request) {
   let filenameStem: string;
 
   if (propertyId) {
+    const orgId = await statementViewerOrg(propertyId);
+    if (!orgId) return new Response("Not found", { status: 404 });
     const one = await buildStatement(propertyId, range);
-    if (!one || one.orgId !== org.id) {
+    if (!one || one.orgId !== orgId) {
       return new Response("Not found", { status: 404 });
     }
     statements = [one];
     filenameStem = `soa-${one.unitNumber.replace(/\s+/g, "-")}`;
   } else {
+    // whole-org export is staff-only
+    const { org } = await requireStaff();
     statements = await buildStatementsForOrg(org.id, range);
     filenameStem = `soa-${org.subdomain}-all`;
   }

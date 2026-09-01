@@ -2,14 +2,22 @@
 
 import Link from "next/link";
 
-export function PrintToolbar({ csvHref }: { csvHref: string }) {
+export function PrintToolbar({
+  csvHref,
+  backHref = "/billing",
+  backLabel = "Back to billing",
+}: {
+  csvHref: string;
+  backHref?: string;
+  backLabel?: string;
+}) {
   return (
     <div className="no-print mb-6 flex items-center justify-between">
       <Link
-        href="/billing"
+        href={backHref}
         className="text-sm text-gray-600 hover:text-gray-900"
       >
-        ← Back to billing
+        ← {backLabel}
       </Link>
       <div className="flex gap-2">
         <a

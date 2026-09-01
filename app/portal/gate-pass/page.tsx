@@ -60,6 +60,13 @@ export default async function PortalGatePassPage() {
                 <div className="text-xs text-gray-400">
                   {fmt(p.validFrom)} – {fmt(p.validUntil)}
                 </div>
+                <Link
+                  href={`/pass/${p.code}`}
+                  target="_blank"
+                  className="mt-1 inline-block text-xs text-gray-500 underline hover:text-gray-900"
+                >
+                  Open visitor pass (QR) to share
+                </Link>
               </li>
             );
           })}

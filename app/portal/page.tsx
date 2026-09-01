@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
+import { amountPaid } from "@/lib/invoice";
 import { peso, periodLabel } from "@/lib/format";
 
 const METHOD_LABEL: Record<string, string> = {
@@ -14,6 +15,8 @@ const METHOD_LABEL: Record<string, string> = {
 
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-PH", { day: "numeric", month: "long", year: "numeric" });
+const shortDate = (d: Date) =>
+  d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
 
 export default async function PortalHome() {
   const { user, property } = await getHomeownerContext();
@@ -33,31 +36,29 @@ export default async function PortalHome() {
   }
 
   const now = new Date();
-  const [statement, invoices, payments, pendingCount, announcementCount] =
-    await Promise.all([
-      buildStatement(property.id, parseStatementRange({})),
-      prisma.invoice.findMany({
-        where: { propertyId: property.id, status: { notIn: ["PAID", "VOID"] } },
-        orderBy: { dueDate: "asc" },
-      }),
-      prisma.payment.findMany({
-        where: { invoice: { propertyId: property.id }, status: "CONFIRMED" },
-        include: { invoice: { select: { period: true } } },
-        orderBy: { paidAt: "desc" },
-        take: 12,
-      }),
-      prisma.payment.count({
-        where: { invoice: { propertyId: property.id }, status: "PENDING" },
-      }),
-      prisma.announcement.count({
-        where: { orgId: property.orgId, publishedAt: { not: null } },
-      }),
-    ]);
+  const [statement, invoices, payments, announcementCount] = await Promise.all([
+    buildStatement(property.id, parseStatementRange({})),
+    prisma.invoice.findMany({
+      where: { propertyId: property.id, status: { notIn: ["PAID", "VOID"] } },
+      include: { payments: { where: { status: "CONFIRMED" } } },
+      orderBy: { dueDate: "asc" },
+    }),
+    prisma.payment.findMany({
+      where: { invoice: { propertyId: property.id } },
+      include: { invoice: { select: { period: true } } },
+      orderBy: { paidAt: "desc" },
+      take: 15,
+    }),
+    prisma.announcement.count({
+      where: { orgId: property.orgId, publishedAt: { not: null } },
+    }),
+  ]);
 
   const balance = statement?.closingBalance ?? 0;
   const owes = balance > 0.005;
   const nextDue = invoices[0]?.dueDate ?? null;
   const overdue = invoices.some((i) => i.dueDate.getTime() < now.getTime());
+  const pendingCount = payments.filter((p) => p.status === "PENDING").length;
 
   const cardTone = !owes
     ? "border-green-200 bg-green-50"
@@ -86,24 +87,58 @@ export default async function PortalHome() {
             {nextDue ? `due ${fmtDate(nextDue)}` : ""}
           </div>
         ) : (
-          <div className="mt-1 text-sm text-green-700">You&apos;re all paid up 🎉</div>
+          <div className="mt-1 text-sm text-green-700">
+            You&apos;re all paid up 🎉
+          </div>
+        )}
+
+        {owes && invoices.length > 0 && (
+          <ul className="mt-3 space-y-1 border-t border-black/5 pt-3 text-sm">
+            {invoices.map((inv) => {
+              const remaining = Number(inv.amount) - amountPaid(inv.payments);
+              const late = inv.dueDate.getTime() < now.getTime();
+              return (
+                <li key={inv.id} className="flex justify-between text-gray-700">
+                  <span>
+                    {inv.period ? periodLabel(inv.period) : "Dues"}
+                    {late && (
+                      <span className="ml-1 text-xs font-medium text-red-600">
+                        overdue
+                      </span>
+                    )}
+                  </span>
+                  <span>{peso(remaining)}</span>
+                </li>
+              );
+            })}
+          </ul>
         )}
 
         {pendingCount > 0 && (
           <div className="mt-3 rounded-md bg-white/70 px-3 py-2 text-xs text-gray-600">
             {pendingCount} payment{pendingCount === 1 ? "" : "s"} submitted and
-            awaiting confirmation by your HOA.
+            awaiting confirmation.
           </div>
         )}
 
-        {owes && (
+        <div className="mt-4 flex gap-2">
+          {owes && (
+            <Link
+              href="/portal/pay"
+              className="flex-1 rounded-lg bg-gray-900 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-800"
+            >
+              Pay now
+            </Link>
+          )}
           <Link
-            href="/portal/pay"
-            className="mt-4 block rounded-lg bg-gray-900 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-800"
+            href={`/statements/${property.id}`}
+            className={`rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 ${
+              owes ? "" : "flex-1"
+            }`}
           >
-            Pay now
+            View statement
           </Link>
-        )}
+        </div>
       </div>
 
       {/* action tiles */}
@@ -128,28 +163,31 @@ export default async function PortalHome() {
         ) : (
           <ul className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200 bg-white">
             {payments.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center justify-between px-4 py-3 text-sm"
-              >
-                <div>
-                  <div className="text-gray-900">
-                    {p.invoice.period
-                      ? periodLabel(p.invoice.period)
-                      : "Payment"}
+              <li key={p.id} className="px-4 py-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-gray-900">
+                      {p.invoice.period
+                        ? periodLabel(p.invoice.period)
+                        : "Payment"}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {METHOD_LABEL[p.method]} · {shortDate(p.paidAt)}
+                      {p.reference ? ` · ${p.reference}` : ""}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400">
-                    {METHOD_LABEL[p.method]} ·{" "}
-                    {p.paidAt.toLocaleDateString("en-PH", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                  <div className="text-right">
+                    <div className="font-medium text-gray-900">
+                      {peso(Number(p.amount))}
+                    </div>
+                    <PaymentBadge status={p.status} />
                   </div>
                 </div>
-                <div className="font-medium text-gray-900">
-                  {peso(Number(p.amount))}
-                </div>
+                {p.status === "REJECTED" && p.note && (
+                  <div className="mt-1 rounded bg-red-50 px-2 py-1 text-xs text-red-700">
+                    {p.note}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -157,6 +195,20 @@ export default async function PortalHome() {
       </div>
     </div>
   );
+}
+
+function PaymentBadge({ status }: { status: string }) {
+  if (status === "CONFIRMED")
+    return (
+      <span className="text-xs font-medium text-green-700">Paid</span>
+    );
+  if (status === "PENDING")
+    return (
+      <span className="text-xs font-medium text-amber-700">
+        Awaiting confirmation
+      </span>
+    );
+  return <span className="text-xs font-medium text-red-600">Rejected</span>;
 }
 
 function Tile({

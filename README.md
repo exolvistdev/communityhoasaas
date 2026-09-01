@@ -27,8 +27,9 @@ walkthrough of the admin app.
 | Team — invite staff/guard by email, role management | ✅ |
 | Settings — HOA name, billing due-day, rate plans, GCash/Maya payment details | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
-| Homeowner portal (§4.4) — balance, history, Pay Now, gate-pass request, announcements | ✅ |
-| Guard portal (§4.5) — pass-code validation with valid/expired/revoked verdicts + scan log | ✅ |
+| Homeowner portal (§4.4) — balance + breakdown, payment history w/ pending/rejected status, Pay Now, own statement, gate-pass request (QR), announcements | ✅ |
+| Guard portal (§4.5) — QR camera scan or manual code, valid/expired/revoked verdict + scan log | ✅ |
+| Visitor pass page `/pass/<code>` — public QR + validity for the visitor to show at the gate | ✅ |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
 portal) and submit the reference; an admin confirms it in **Reconciliation**,

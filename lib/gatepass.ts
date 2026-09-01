@@ -3,6 +3,15 @@ import type { GatePassStatus } from "@prisma/client";
 // Ambiguous characters (I, L, O, 0, 1) left out so codes read cleanly at a gate.
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
+/**
+ * Pull a gate-pass code out of whatever a scanner / paste produced — a full
+ * `…/pass/ABC123` URL, or the bare code.
+ */
+export function extractGatePassCode(raw: string): string {
+  const m = raw.match(/\/pass\/([A-Za-z0-9]+)/);
+  return (m ? m[1] : raw).trim().toUpperCase();
+}
+
 /** A short, human-enterable gate-pass code, e.g. "K7M4PQ2R". */
 export function generateGatePassCode(length = 8) {
   let out = "";

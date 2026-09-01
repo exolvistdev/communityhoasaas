@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCurrentOrgContext } from "@/lib/tenant";
+import { requireStaff } from "@/lib/rbac";
 import { buildStatementsForOrg, parseStatementRange } from "@/lib/soa";
 import { StatementDocument } from "@/components/StatementDocument";
 import { PrintToolbar } from "./PrintToolbar";
@@ -9,7 +9,7 @@ export default async function BulkStatementsPage({
 }: {
   searchParams: { from?: string; to?: string; scope?: string };
 }) {
-  const { org } = await getCurrentOrgContext();
+  const { org } = await requireStaff();
   const range = parseStatementRange(searchParams);
   const scope = searchParams.scope === "outstanding" ? "outstanding" : "all";
 

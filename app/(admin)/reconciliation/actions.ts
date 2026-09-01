@@ -14,6 +14,7 @@ function revalidate() {
   revalidatePath("/billing");
   revalidatePath("/dashboard");
   revalidatePath("/properties");
+  revalidatePath("/portal");
 }
 
 async function findPending(id: string) {

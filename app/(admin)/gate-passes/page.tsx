@@ -98,8 +98,14 @@ export default async function GatePassesPage({
             <tbody>
               {visible.map(({ p, display }) => (
                 <tr key={p.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2.5 font-mono font-medium text-gray-900">
-                    {p.code}
+                  <td className="px-4 py-2.5 font-mono font-medium">
+                    <Link
+                      href={`/pass/${p.code}`}
+                      target="_blank"
+                      className="text-gray-900 underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+                    >
+                      {p.code}
+                    </Link>
                   </td>
                   <td className="px-4 py-2.5">{p.visitorName}</td>
                   <td className="px-4 py-2.5 text-gray-600">

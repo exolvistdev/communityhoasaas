@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
-import { getCurrentOrgContext } from "@/lib/tenant";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
+import { statementViewerOrg } from "@/lib/statement-access";
+import { getCurrentOrgContext } from "@/lib/tenant";
 import { StatementDocument } from "@/components/StatementDocument";
 import { PrintToolbar } from "../PrintToolbar";
 
@@ -11,19 +12,27 @@ export default async function SingleStatementPage({
   params: { propertyId: string };
   searchParams: { from?: string; to?: string };
 }) {
-  const { org } = await getCurrentOrgContext();
+  const orgId = await statementViewerOrg(params.propertyId);
+  if (!orgId) notFound();
+
   const range = parseStatementRange(searchParams);
   const statement = await buildStatement(params.propertyId, range);
-
-  if (!statement || statement.orgId !== org.id) notFound();
+  if (!statement || statement.orgId !== orgId) notFound();
 
   const qs = new URLSearchParams({ propertyId: params.propertyId });
   if (searchParams.from) qs.set("from", searchParams.from);
   if (searchParams.to) qs.set("to", searchParams.to);
 
+  const { user } = await getCurrentOrgContext();
+  const isHomeowner = user.role === "HOMEOWNER";
+
   return (
     <>
-      <PrintToolbar csvHref={`/statements/export?${qs.toString()}`} />
+      <PrintToolbar
+        csvHref={`/statements/export?${qs.toString()}`}
+        backHref={isHomeowner ? "/portal" : "/billing"}
+        backLabel={isHomeowner ? "Back to portal" : "Back to billing"}
+      />
       <StatementDocument statement={statement} />
     </>
   );

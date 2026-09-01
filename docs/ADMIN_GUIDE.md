@@ -89,10 +89,14 @@ Create a pass for a visitor (property, name, validity window) — a short code i
 generated to share with them. List / filter / revoke. Homeowners can also create
 passes for their own unit from the portal.
 
-**Guard portal** (`/guard`, guard accounts only): a single screen where the guard
-types the visitor's code and gets a big **Valid / Expired / Not-yet-valid /
-Revoked / No-match** verdict with the visitor name, unit, and window, plus a list
-of their recent checks. Every check is logged.
+Every pass has a shareable page at `/pass/<code>` showing a QR + the code +
+validity — the homeowner/admin sends that link to the visitor, who shows it at
+the gate.
+
+**Guard portal** (`/guard`, guard accounts only): the guard **scans the visitor's
+QR** (camera) or types the code, and gets a big **Valid / Expired / Not-yet-valid
+/ Revoked / No-match** verdict with the visitor name, unit, and window, plus a
+list of their recent checks. Every check is logged.
 
 ## 8. Announcements
 
@@ -120,9 +124,12 @@ A homeowner you've invited (from a property's People section) signs in and gets
 - **Pay now** — shows your GCash / Maya details (from Settings → Payments); the
   homeowner pays in their own app and submits the amount + reference, which lands
   in **Reconciliation** as a pending payment for you to confirm. Cash / bank
-  shows your written instructions only.
-- **Gate pass** — the homeowner can register their own visitors (same short code
-  the guard checks); these also appear in the admin Gate passes list.
+  shows your written instructions only. Submitted payments show in their history
+  as **Awaiting confirmation**, then **Paid** or **Rejected** (with your reason).
+- **View statement** — the homeowner can open/print their own Statement of Account
+  (only their unit).
+- **Gate pass** — the homeowner can register their own visitors and share the
+  `/pass/<code>` QR link; these also appear in the admin Gate passes list.
 - **Announcements** — your published announcements.
 - **Payment history** — their confirmed payments.
 
