@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Tenancy
+// ─────────────────────────────────────────────
+
+model Organization {
+  id            String   @id @default(uuid())
+  name          String
+  subdomain     String   @unique
+  plan          String   @default("growth")
+  billingDueDay Int      @default(15) // day of month monthly-dues invoices fall due
+  gcashNumber         String?
+  gcashName           String?
+  mayaNumber          String?
+  mayaName            String?
+  paymentInstructions String? // bank transfer + cash / office-hours notes
+  createdAt     DateTime @default(now())
+
+  users        User[]
+  properties   Property[]
+  accounts     Account[]
+  journalEntries JournalEntry[]
+  ratePlans    RatePlan[]
+  announcements Announcement[]
+
+  @@map("organizations")
+}
+
+model RatePlan {
+  id          String   @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  name        String
+  monthlyRate Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+
+  properties Property[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+  @@map("rate_plans")
+}
+
+enum UserRole {
+  ADMIN
+  TREASURER
+  BOARD_MEMBER
+  GUARD
+  HOMEOWNER
+}
+
+model User {
+  id         String   @id @default(uuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id])
+  authId     String?  @unique // Supabase auth.users.id
+  email      String   @unique
+  fullName   String
+  role       UserRole
+  acceptedAt DateTime? // null = invited, not yet signed in
+  createdAt  DateTime @default(now())
+
+  gatePassesCreated GatePass[]
+  announcements     Announcement[]
+  homeowner         Homeowner?
+  paymentsSubmitted Payment[] @relation("PaymentSubmittedBy")
+  paymentsConfirmed Payment[] @relation("PaymentConfirmedBy")
+
+  @@index([orgId])
+  @@map("users")
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  title       String
+  body        String
+  publishedAt DateTime? // null = draft
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([orgId])
+  @@map("announcements")
+}
+
+// ─────────────────────────────────────────────
+// Properties & homeowners
+// ─────────────────────────────────────────────
+
+enum PropertyType {
+  RESIDENTIAL
+  COMMERCIAL
+  TOWNHOUSE
+}
+
+model Property {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  unitNumber   String
+  type         PropertyType @default(RESIDENTIAL)
+  monthlyRate  Decimal  @db.Decimal(12, 2)
+  ratePlanId   String?
+  ratePlan     RatePlan? @relation(fields: [ratePlanId], references: [id])
+  archivedAt   DateTime? // set when a unit is sold / moved out — stops billing
+  createdAt    DateTime @default(now())
+
+  homeowners Homeowner[]
+  invoices   Invoice[]
+  gatePasses GatePass[]
+
+  @@unique([orgId, unitNumber])
+  @@index([orgId])
+  @@index([ratePlanId])
+  @@index([orgId, archivedAt])
+  @@map("properties")
+}
+
+enum HomeownerRole {
+  OWNER
+  CO_OWNER
+  RENTER
+}
+
+model Homeowner {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  userId     String?  @unique // linked login for the homeowner portal
+  user       User?    @relation(fields: [userId], references: [id])
+  fullName   String
+  role       HomeownerRole @default(OWNER)
+  email      String?
+  phone      String?
+  isPrimary  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId])
+  @@map("homeowners")
+}
+
+// ─────────────────────────────────────────────
+// Billing
+// ─────────────────────────────────────────────
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+
+model Invoice {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  amount     Decimal  @db.Decimal(12, 2)
+  period     String?  // billing period this invoice covers, "YYYY-MM"
+  dueDate    DateTime
+  status     InvoiceStatus @default(DRAFT)
+  memo       String?
+  voidedAt   DateTime?
+  voidReason String?
+  createdAt  DateTime @default(now())
+
+  payments      Payment[]
+  journalEntry  JournalEntry?
+
+  @@unique([propertyId, period])
+  @@index([propertyId])
+  @@index([status])
+  @@map("invoices")
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  BANK_TRANSFER
+  GCASH
+  MAYA
+}
+
+enum PaymentStatus {
+  PENDING   // submitted by a homeowner, awaiting admin confirmation
+  CONFIRMED // posted to the ledger
+  REJECTED
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  amount    Decimal  @db.Decimal(12, 2)
+  method    PaymentMethod
+  status    PaymentStatus @default(CONFIRMED)
+  reference String?
+  note      String?  // homeowner note or admin rejection reason
+  paidAt    DateTime @default(now())
+
+  submittedById String?
+  submittedBy   User?   @relation("PaymentSubmittedBy", fields: [submittedById], references: [id])
+  confirmedById String?
+  confirmedBy   User?   @relation("PaymentConfirmedBy", fields: [confirmedById], references: [id])
+  confirmedAt   DateTime?
+
+  journalEntry JournalEntry?
+
+  @@index([invoiceId])
+  @@index([status])
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// Double-entry ledger
+// ─────────────────────────────────────────────
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+model Account {
+  id       String   @id @default(uuid())
+  orgId    String
+  org      Organization @relation(fields: [orgId], references: [id])
+  code     String
+  name     String
+  type     AccountType
+  parentId String?
+  parent   Account? @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children Account[] @relation("AccountHierarchy")
+
+  journalLines JournalLine[]
+
+  @@unique([orgId, code])
+  @@index([orgId])
+  @@map("accounts")
+}
+
+model JournalEntry {
+  id         String   @id @default(uuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id])
+  entryDate  DateTime @default(now())
+  sourceType String   // "invoice" | "payment" | "manual"
+  invoiceId  String?  @unique
+  invoice    Invoice? @relation(fields: [invoiceId], references: [id])
+  paymentId  String?  @unique
+  payment    Payment? @relation(fields: [paymentId], references: [id])
+  memo       String?
+
+  lines JournalLine[]
+
+  @@index([orgId])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id      String   @id @default(uuid())
+  entryId String
+  entry   JournalEntry @relation(fields: [entryId], references: [id])
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+  debit   Decimal  @default(0) @db.Decimal(12, 2)
+  credit  Decimal  @default(0) @db.Decimal(12, 2)
+
+  @@index([entryId])
+  @@index([accountId])
+  @@map("journal_lines")
+}
+
+// ─────────────────────────────────────────────
+// Gate passes
+// ─────────────────────────────────────────────
+
+enum GatePassStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+model GatePass {
+  id          String   @id @default(uuid())
+  code        String   @unique // short scannable code the guard enters
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  visitorName String
+  validFrom   DateTime
+  validUntil  DateTime
+  status      GatePassStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([status])
+  @@map("gate_passes")
+}

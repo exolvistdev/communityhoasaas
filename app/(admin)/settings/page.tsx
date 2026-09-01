@@ -1,0 +1,93 @@
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/rbac";
+import { OrgSettingsForm } from "./OrgSettingsForm";
+import { PaymentSettingsForm } from "./PaymentSettingsForm";
+import { RatePlansManager } from "./RatePlansManager";
+
+export const metadata = { title: "Settings · HOA SaaS" };
+
+export default async function SettingsPage() {
+  const { org, user } = await requireRole("ADMIN");
+
+  const plans = await prisma.ratePlan.findMany({
+    where: { orgId: org.id },
+    include: { _count: { select: { properties: true } } },
+    orderBy: { name: "asc" },
+  });
+
+  const staleCounts = await Promise.all(
+    plans.map((p) =>
+      prisma.property.count({
+        where: { ratePlanId: p.id, monthlyRate: { not: p.monthlyRate } },
+      })
+    )
+  );
+
+  const planData = plans.map((p, i) => ({
+    id: p.id,
+    name: p.name,
+    monthlyRate: Number(p.monthlyRate),
+    propertyCount: p._count.properties,
+    staleCount: staleCounts[i],
+  }));
+
+  return (
+    <div className="max-w-2xl space-y-8">
+      <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-gray-900">Organization</h2>
+        <OrgSettingsForm
+          org={{ name: org.name, billingDueDay: org.billingDueDay }}
+        />
+        <dl className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white text-sm">
+          <Row label="Subdomain" value={`${org.subdomain}.hoasaas.ph`} />
+          <Row label="Plan" value={org.plan} />
+          <Row
+            label="Signed in as"
+            value={`${user.fullName} (${user.email}) · ${user.role}`}
+          />
+        </dl>
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Payments</h2>
+          <p className="text-xs text-gray-500">
+            Shown to homeowners on the Pay Now screen. They pay in their own
+            GCash/Maya app, then submit the reference for you to confirm.
+          </p>
+        </div>
+        <PaymentSettingsForm
+          org={{
+            gcashNumber: org.gcashNumber,
+            gcashName: org.gcashName,
+            mayaNumber: org.mayaNumber,
+            mayaName: org.mayaName,
+            paymentInstructions: org.paymentInstructions,
+          }}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Rate plans</h2>
+          <p className="text-xs text-gray-500">
+            Named dues tiers you assign to properties. Changing a plan&apos;s rate
+            doesn&apos;t touch existing properties until you re-apply it.
+          </p>
+        </div>
+        <RatePlansManager plans={planData} />
+      </section>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between px-4 py-3">
+      <dt className="text-gray-500">{label}</dt>
+      <dd className="text-gray-900">{value}</dd>
+    </div>
+  );
+}
