@@ -65,6 +65,7 @@ model Organization {
   auditEvents   AuditEvent[]
   marketplaceListings MarketplaceListing[]
   marketConversations MarketConversation[]
+  marketplaceBlocks   MarketplaceBlock[]
 
   @@map("organizations")
 }
@@ -117,6 +118,8 @@ model User {
   fullName   String
   role       UserRole
   acceptedAt DateTime? // null = invited, not yet signed in
+  deactivatedAt DateTime? // access revoked but row kept (owns marketplace history)
+  emailNotifications Boolean @default(true)
   createdAt  DateTime @default(now())
 
   gatePassesCreated GatePass[]
@@ -132,6 +135,9 @@ model User {
   conversationsAsBuyer  MarketConversation[]  @relation("ConversationBuyer")
   conversationsAsSeller MarketConversation[]  @relation("ConversationSeller")
   marketMessages        MarketMessage[]       @relation("MessageSender")
+  conversationReports   ConversationReport[]  @relation("ConvReportReporter")
+  blocksMade            MarketplaceBlock[]    @relation("BlockBlocker")
+  blocksAgainst         MarketplaceBlock[]    @relation("BlockBlocked")
 
   @@index([orgId])
   @@map("users")
@@ -428,13 +434,15 @@ model MarketplaceListing {
   photos       String[] // ordered Supabase Storage object paths
   removedReason String?
   soldAt       DateTime?
+  expiresAt    DateTime // auto-hidden from browse once past; seller can renew
+  bumpedAt     DateTime @default(now()) // browse sort key; renew resets it
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   conversations MarketConversation[]
   reports       ListingReport[]
 
-  @@index([orgId, status, createdAt])
+  @@index([orgId, status, bumpedAt])
   @@index([sellerId])
   @@map("marketplace_listings")
 }
@@ -464,10 +472,13 @@ model MarketConversation {
   buyer         User     @relation("ConversationBuyer", fields: [buyerId], references: [id])
   sellerId      String
   seller        User     @relation("ConversationSeller", fields: [sellerId], references: [id])
+  closedAt      DateTime? // frozen by a moderator — no more messages
+  closedReason  String?
   createdAt     DateTime @default(now())
   lastMessageAt DateTime @default(now())
 
   messages MarketMessage[]
+  reports  ConversationReport[]
 
   @@unique([listingId, buyerId])
   @@index([orgId])
@@ -488,4 +499,34 @@ model MarketMessage {
 
   @@index([conversationId, createdAt])
   @@map("market_messages")
+}
+
+model ConversationReport {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   MarketConversation @relation(fields: [conversationId], references: [id])
+  reporterId     String
+  reporter       User     @relation("ConvReportReporter", fields: [reporterId], references: [id])
+  reason         String
+  createdAt      DateTime @default(now())
+  resolvedAt     DateTime?
+
+  @@unique([conversationId, reporterId])
+  @@index([conversationId])
+  @@map("conversation_reports")
+}
+
+model MarketplaceBlock {
+  id        String   @id @default(uuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  blockerId String
+  blocker   User     @relation("BlockBlocker", fields: [blockerId], references: [id])
+  blockedId String
+  blocked   User     @relation("BlockBlocked", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([orgId])
+  @@map("marketplace_blocks")
 }

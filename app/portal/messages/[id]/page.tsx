@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
-import { peso } from "@/lib/format";
-import { publicPhotoUrl } from "@/lib/marketplace";
+import { priceLabel, publicPhotoUrl } from "@/lib/marketplace";
 import { MarkRead } from "./MarkRead";
 import { MessageComposer } from "./MessageComposer";
+import { ThreadActions } from "./ThreadActions";
 
 export const metadata = { title: "Conversation · HOA SaaS" };
 
@@ -16,6 +16,12 @@ const time = (d: Date) =>
     hour: "numeric",
     minute: "2-digit",
   });
+
+const partySelect = {
+  id: true,
+  fullName: true,
+  homeowner: { select: { property: { select: { unitNumber: true } } } },
+} as const;
 
 export default async function ConversationPage({
   params,
@@ -30,8 +36,8 @@ export default async function ConversationPage({
       listing: {
         select: { id: true, title: true, price: true, photos: true, status: true },
       },
-      buyer: { select: { id: true, fullName: true } },
-      seller: { select: { id: true, fullName: true } },
+      buyer: { select: partySelect },
+      seller: { select: partySelect },
       messages: { orderBy: { createdAt: "asc" } },
     },
   });
@@ -42,6 +48,30 @@ export default async function ConversationPage({
   const hasUnread = convo.messages.some(
     (m) => m.senderId !== user.id && !m.readAt
   );
+
+  const [myBlock, theirBlock, myReport] = await Promise.all([
+    prisma.marketplaceBlock.findUnique({
+      where: {
+        blockerId_blockedId: { blockerId: user.id, blockedId: other.id },
+      },
+    }),
+    prisma.marketplaceBlock.findUnique({
+      where: {
+        blockerId_blockedId: { blockerId: other.id, blockedId: user.id },
+      },
+    }),
+    prisma.conversationReport.findUnique({
+      where: {
+        conversationId_reporterId: {
+          conversationId: convo.id,
+          reporterId: user.id,
+        },
+      },
+    }),
+  ]);
+
+  const blocked = Boolean(myBlock || theirBlock);
+  const unit = other.homeowner?.property?.unitNumber;
 
   return (
     <div className="flex min-h-[70vh] flex-col space-y-3">
@@ -72,11 +102,19 @@ export default async function ConversationPage({
             {convo.listing.title}
           </div>
           <div className="text-xs text-gray-400">
-            {peso(Number(convo.listing.price), { cents: false })} · with{" "}
-            {other.fullName}
+            {priceLabel(Number(convo.listing.price))} · with {other.fullName}
+            {unit ? ` · ${unit}` : ""}
           </div>
         </div>
       </Link>
+
+      <ThreadActions
+        conversationId={convo.id}
+        otherUserId={other.id}
+        otherName={other.fullName}
+        iBlocked={Boolean(myBlock)}
+        alreadyReported={Boolean(myReport && !myReport.resolvedAt)}
+      />
 
       <div className="flex-1 space-y-2">
         {convo.messages.map((m) => {
@@ -107,7 +145,20 @@ export default async function ConversationPage({
         })}
       </div>
 
-      <MessageComposer conversationId={convo.id} />
+      {convo.closedAt ? (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+          A moderator closed this conversation.
+          {convo.closedReason ? ` ${convo.closedReason}` : ""}
+        </p>
+      ) : blocked ? (
+        <p className="rounded-lg bg-gray-100 px-3 py-2 text-center text-xs text-gray-600">
+          {myBlock
+            ? "You blocked this person. Unblock them above to message again."
+            : "This person isn't accepting messages from you."}
+        </p>
+      ) : (
+        <MessageComposer conversationId={convo.id} />
+      )}
     </div>
   );
 }

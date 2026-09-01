@@ -42,6 +42,7 @@ export async function getCurrentOrgContext() {
   });
 
   if (!user) redirect("/onboarding");
+  if (user.deactivatedAt) redirect("/login");
 
   // First authenticated load after an invite — mark it accepted.
   if (!user.acceptedAt) {
@@ -78,6 +79,8 @@ export async function tryGetOrgContext() {
     where: { authId: authUser.id },
     include: { org: true },
   });
+
+  if (user?.deactivatedAt) redirect("/login");
 
   return user
     ? { authUser, user, org: user.org, impersonating: false as const }

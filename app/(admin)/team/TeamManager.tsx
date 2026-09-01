@@ -219,7 +219,12 @@ export function TeamManager({
                   {m.id !== selfId && (
                     <button
                       onClick={() => {
-                        if (!confirm(`Remove ${m.fullName}?`)) return;
+                        if (
+                          !confirm(
+                            `Remove ${m.fullName}? Their login is revoked. If they have marketplace history, the account is kept (deactivated) and their active listings are withdrawn.`
+                          )
+                        )
+                          return;
                         act(() => removeMember(m.id));
                       }}
                       className="ml-3 text-xs text-red-500 underline hover:text-red-700"

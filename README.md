@@ -53,7 +53,9 @@ DATABASE_URL="postgresql://…@…pooler.supabase.com:6543/postgres?pgbouncer=tr
 DIRECT_URL="postgresql://…@…pooler.supabase.com:5432/postgres"                                       # session pooler / direct — prisma migrate
 NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="…"                    # Supabase → Settings → API
-SUPABASE_SERVICE_ROLE_KEY="…"                        # required for invites + seed auth users
+SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth users, marketplace photo uploads
+RESEND_API_KEY=""                                    # optional — marketplace email notifications no-op without it
+EMAIL_FROM="HOA SaaS <onboarding@resend.dev>"        # sender for notification emails
 ```
 
 Use the **transaction-mode pooler** (`:6543`, `pgbouncer=true`) for `DATABASE_URL`

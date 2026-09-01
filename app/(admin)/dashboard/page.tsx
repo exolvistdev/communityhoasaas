@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
+import { can } from "@/lib/permissions";
 import { MetricCard } from "@/components/MetricCard";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
 import { peso, periodLabel, currentPeriod } from "@/lib/format";
@@ -8,9 +9,10 @@ import { peso, periodLabel, currentPeriod } from "@/lib/format";
 export const metadata = { title: "Dashboard · HOA SaaS" };
 
 export default async function DashboardPage() {
-  const { org } = await getCurrentOrgContext();
+  const { org, user } = await getCurrentOrgContext();
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const canModerate = can(user.role, "marketplace:moderate");
 
   const [
     propertyCount,
@@ -18,6 +20,7 @@ export default async function DashboardPage() {
     overdueCount,
     activeGatePasses,
     properties,
+    marketReports,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
     prisma.payment.aggregate({
@@ -51,6 +54,16 @@ export default async function DashboardPage() {
       },
       orderBy: { unitNumber: "asc" },
     }),
+    canModerate
+      ? Promise.all([
+          prisma.marketplaceListing.count({
+            where: { orgId: org.id, reports: { some: { resolvedAt: null } } },
+          }),
+          prisma.conversationReport.count({
+            where: { resolvedAt: null, conversation: { orgId: org.id } },
+          }),
+        ]).then(([a, b]) => a + b)
+      : Promise.resolve(0),
   ]);
 
   const collected = Number(collectedAgg._sum.amount ?? 0);
@@ -83,6 +96,16 @@ export default async function DashboardPage() {
           Add property
         </Link>
       </div>
+
+      {canModerate && marketReports > 0 && (
+        <Link
+          href="/marketplace?f=reported"
+          className="block rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 hover:bg-amber-100"
+        >
+          {marketReports} marketplace item{marketReports === 1 ? "" : "s"} need
+          review →
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <MetricCard label="Total properties" value={propertyCount} />

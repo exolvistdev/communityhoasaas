@@ -61,3 +61,13 @@ export async function updateHomeownerContact(input: unknown): Promise<Result> {
   revalidatePath(`/properties/${homeowner.propertyId}`);
   return { ok: true };
 }
+
+export async function setEmailNotifications(enabled: boolean): Promise<Result> {
+  const { user } = await getCurrentOrgContext();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailNotifications: Boolean(enabled) },
+  });
+  revalidatePath("/account");
+  return { ok: true };
+}

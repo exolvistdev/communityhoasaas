@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
@@ -103,7 +104,9 @@ export async function updateMemberRole(
   return { ok: true };
 }
 
-export async function removeMember(userId: string): Promise<Result> {
+export async function removeMember(
+  userId: string
+): Promise<Result<{ deactivated?: boolean }>> {
   const denied = await guard();
   if (denied) return denied;
 
@@ -124,20 +127,47 @@ export async function removeMember(userId: string): Promise<Result> {
       where: { id: target.homeowner.id },
       data: { userId: null },
     });
-  await prisma.user.delete({ where: { id: userId } });
 
+  // Revoke the Supabase login either way.
   if (target.authId) {
     await createAdminClient()
       .auth.admin.deleteUser(target.authId)
       .catch(() => {});
   }
 
+  let deactivated = false;
+  try {
+    await prisma.user.delete({ where: { id: userId } });
+  } catch (e) {
+    // They own content the DB won't let us delete (marketplace listings,
+    // messages, gate passes…). Keep the row but revoke all access.
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2003"
+    ) {
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: userId },
+          data: { deactivatedAt: new Date(), authId: null },
+        }),
+        prisma.marketplaceListing.updateMany({
+          where: { sellerId: userId, status: "ACTIVE" },
+          data: { status: "WITHDRAWN" },
+        }),
+      ]);
+      deactivated = true;
+    } else {
+      throw e;
+    }
+  }
+
   revalidatePath("/team");
   await logAudit({
     action: "team.remove",
     target: `${target.fullName} (${target.role})`,
+    detail: deactivated ? "access revoked; history kept" : undefined,
   });
-  return { ok: true };
+  return { ok: true, deactivated };
 }
 
 export async function resendInvite(

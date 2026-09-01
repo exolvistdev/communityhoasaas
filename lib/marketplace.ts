@@ -1,8 +1,42 @@
 import type { ListingCategory, ListingStatus } from "@prisma/client";
+import { peso } from "@/lib/format";
 
 // Pure helpers — safe to import from client components.
 
 export const MARKETPLACE_BUCKET = "marketplace";
+
+/** How long a new listing stays visible in browse before it must be renewed. */
+export const LISTING_TTL_DAYS = 30;
+
+export function listingExpiresAt(from: Date = new Date()) {
+  return new Date(from.getTime() + LISTING_TTL_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/** A live listing whose window has closed — hidden from browse, renewable. */
+export function listingIsExpired(l: {
+  status: ListingStatus;
+  expiresAt: Date;
+}) {
+  return l.status === "ACTIVE" && l.expiresAt.getTime() < Date.now();
+}
+
+export function priceLabel(n: number) {
+  return n === 0 ? "Free" : peso(n, { cents: false });
+}
+
+export const LISTING_SORTS = [
+  { value: "recent", label: "Most recent" },
+  { value: "price_asc", label: "Price: low to high" },
+  { value: "price_desc", label: "Price: high to low" },
+] as const;
+
+export type ListingSort = (typeof LISTING_SORTS)[number]["value"];
+
+export function listingOrderBy(sort: string | undefined) {
+  if (sort === "price_asc") return { price: "asc" as const };
+  if (sort === "price_desc") return { price: "desc" as const };
+  return { bumpedAt: "desc" as const };
+}
 
 /** Public URL for a stored listing photo. Pure string build. */
 export function publicPhotoUrl(path: string) {

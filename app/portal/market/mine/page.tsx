@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
-import { peso } from "@/lib/format";
-import { LISTING_STATUS_BADGE, publicPhotoUrl } from "@/lib/marketplace";
+import {
+  LISTING_STATUS_BADGE,
+  listingIsExpired,
+  priceLabel,
+  publicPhotoUrl,
+} from "@/lib/marketplace";
+import { RenewButton } from "./RenewButton";
 
 export const metadata = { title: "My listings · HOA SaaS" };
+
+const SOON_MS = 7 * 24 * 60 * 60 * 1000;
 
 export default async function MyListingsPage() {
   const { user } = await getHomeownerContext();
@@ -41,11 +48,16 @@ export default async function MyListingsPage() {
         <ul className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200 bg-white">
           {listings.map((l) => {
             const badge = LISTING_STATUS_BADGE[l.status];
+            const expired = listingIsExpired(l);
+            const soon =
+              l.status === "ACTIVE" &&
+              !expired &&
+              l.expiresAt.getTime() - Date.now() < SOON_MS;
             return (
-              <li key={l.id}>
+              <li key={l.id} className="flex items-center gap-3 px-3 py-3">
                 <Link
                   href={`/portal/market/${l.id}`}
-                  className="flex items-center gap-3 px-3 py-3 hover:bg-gray-50"
+                  className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80"
                 >
                   <div className="h-14 w-14 shrink-0 rounded-md bg-gray-100">
                     {l.photos[0] && (
@@ -56,22 +68,31 @@ export default async function MyListingsPage() {
                       />
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-gray-900">
                       {l.title}
                     </div>
                     <div className="text-xs text-gray-400">
-                      {peso(Number(l.price), { cents: false })} ·{" "}
-                      {l._count.conversations} chat
+                      {priceLabel(Number(l.price))} · {l._count.conversations} chat
                       {l._count.conversations === 1 ? "" : "s"}
+                      {expired
+                        ? " · expired"
+                        : soon
+                        ? " · expiring soon"
+                        : ""}
                     </div>
                   </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                  >
-                    {badge.label}
-                  </span>
                 </Link>
+                <div className="flex shrink-0 items-center gap-2">
+                  {(expired || soon) && <RenewButton id={l.id} />}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      expired ? "bg-amber-100 text-amber-800" : badge.className
+                    }`}
+                  >
+                    {expired ? "Expired" : badge.label}
+                  </span>
+                </div>
               </li>
             );
           })}

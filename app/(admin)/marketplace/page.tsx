@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
-import { peso } from "@/lib/format";
-import { CATEGORY_LABEL, LISTING_STATUS_BADGE } from "@/lib/marketplace";
+import {
+  CATEGORY_LABEL,
+  LISTING_STATUS_BADGE,
+  priceLabel,
+} from "@/lib/marketplace";
 
 export const metadata = { title: "Marketplace · HOA SaaS" };
 
@@ -48,13 +51,31 @@ export default async function AdminMarketplacePage({
         )
       : listings;
 
-  const openReports = await prisma.marketplaceListing.count({
-    where: { orgId: org.id, reports: { some: { resolvedAt: null } } },
-  });
+  const [openReports, openConvoReports] = await Promise.all([
+    prisma.marketplaceListing.count({
+      where: { orgId: org.id, reports: { some: { resolvedAt: null } } },
+    }),
+    prisma.conversationReport.count({
+      where: { resolvedAt: null, conversation: { orgId: org.id } },
+    }),
+  ]);
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Marketplace</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-gray-900">Marketplace</h1>
+        <Link
+          href="/marketplace/conversations"
+          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Reported conversations
+          {openConvoReports > 0 && (
+            <span className="ml-1.5 rounded-full bg-red-100 px-1.5 text-xs font-medium text-red-800">
+              {openConvoReports}
+            </span>
+          )}
+        </Link>
+      </div>
 
       <div className="flex gap-2">
         <Pill href="/marketplace" active={filter === "all"}>
@@ -105,7 +126,7 @@ export default async function AdminMarketplacePage({
                       {l.seller.fullName}
                     </td>
                     <td className="px-4 py-2.5 text-gray-600">
-                      {peso(Number(l.price), { cents: false })}
+                      {priceLabel(Number(l.price))}
                     </td>
                     <td className="px-4 py-2.5">
                       <span

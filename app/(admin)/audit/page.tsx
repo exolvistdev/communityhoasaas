@@ -26,6 +26,9 @@ const ACTION_LABEL: Record<string, string> = {
   "marketplace.remove": "Took down listing",
   "marketplace.restore": "Restored listing",
   "marketplace.reports_dismiss": "Dismissed listing reports",
+  "marketplace.conversation_close": "Closed a conversation",
+  "marketplace.conversation_reopen": "Reopened a conversation",
+  "marketplace.conversation_reports_dismiss": "Dismissed conversation reports",
 };
 
 const fmt = (d: Date) =>

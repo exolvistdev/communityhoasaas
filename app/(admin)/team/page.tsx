@@ -8,7 +8,7 @@ export default async function TeamPage() {
   const { org, user: me } = await requireRole("ADMIN");
 
   const members = await prisma.user.findMany({
-    where: { orgId: org.id },
+    where: { orgId: org.id, deactivatedAt: null },
     orderBy: [{ acceptedAt: { sort: "asc", nulls: "first" } }, { createdAt: "asc" }],
   });
 

@@ -4,6 +4,8 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { ProfileForm } from "./ProfileForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ContactForm } from "./ContactForm";
+import { NotificationToggle } from "./NotificationToggle";
+import { BlockedResidents } from "./BlockedResidents";
 
 export const metadata = { title: "Account · HOA SaaS" };
 
@@ -30,6 +32,15 @@ export default async function AccountPage() {
     user.role === "HOMEOWNER"
       ? await prisma.homeowner.findFirst({ where: { userId: user.id } })
       : null;
+
+  const blocked =
+    user.role === "HOMEOWNER"
+      ? await prisma.marketplaceBlock.findMany({
+          where: { blockerId: user.id },
+          include: { blocked: { select: { id: true, fullName: true } } },
+          orderBy: { createdAt: "desc" },
+        })
+      : [];
 
   return (
     <main className="mx-auto max-w-md space-y-6 px-6 py-8">
@@ -58,6 +69,25 @@ export default async function AccountPage() {
         <h2 className="text-sm font-semibold text-gray-900">Password</h2>
         <ChangePasswordForm />
       </section>
+
+      <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Notifications</h2>
+        <NotificationToggle enabled={user.emailNotifications} />
+      </section>
+
+      {user.role === "HOMEOWNER" && (
+        <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-gray-900">
+            Blocked residents
+          </h2>
+          <BlockedResidents
+            blocked={blocked.map((b) => ({
+              id: b.blocked.id,
+              name: b.blocked.fullName,
+            }))}
+          />
+        </section>
+      )}
 
       {homeowner && (
         <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">

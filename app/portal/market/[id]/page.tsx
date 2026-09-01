@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
-import { peso } from "@/lib/format";
 import {
   CATEGORY_LABEL,
   LISTING_STATUS_BADGE,
+  listingIsExpired,
+  priceLabel,
   publicPhotoUrl,
 } from "@/lib/marketplace";
 import { MessageSellerButton } from "./MessageSellerButton";
@@ -39,8 +40,6 @@ export default async function ListingDetailPage({
   if (!listing) notFound();
 
   const isSeller = listing.sellerId === user.id;
-  // Only the seller sees a listing that isn't live; moderators use /marketplace.
-  if (!isSeller && listing.status !== "ACTIVE") notFound();
 
   const [myReport, myConversation, sellerConvoCount] = await Promise.all([
     isSeller
@@ -62,6 +61,12 @@ export default async function ListingDetailPage({
       : Promise.resolve(0),
   ]);
 
+  // A non-seller sees a non-live listing only if they have a conversation about
+  // it (so a buyer can still reference a now-sold item). Moderators use /marketplace.
+  if (!isSeller && listing.status !== "ACTIVE" && !myConversation) notFound();
+
+  const isActive = listing.status === "ACTIVE";
+  const expired = listingIsExpired(listing);
   const badge = LISTING_STATUS_BADGE[listing.status];
 
   return (
@@ -89,16 +94,22 @@ export default async function ListingDetailPage({
       <div>
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-lg font-semibold text-gray-900">{listing.title}</h1>
-          {listing.status !== "ACTIVE" && (
-            <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-            >
-              {badge.label}
+          {expired ? (
+            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+              Expired
             </span>
+          ) : (
+            !isActive && (
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+              >
+                {badge.label}
+              </span>
+            )
           )}
         </div>
         <div className="mt-1 text-xl font-semibold text-gray-900">
-          {peso(Number(listing.price), { cents: false })}
+          {priceLabel(Number(listing.price))}
         </div>
         <div className="mt-0.5 text-xs text-gray-400">
           {CATEGORY_LABEL[listing.category]} · posted {fmtDate(listing.createdAt)}
@@ -121,7 +132,11 @@ export default async function ListingDetailPage({
 
       {isSeller ? (
         <>
-          <SellerControls listingId={listing.id} status={listing.status} />
+          <SellerControls
+            listingId={listing.id}
+            status={listing.status}
+            expired={expired}
+          />
           {sellerConvoCount > 0 && (
             <Link
               href="/portal/messages"
@@ -146,13 +161,19 @@ export default async function ListingDetailPage({
             >
               Open your conversation
             </Link>
-          ) : (
+          ) : isActive ? (
             <MessageSellerButton listingId={listing.id} />
+          ) : (
+            <p className="rounded-lg bg-gray-100 px-3 py-2 text-center text-sm text-gray-500">
+              This listing is no longer available.
+            </p>
           )}
-          <ReportListingForm
-            listingId={listing.id}
-            alreadyReported={Boolean(myReport && !myReport.resolvedAt)}
-          />
+          {isActive && (
+            <ReportListingForm
+              listingId={listing.id}
+              alreadyReported={Boolean(myReport && !myReport.resolvedAt)}
+            />
+          )}
         </div>
       )}
     </div>

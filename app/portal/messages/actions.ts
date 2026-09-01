@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
+import {
+  notifyNewMessage,
+  notifyConversationReported,
+  areUsersBlocked,
+} from "@/lib/notify";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -22,6 +27,8 @@ export async function startConversation(
     return { ok: false, error: "This is your own listing" };
   if (listing.status !== "ACTIVE")
     return { ok: false, error: "This listing is no longer available" };
+  if (await areUsersBlocked(user.id, listing.sellerId))
+    return { ok: false, error: "You can't message this person" };
 
   const convo = await prisma.marketConversation.upsert({
     where: {
@@ -63,6 +70,12 @@ export async function sendMessage(
   const { user } = await getHomeownerContext();
   const convo = await participantConversation(conversationId, user.id);
   if (!convo) return { ok: false, error: "Conversation not found" };
+  if (convo.closedAt)
+    return { ok: false, error: "A moderator closed this conversation" };
+
+  const other = convo.buyerId === user.id ? convo.sellerId : convo.buyerId;
+  if (await areUsersBlocked(user.id, other))
+    return { ok: false, error: "You can't message this person" };
 
   await prisma.$transaction([
     prisma.marketMessage.create({
@@ -78,6 +91,7 @@ export async function sendMessage(
     }),
   ]);
 
+  void notifyNewMessage(conversationId, user.id).catch(() => {});
   revalidatePath("/portal/messages");
   revalidatePath(`/portal/messages/${conversationId}`);
   revalidatePath("/portal");
@@ -102,5 +116,80 @@ export async function markConversationRead(
 
   revalidatePath("/portal/messages");
   revalidatePath("/portal");
+  return { ok: true };
+}
+
+/* ─────────────────────────── block / unblock ─────────────────────── */
+
+export async function blockUser(otherUserId: string): Promise<Result> {
+  const { user, org } = await getHomeownerContext();
+  if (otherUserId === user.id)
+    return { ok: false, error: "You can't block yourself" };
+
+  const other = await prisma.user.findFirst({
+    where: { id: otherUserId, orgId: org.id },
+  });
+  if (!other) return { ok: false, error: "Resident not found" };
+
+  await prisma.marketplaceBlock.upsert({
+    where: {
+      blockerId_blockedId: { blockerId: user.id, blockedId: otherUserId },
+    },
+    create: { orgId: org.id, blockerId: user.id, blockedId: otherUserId },
+    update: {},
+  });
+
+  revalidatePath("/portal/messages");
+  revalidatePath("/account");
+  return { ok: true };
+}
+
+export async function unblockUser(otherUserId: string): Promise<Result> {
+  const { user } = await getHomeownerContext();
+  await prisma.marketplaceBlock
+    .delete({
+      where: {
+        blockerId_blockedId: { blockerId: user.id, blockedId: otherUserId },
+      },
+    })
+    .catch(() => {});
+
+  revalidatePath("/portal/messages");
+  revalidatePath("/account");
+  return { ok: true };
+}
+
+/* ──────────────────────── report a conversation ──────────────────── */
+
+const reportSchema = z.object({
+  reason: z.string().trim().min(5, "Tell the moderators what's wrong").max(500),
+});
+
+export async function reportConversation(
+  conversationId: string,
+  input: unknown
+): Promise<Result> {
+  const parsed = reportSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const { user } = await getHomeownerContext();
+  const convo = await participantConversation(conversationId, user.id);
+  if (!convo) return { ok: false, error: "Conversation not found" };
+
+  await prisma.conversationReport.upsert({
+    where: {
+      conversationId_reporterId: { conversationId, reporterId: user.id },
+    },
+    create: { conversationId, reporterId: user.id, reason: parsed.data.reason },
+    update: {
+      reason: parsed.data.reason,
+      createdAt: new Date(),
+      resolvedAt: null,
+    },
+  });
+
+  void notifyConversationReported(conversationId).catch(() => {});
+  revalidatePath(`/portal/messages/${conversationId}`);
   return { ok: true };
 }

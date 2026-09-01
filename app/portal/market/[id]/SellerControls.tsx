@@ -4,14 +4,16 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ListingStatus } from "@prisma/client";
-import { setListingStatus } from "../actions";
+import { setListingStatus, renewListing } from "../actions";
 
 export function SellerControls({
   listingId,
   status,
+  expired,
 }: {
   listingId: string;
   status: ListingStatus;
+  expired: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -21,6 +23,15 @@ export function SellerControls({
     setError(null);
     start(async () => {
       const res = await setListingStatus(listingId, next);
+      if (res.ok) router.refresh();
+      else setError(res.error);
+    });
+  }
+
+  function renew() {
+    setError(null);
+    start(async () => {
+      const res = await renewListing(listingId);
       if (res.ok) router.refresh();
       else setError(res.error);
     });
@@ -36,6 +47,15 @@ export function SellerControls({
         >
           Edit
         </Link>
+        {expired && status === "ACTIVE" && (
+          <button
+            onClick={renew}
+            disabled={pending}
+            className="rounded-md border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+          >
+            Renew (expired)
+          </button>
+        )}
         {status !== "SOLD" && (
           <button
             onClick={() => change("SOLD")}

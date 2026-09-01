@@ -167,12 +167,16 @@ async function resetDemoOrg() {
   if (!org) return;
   const orgId = org.id;
   await clearOrgListingPhotos(orgId);
+  await prisma.conversationReport.deleteMany({
+    where: { conversation: { orgId } },
+  });
   await prisma.marketMessage.deleteMany({
     where: { conversation: { orgId } },
   });
   await prisma.marketConversation.deleteMany({ where: { orgId } });
   await prisma.listingReport.deleteMany({ where: { listing: { orgId } } });
   await prisma.marketplaceListing.deleteMany({ where: { orgId } });
+  await prisma.marketplaceBlock.deleteMany({ where: { orgId } });
   await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
   await prisma.journalEntry.deleteMany({ where: { orgId } });
   await prisma.payment.deleteMany({
@@ -500,6 +504,7 @@ async function main() {
   });
 
   // ── Resident marketplace ──────────────────────────────────────────
+  const DAY = 24 * 60 * 60 * 1000;
   const mkListing = (
     seller: { id: string },
     data: {
@@ -516,11 +521,20 @@ async function main() {
         | "SERVICES"
         | "OTHER";
       price: number;
+      expiresInDays?: number;
     }
-  ) =>
-    prisma.marketplaceListing.create({
-      data: { orgId: org.id, sellerId: seller.id, photos: [], ...data },
+  ) => {
+    const { expiresInDays = 30, ...rest } = data;
+    return prisma.marketplaceListing.create({
+      data: {
+        orgId: org.id,
+        sellerId: seller.id,
+        photos: [],
+        expiresAt: new Date(Date.now() + expiresInDays * DAY),
+        ...rest,
+      },
     });
+  };
 
   const mattress = await mkListing(homeownerUser, {
     title: "Uratex foam mattress — double size",
@@ -528,6 +542,7 @@ async function main() {
       "Selling our double-size Uratex foam mattress, about 2 years old, used in the guest room only. No stains, no bed bugs. Pick up at Blk 1 Lot 1.",
     category: "FURNITURE",
     price: 3500,
+    expiresInDays: 3, // nearly expired — demos the Renew nudge
   });
   await mkListing(homeownerUser, {
     title: "1.0HP window-type aircon (Carrier)",
@@ -536,7 +551,7 @@ async function main() {
     category: "APPLIANCES",
     price: 6500,
   });
-  await mkListing(anaUser, {
+  const bike = await mkListing(anaUser, {
     title: "Kids' mountain bike — 20-inch",
     description:
       "20-inch kids' mountain bike, 6-speed. My daughter outgrew it. Tires still good, brakes recently adjusted. Minor rust on the kickstand.",
@@ -615,6 +630,39 @@ async function main() {
       reporterId: anaUser.id,
       reason:
         "Price looks too low for a working Carrier unit — worried it might be misleading or already broken.",
+    },
+  });
+
+  // A second thread (Juan asking about Ana's bike) that Ana then reports —
+  // gives the conversation-moderation view something to act on.
+  const bikeConvo = await prisma.marketConversation.create({
+    data: {
+      orgId: org.id,
+      listingId: bike.id,
+      buyerId: homeownerUser.id,
+      sellerId: anaUser.id,
+      lastMessageAt: new Date(Date.now() - 10 * 60 * 1000),
+      messages: {
+        create: [
+          {
+            senderId: homeownerUser.id,
+            body: "Will you take 1500 for the bike? Cash today.",
+            createdAt: new Date(Date.now() - 15 * 60 * 1000),
+          },
+          {
+            senderId: homeownerUser.id,
+            body: "Hello? 1500 final. Don't waste my time.",
+            createdAt: new Date(Date.now() - 10 * 60 * 1000),
+          },
+        ],
+      },
+    },
+  });
+  await prisma.conversationReport.create({
+    data: {
+      conversationId: bikeConvo.id,
+      reporterId: anaUser.id,
+      reason: "Buyer is being rude and pushy after I said the price was firm.",
     },
   });
 

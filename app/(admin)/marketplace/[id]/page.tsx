@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
-import { peso } from "@/lib/format";
 import {
   CATEGORY_LABEL,
   LISTING_STATUS_BADGE,
+  priceLabel,
   publicPhotoUrl,
 } from "@/lib/marketplace";
 import {
@@ -67,7 +67,7 @@ export default async function AdminListingPage({
         <div>
           <h1 className="text-lg font-semibold text-gray-900">{listing.title}</h1>
           <div className="mt-0.5 text-sm text-gray-500">
-            {peso(Number(listing.price), { cents: false })} ·{" "}
+            {priceLabel(Number(listing.price))} ·{" "}
             {CATEGORY_LABEL[listing.category]} · posted {fmt(listing.createdAt)}
           </div>
         </div>

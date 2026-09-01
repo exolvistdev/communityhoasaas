@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
-import { isListingCategory } from "@/lib/marketplace";
+import { isListingCategory, listingExpiresAt } from "@/lib/marketplace";
+import { notifyListingReported } from "@/lib/notify";
 import {
   uploadListingPhotos,
   deleteListingPhotos,
@@ -60,6 +61,7 @@ export async function createListing(
       category: d.category,
       price: d.price,
       photos: [],
+      expiresAt: listingExpiresAt(),
     },
   });
 
@@ -144,6 +146,21 @@ export async function setListingStatus(
   return { ok: true };
 }
 
+export async function renewListing(id: string): Promise<Result> {
+  const owned = await ownListing(id);
+  if (!owned) return { ok: false, error: "Listing not found" };
+  if (owned.listing.status !== "ACTIVE")
+    return { ok: false, error: "Only active listings can be renewed" };
+
+  const now = new Date();
+  await prisma.marketplaceListing.update({
+    where: { id },
+    data: { expiresAt: listingExpiresAt(now), bumpedAt: now },
+  });
+  revalidate(id);
+  return { ok: true };
+}
+
 /* ─────────────────────────────── report ──────────────────────────── */
 
 const reportSchema = z.object({
@@ -172,6 +189,7 @@ export async function reportListing(
     update: { reason: parsed.data.reason, createdAt: new Date(), resolvedAt: null },
   });
 
+  void notifyListingReported(id).catch(() => {});
   revalidate(id);
   return { ok: true };
 }
