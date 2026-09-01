@@ -240,8 +240,9 @@ async function main() {
     await postInvoiceIssued(invoice.id);
     invoiceByUnit.set(p.unitNumber, invoice.id);
 
-    // Pay the first two in full, one partially, leave the rest outstanding.
-    if (i < 2) {
+    // Blk 1 Lot 2 paid in full; Blk 1 Lot 3 partial; the rest outstanding
+    // (Blk 1 Lot 1 is the demo homeowner login — left owing on purpose).
+    if (i === 1) {
       const pay = await prisma.payment.create({
         data: {
           invoiceId: invoice.id,
@@ -266,6 +267,25 @@ async function main() {
       });
       await postPaymentReceived(pay.id);
     }
+  }
+
+  // A prior-month overdue invoice for Blk 1 Lot 1 (demo homeowner login).
+  {
+    const blk1lot1 = await prisma.property.findFirstOrThrow({
+      where: { orgId: org.id, unitNumber: "Blk 1 Lot 1" },
+    });
+    const priorPeriod = `${y}-${String(m - 1).padStart(2, "0")}`;
+    const priorInvoice = await prisma.invoice.create({
+      data: {
+        propertyId: blk1lot1.id,
+        amount: blk1lot1.monthlyRate,
+        period: priorPeriod,
+        dueDate: new Date(y, m - 2, 15),
+        status: "SENT",
+        memo: `Monthly dues — ${priorPeriod}`,
+      },
+    });
+    await postInvoiceIssued(priorInvoice.id);
   }
 
   // An archived (moved-out) unit — excluded from billing and the active list.

@@ -27,7 +27,8 @@ walkthrough of the admin app.
 | Team — invite staff/guard by email, role management | ✅ |
 | Settings — HOA name, billing due-day, rate plans, GCash/Maya payment details | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
-| Homeowner portal (§4.4) · Guard portal (§4.5) | ⏳ next |
+| Homeowner portal (§4.4) — balance, history, Pay Now, gate-pass request, announcements | ✅ |
+| Guard portal (§4.5) | ⏳ next |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
 portal) and submit the reference; an admin confirms it in **Reconciliation**,
@@ -42,12 +43,17 @@ npm install
 Create `.env` (it is git-ignored):
 
 ```
-DATABASE_URL="postgresql://…"                       # Supabase pooled connection
-DIRECT_URL="postgresql://…"                          # Supabase direct connection
+# Supabase → Database → Connection string
+DATABASE_URL="postgresql://…@…pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"  # transaction pooler
+DIRECT_URL="postgresql://…@…pooler.supabase.com:5432/postgres"                                       # session pooler / direct — prisma migrate
 NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="…"                    # Supabase → Settings → API
 SUPABASE_SERVICE_ROLE_KEY="…"                        # required for invites + seed auth users
 ```
+
+Use the **transaction-mode pooler** (`:6543`, `pgbouncer=true`) for `DATABASE_URL`
+so the app doesn't exhaust the session pooler's connection limit; `DIRECT_URL`
+(`:5432`) is only used by `prisma migrate`.
 
 In the Supabase dashboard: **Authentication → Providers → Email** — either turn
 off "Confirm email" or keep `SUPABASE_SERVICE_ROLE_KEY` set (onboarding and
@@ -81,7 +87,8 @@ app/
   onboarding/         org + admin sign-up wizard
   statements/         printable Statement of Account (kept outside the sidebar chrome)
   accept-invite/      set-password page for invited users
-  guard/  portal/     placeholder homeowner/guard portals (next milestone)
+  portal/             homeowner portal — balance, Pay Now, gate-pass request, announcements
+  guard/              placeholder guard portal (next milestone)
   login/  auth/
 lib/
   prisma.ts           Prisma singleton

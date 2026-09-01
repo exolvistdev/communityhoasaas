@@ -104,3 +104,21 @@ or remove them; the last admin can't be removed or demoted.
 
 HOA name, invoice due day, rate plans, and payment details (GCash / Maya / bank /
 cash instructions).
+
+## What homeowners see
+
+A homeowner you've invited (from a property's People section) signs in and gets
+`/portal` — a mobile-friendly view of **their unit only**:
+
+- **Balance card** — amount due and next due date, with an overdue (red) or
+  paid-up (green) treatment; a "Pay now" button when they owe.
+- **Pay now** — shows your GCash / Maya details (from Settings → Payments); the
+  homeowner pays in their own app and submits the amount + reference, which lands
+  in **Reconciliation** as a pending payment for you to confirm. Cash / bank
+  shows your written instructions only.
+- **Gate pass** — the homeowner can register their own visitors (same short code
+  the guard checks); these also appear in the admin Gate passes list.
+- **Announcements** — your published announcements.
+- **Payment history** — their confirmed payments.
+
+Guards and homeowners never see the staff app.
