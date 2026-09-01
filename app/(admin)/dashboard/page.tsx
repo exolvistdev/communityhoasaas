@@ -40,6 +40,7 @@ export default async function DashboardPage() {
         property: { orgId: org.id },
         status: "ACTIVE",
         validUntil: { gt: now },
+        usedAt: null,
       },
     }),
     prisma.property.findMany({

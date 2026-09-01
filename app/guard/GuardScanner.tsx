@@ -32,6 +32,12 @@ const VERDICT: Record<
     panel: "bg-red-600 text-white",
     chip: "bg-red-100 text-red-800",
   },
+  USED: {
+    label: "Already used",
+    ok: false,
+    panel: "bg-red-600 text-white",
+    chip: "bg-red-100 text-red-800",
+  },
   NOT_FOUND: {
     label: "No matching pass",
     ok: false,
@@ -165,6 +171,11 @@ export function GuardScanner({
               <div className="opacity-90">
                 {fmtTime(result.validFrom)} – {fmtTime(result.validUntil)}
               </div>
+              {result.verdict === "USED" && result.usedAt && (
+                <div className="font-medium">
+                  Used {fmtTime(result.usedAt)}
+                </div>
+              )}
             </div>
           )}
         </div>

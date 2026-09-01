@@ -254,6 +254,7 @@ export default async function PropertyDetailPage({
               <tbody>
                 {property.gatePasses.map((gp) => {
                   const display = effectiveGatePassStatus(gp);
+                  const active = display === "ACTIVE" && !gp.usedAt;
                   return (
                     <tr key={gp.id} className="border-t border-gray-100">
                       <td className="px-4 py-2.5 font-mono font-medium">
@@ -269,11 +270,16 @@ export default async function PropertyDetailPage({
                       <td className="px-4 py-2.5 text-gray-600">
                         {fmtDate(gp.validFrom)} – {fmtDate(gp.validUntil)}
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
                         <GatePassStatusBadge status={display} />
+                        {gp.usedAt && (
+                          <span className="ml-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                            Used {fmtDate(gp.usedAt)}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        {canWrite && display === "ACTIVE" ? (
+                        {canWrite && active ? (
                           <RevokeGatePassButton id={gp.id} />
                         ) : (
                           <span className="text-gray-400">—</span>

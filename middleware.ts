@@ -47,6 +47,24 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+
+  // Platform operator console — separate auth surface, its own login page.
+  const isPlatform = path === "/platform" || path.startsWith("/platform/");
+  const isPlatformLogin = path === "/platform/login";
+
+  if (isPlatform && !isPlatformLogin && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/platform/login";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
+
+  if (isPlatformLogin && user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/platform";
+    return NextResponse.redirect(url);
+  }
+
   const needsAuth = PROTECTED.some((p) => path === p || path.startsWith(p + "/"));
 
   if (needsAuth && !user) {

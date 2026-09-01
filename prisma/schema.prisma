@@ -9,6 +9,36 @@ datasource db {
 }
 
 // ─────────────────────────────────────────────
+// Platform (cross-tenant — not part of any org)
+// ─────────────────────────────────────────────
+
+model PlatformAdmin {
+  id        String   @id @default(uuid())
+  authId    String   @unique // Supabase auth.users.id
+  email     String   @unique
+  fullName  String
+  createdAt DateTime @default(now())
+
+  impersonations ImpersonationEvent[]
+
+  @@map("platform_admins")
+}
+
+model ImpersonationEvent {
+  id              String   @id @default(uuid())
+  platformAdminId String
+  platformAdmin   PlatformAdmin @relation(fields: [platformAdminId], references: [id])
+  targetUserId    String
+  targetUser      User     @relation(fields: [targetUserId], references: [id])
+  targetOrgName   String   // snapshot — survives the org changing name later
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+
+  @@index([platformAdminId, startedAt])
+  @@map("impersonation_events")
+}
+
+// ─────────────────────────────────────────────
 // Tenancy
 // ─────────────────────────────────────────────
 
@@ -94,6 +124,7 @@ model User {
   paymentsSubmitted Payment[] @relation("PaymentSubmittedBy")
   paymentsConfirmed Payment[] @relation("PaymentConfirmedBy")
   auditEvents       AuditEvent[]
+  impersonatedAs    ImpersonationEvent[]
 
   @@index([orgId])
   @@map("users")
@@ -327,6 +358,7 @@ model GatePass {
   validFrom   DateTime
   validUntil  DateTime
   status      GatePassStatus @default(ACTIVE)
+  usedAt      DateTime? // single-use — set on the first successful guard scan
   createdAt   DateTime @default(now())
 
   scans GatePassScan[]

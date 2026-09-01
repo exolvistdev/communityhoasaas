@@ -54,7 +54,14 @@ export default async function PortalGatePassPage() {
                   <span className="font-mono font-semibold text-gray-900">
                     {p.code}
                   </span>
-                  <GatePassStatusBadge status={status} />
+                  <span className="flex items-center gap-1.5">
+                    {p.usedAt && (
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                        Used {fmt(p.usedAt)}
+                      </span>
+                    )}
+                    <GatePassStatusBadge status={status} />
+                  </span>
                 </div>
                 <div className="mt-0.5 text-gray-600">{p.visitorName}</div>
                 <div className="text-xs text-gray-400">

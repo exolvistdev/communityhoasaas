@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getHomeownerContext } from "@/lib/portal";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
 export const metadata = { title: "Homeowner portal · HOA SaaS" };
 
@@ -8,10 +9,13 @@ export default async function PortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { org, user, property } = await getHomeownerContext();
+  const { org, user, property, impersonating } = await getHomeownerContext();
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {impersonating && (
+        <ImpersonationBanner name={user.fullName} role={user.role} />
+      )}
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           <Link href="/portal" className="min-w-0">

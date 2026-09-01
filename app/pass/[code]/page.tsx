@@ -19,6 +19,7 @@ const VERDICT_TEXT: Record<GatePassVerdict, { label: string; tone: string }> = {
   NOT_YET_VALID: { label: "Not valid yet", tone: "text-amber-700" },
   EXPIRED: { label: "Expired", tone: "text-red-700" },
   REVOKED: { label: "Revoked", tone: "text-red-700" },
+  USED: { label: "Already used", tone: "text-red-700" },
 };
 
 export default async function VisitorPassPage({
@@ -74,6 +75,7 @@ export default async function VisitorPassPage({
           <Row label="Unit" value={pass.property.unitNumber} />
           <Row label="Valid from" value={fmt(pass.validFrom)} />
           <Row label="Valid until" value={fmt(pass.validUntil)} />
+          {pass.usedAt && <Row label="Used" value={fmt(pass.usedAt)} />}
         </dl>
 
         <p className="mt-4 text-xs text-gray-400">

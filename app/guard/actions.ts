@@ -11,6 +11,7 @@ export type ScanVerdict =
   | "EXPIRED"
   | "NOT_YET_VALID"
   | "REVOKED"
+  | "USED"
   | "NOT_FOUND";
 
 export type ScanResult = {
@@ -20,6 +21,7 @@ export type ScanResult = {
   unitNumber?: string;
   validFrom?: string;
   validUntil?: string;
+  usedAt?: string;
   scannedAt: string;
 };
 
@@ -42,7 +44,17 @@ export async function validatePass(input: unknown): Promise<ScanResult> {
     : null;
 
   const inOrg = pass && pass.property.orgId === org.id;
-  const verdict: ScanVerdict = !inOrg ? "NOT_FOUND" : validateGatePass(pass!);
+  let verdict: ScanVerdict = !inOrg ? "NOT_FOUND" : validateGatePass(pass!);
+
+  // Single-use: the first successful scan consumes the pass. Do it atomically
+  // so two near-simultaneous scans can't both come back VALID.
+  if (verdict === "VALID") {
+    const consumed = await prisma.gatePass.updateMany({
+      where: { id: pass!.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count === 0) verdict = "USED";
+  }
 
   await prisma.gatePassScan.create({
     data: {
@@ -65,6 +77,7 @@ export async function validatePass(input: unknown): Promise<ScanResult> {
     unitNumber: pass.property.unitNumber,
     validFrom: pass.validFrom.toISOString(),
     validUntil: pass.validUntil.toISOString(),
+    usedAt: pass.usedAt?.toISOString() ?? (verdict === "USED" ? scannedAt : undefined),
     scannedAt,
   };
 }

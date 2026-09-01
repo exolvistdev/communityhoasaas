@@ -23,6 +23,11 @@ const DEMO_HOMEOWNER = {
   fullName: "Juan Dela Cruz",
   role: "HOMEOWNER" as const,
 };
+// Platform operator — belongs to no org; signs in at /platform/login.
+const PLATFORM_ADMIN = {
+  email: "superadmin@hoasaas.ph",
+  fullName: "Platform Operator",
+};
 
 type SeededAuth = Record<string, string | null>; // email -> authId
 
@@ -31,7 +36,7 @@ type SeededAuth = Record<string, string | null>; // email -> authId
 async function createDemoAuthUsers(): Promise<SeededAuth> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const all = [...DEMO_STAFF, DEMO_HOMEOWNER];
+  const all = [...DEMO_STAFF, DEMO_HOMEOWNER, PLATFORM_ADMIN];
   const out: SeededAuth = {};
   if (!url || !key) {
     console.log("  (no service-role key — skipping auth users; DB-only demo)");
@@ -143,6 +148,9 @@ async function resetDemoOrg() {
   await prisma.property.deleteMany({ where: { orgId } });
   await prisma.ratePlan.deleteMany({ where: { orgId } });
   await prisma.account.deleteMany({ where: { orgId } });
+  await prisma.impersonationEvent.deleteMany({
+    where: { targetUser: { orgId } },
+  });
   await prisma.user.deleteMany({ where: { orgId } });
   await prisma.organization.delete({ where: { id: orgId } });
 }
@@ -150,6 +158,18 @@ async function resetDemoOrg() {
 async function main() {
   await resetDemoOrg();
   const auth = await createDemoAuthUsers();
+
+  // Platform operator — decoupled from any org.
+  await prisma.platformAdmin.deleteMany({ where: { email: PLATFORM_ADMIN.email } });
+  if (auth[PLATFORM_ADMIN.email]) {
+    await prisma.platformAdmin.create({
+      data: {
+        authId: auth[PLATFORM_ADMIN.email]!,
+        email: PLATFORM_ADMIN.email,
+        fullName: PLATFORM_ADMIN.fullName,
+      },
+    });
+  }
 
   const org = await prisma.organization.create({
     data: {
@@ -431,6 +451,8 @@ async function main() {
     console.log(`  logins (password: ${DEMO_PASSWORD}):`);
     for (const s of DEMO_STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
     console.log(`    HOMEOWNER    ${DEMO_HOMEOWNER.email}`);
+    if (auth[PLATFORM_ADMIN.email])
+      console.log(`    PLATFORM     ${PLATFORM_ADMIN.email}  (sign in at /platform/login)`);
   }
 }
 

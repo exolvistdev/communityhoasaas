@@ -7,7 +7,7 @@ import { requirePortalRole } from "@/lib/rbac";
  * been linked to a unit yet — pages should show a "contact your HOA" message.
  */
 export async function getHomeownerContext() {
-  const { user, org } = await requirePortalRole("HOMEOWNER");
+  const { user, org, impersonating } = await requirePortalRole("HOMEOWNER");
 
   const homeowner = await prisma.homeowner.findFirst({
     where: { userId: user.id },
@@ -17,6 +17,7 @@ export async function getHomeownerContext() {
   return {
     user,
     org,
+    impersonating,
     homeowner,
     property: homeowner?.property ?? null,
   };

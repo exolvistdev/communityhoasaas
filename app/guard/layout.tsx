@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requirePortalRole } from "@/lib/rbac";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
 export const metadata = { title: "Gate — pass validation" };
 
@@ -8,10 +9,13 @@ export default async function GuardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { org, user } = await requirePortalRole("GUARD");
+  const { org, user, impersonating } = await requirePortalRole("GUARD");
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {impersonating && (
+        <ImpersonationBanner name={user.fullName} role={user.role} />
+      )}
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <div className="min-w-0">

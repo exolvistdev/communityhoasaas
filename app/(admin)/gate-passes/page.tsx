@@ -22,8 +22,15 @@ const RESULT_CHIP: Record<string, string> = {
   EXPIRED: "bg-red-100 text-red-800",
   NOT_YET_VALID: "bg-red-100 text-red-800",
   REVOKED: "bg-red-100 text-red-800",
+  USED: "bg-red-100 text-red-800",
   NOT_FOUND: "bg-gray-200 text-gray-700",
 };
+
+const usedTag = (d: Date) => (
+  <span className="ml-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+    Used {d.toLocaleString("en-PH", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+  </span>
+);
 
 type Filter = "all" | "active" | "inactive";
 type View = "passes" | "activity";
@@ -94,17 +101,21 @@ async function PassesList({
     orderBy: { createdAt: "desc" },
   });
 
-  const rows = passes.map((p) => ({ p, display: effectiveGatePassStatus(p) }));
+  const rows = passes.map((p) => {
+    const display = effectiveGatePassStatus(p);
+    // A spent single-use pass is no longer "active" even if still in its window.
+    return { p, display, active: display === "ACTIVE" && !p.usedAt };
+  });
   const counts = {
     all: rows.length,
-    active: rows.filter((r) => r.display === "ACTIVE").length,
-    inactive: rows.filter((r) => r.display !== "ACTIVE").length,
+    active: rows.filter((r) => r.active).length,
+    inactive: rows.filter((r) => !r.active).length,
   };
   const visible =
     filter === "active"
-      ? rows.filter((r) => r.display === "ACTIVE")
+      ? rows.filter((r) => r.active)
       : filter === "inactive"
-      ? rows.filter((r) => r.display !== "ACTIVE")
+      ? rows.filter((r) => !r.active)
       : rows;
 
   return (
@@ -139,7 +150,7 @@ async function PassesList({
               </tr>
             </thead>
             <tbody>
-              {visible.map(({ p, display }) => (
+              {visible.map(({ p, display, active }) => (
                 <tr key={p.id} className="border-t border-gray-100">
                   <td className="px-4 py-2.5 font-mono font-medium">
                     <Link
@@ -162,11 +173,12 @@ async function PassesList({
                   <td className="px-4 py-2.5 text-gray-600">
                     {fmt(p.validFrom)} – {fmt(p.validUntil)}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2.5 whitespace-nowrap">
                     <GatePassStatusBadge status={display} />
+                    {p.usedAt && usedTag(p.usedAt)}
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    {canWrite && display === "ACTIVE" ? (
+                    {canWrite && active ? (
                       <RevokeGatePassButton id={p.id} />
                     ) : (
                       <span className="text-gray-400">—</span>
