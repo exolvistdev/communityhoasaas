@@ -23,6 +23,9 @@ const ACTION_LABEL: Record<string, string> = {
   "team.role_change": "Changed member role",
   "team.remove": "Removed team member",
   "team.reset_link_sent": "Sent password-reset link",
+  "marketplace.remove": "Took down listing",
+  "marketplace.restore": "Restored listing",
+  "marketplace.reports_dismiss": "Dismissed listing reports",
 };
 
 const fmt = (d: Date) =>

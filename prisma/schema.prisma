@@ -63,6 +63,8 @@ model Organization {
   announcements Announcement[]
   gatePassScans GatePassScan[]
   auditEvents   AuditEvent[]
+  marketplaceListings MarketplaceListing[]
+  marketConversations MarketConversation[]
 
   @@map("organizations")
 }
@@ -125,6 +127,11 @@ model User {
   paymentsConfirmed Payment[] @relation("PaymentConfirmedBy")
   auditEvents       AuditEvent[]
   impersonatedAs    ImpersonationEvent[]
+  marketplaceListings   MarketplaceListing[]  @relation("ListingSeller")
+  listingReports        ListingReport[]       @relation("ReportReporter")
+  conversationsAsBuyer  MarketConversation[]  @relation("ConversationBuyer")
+  conversationsAsSeller MarketConversation[]  @relation("ConversationSeller")
+  marketMessages        MarketMessage[]       @relation("MessageSender")
 
   @@index([orgId])
   @@map("users")
@@ -382,4 +389,103 @@ model GatePassScan {
 
   @@index([orgId, scannedAt])
   @@map("gate_pass_scans")
+}
+
+// ─────────────────────────────────────────────
+// Resident marketplace (Phase 2)
+// ─────────────────────────────────────────────
+
+enum ListingCategory {
+  FURNITURE
+  APPLIANCES
+  ELECTRONICS
+  HOME_GARDEN
+  VEHICLES
+  CLOTHING
+  KIDS
+  SERVICES
+  OTHER
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  WITHDRAWN // taken down by the seller
+  REMOVED   // taken down by a moderator
+}
+
+model MarketplaceListing {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  sellerId     String
+  seller       User     @relation("ListingSeller", fields: [sellerId], references: [id])
+  title        String
+  description  String
+  category     ListingCategory @default(OTHER)
+  price        Decimal  @db.Decimal(12, 2)
+  status       ListingStatus   @default(ACTIVE)
+  photos       String[] // ordered Supabase Storage object paths
+  removedReason String?
+  soldAt       DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  conversations MarketConversation[]
+  reports       ListingReport[]
+
+  @@index([orgId, status, createdAt])
+  @@index([sellerId])
+  @@map("marketplace_listings")
+}
+
+model ListingReport {
+  id         String   @id @default(uuid())
+  listingId  String
+  listing    MarketplaceListing @relation(fields: [listingId], references: [id])
+  reporterId String
+  reporter   User     @relation("ReportReporter", fields: [reporterId], references: [id])
+  reason     String
+  createdAt  DateTime @default(now())
+  resolvedAt DateTime?
+
+  @@unique([listingId, reporterId])
+  @@index([listingId])
+  @@map("listing_reports")
+}
+
+model MarketConversation {
+  id            String   @id @default(uuid())
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id])
+  listingId     String
+  listing       MarketplaceListing @relation(fields: [listingId], references: [id])
+  buyerId       String
+  buyer         User     @relation("ConversationBuyer", fields: [buyerId], references: [id])
+  sellerId      String
+  seller        User     @relation("ConversationSeller", fields: [sellerId], references: [id])
+  createdAt     DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+
+  messages MarketMessage[]
+
+  @@unique([listingId, buyerId])
+  @@index([orgId])
+  @@index([buyerId, lastMessageAt])
+  @@index([sellerId, lastMessageAt])
+  @@map("market_conversations")
+}
+
+model MarketMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   MarketConversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User     @relation("MessageSender", fields: [senderId], references: [id])
+  body           String
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("market_messages")
 }

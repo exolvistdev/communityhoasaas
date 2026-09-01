@@ -6,6 +6,12 @@ import {
 } from "../lib/ledger";
 import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
+import {
+  ensureMarketplaceBucket,
+  uploadListingPhotos,
+  MARKETPLACE_BUCKET,
+} from "../lib/storage";
+import { createAdminClient } from "../lib/supabase/admin";
 
 const prisma = new PrismaClient();
 
@@ -17,12 +23,23 @@ const DEMO_STAFF = [
   { email: "board@sample-hoa.ph", fullName: "Elena Villanueva", role: "BOARD_MEMBER" as const },
   { email: "guard@sample-hoa.ph", fullName: "Boy Guard", role: "GUARD" as const },
 ];
-// One homeowner login, linked below to Blk 1 Lot 1's owner.
-const DEMO_HOMEOWNER = {
-  email: "juan@example.com",
-  fullName: "Juan Dela Cruz",
-  role: "HOMEOWNER" as const,
-};
+// Homeowner logins, each linked below to the named person on their unit.
+const DEMO_HOMEOWNERS = [
+  {
+    email: "juan@example.com",
+    fullName: "Juan Dela Cruz",
+    role: "HOMEOWNER" as const,
+    unit: "Blk 1 Lot 1",
+    person: "Juan Dela Cruz",
+  },
+  {
+    email: "ana@example.com",
+    fullName: "Ana Reyes",
+    role: "HOMEOWNER" as const,
+    unit: "Blk 1 Lot 2",
+    person: "Ana Reyes",
+  },
+];
 // Platform operator — belongs to no org; signs in at /platform/login.
 const PLATFORM_ADMIN = {
   email: "superadmin@hoasaas.ph",
@@ -36,7 +53,7 @@ type SeededAuth = Record<string, string | null>; // email -> authId
 async function createDemoAuthUsers(): Promise<SeededAuth> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const all = [...DEMO_STAFF, DEMO_HOMEOWNER, PLATFORM_ADMIN];
+  const all = [...DEMO_STAFF, ...DEMO_HOMEOWNERS, PLATFORM_ADMIN];
   const out: SeededAuth = {};
   if (!url || !key) {
     console.log("  (no service-role key — skipping auth users; DB-only demo)");
@@ -127,6 +144,21 @@ const PROPERTIES: {
   },
 ];
 
+/** Best-effort: drop every marketplace photo stored under an org's folder. */
+async function clearOrgListingPhotos(orgId: string) {
+  try {
+    const storage = createAdminClient().storage.from(MARKETPLACE_BUCKET);
+    const { data: folders } = await storage.list(orgId);
+    for (const f of folders ?? []) {
+      const { data: files } = await storage.list(`${orgId}/${f.name}`);
+      const paths = (files ?? []).map((x) => `${orgId}/${f.name}/${x.name}`);
+      if (paths.length) await storage.remove(paths);
+    }
+  } catch {
+    /* best effort */
+  }
+}
+
 /** Remove a previously-seeded demo org and all its rows, in FK order. */
 async function resetDemoOrg() {
   const org = await prisma.organization.findUnique({
@@ -134,6 +166,13 @@ async function resetDemoOrg() {
   });
   if (!org) return;
   const orgId = org.id;
+  await clearOrgListingPhotos(orgId);
+  await prisma.marketMessage.deleteMany({
+    where: { conversation: { orgId } },
+  });
+  await prisma.marketConversation.deleteMany({ where: { orgId } });
+  await prisma.listingReport.deleteMany({ where: { listing: { orgId } } });
+  await prisma.marketplaceListing.deleteMany({ where: { orgId } });
   await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
   await prisma.journalEntry.deleteMany({ where: { orgId } });
   await prisma.payment.deleteMany({
@@ -158,6 +197,9 @@ async function resetDemoOrg() {
 async function main() {
   await resetDemoOrg();
   const auth = await createDemoAuthUsers();
+  await ensureMarketplaceBucket().catch((e) =>
+    console.log("  (marketplace bucket setup skipped:", e.message, ")")
+  );
 
   // Platform operator — decoupled from any org.
   await prisma.platformAdmin.deleteMany({ where: { email: PLATFORM_ADMIN.email } });
@@ -201,16 +243,22 @@ async function main() {
       },
     });
   }
-  const homeownerUser = await prisma.user.create({
-    data: {
-      orgId: org.id,
-      authId: auth[DEMO_HOMEOWNER.email],
-      email: DEMO_HOMEOWNER.email,
-      fullName: DEMO_HOMEOWNER.fullName,
-      role: DEMO_HOMEOWNER.role,
-      acceptedAt: new Date(),
-    },
-  });
+  const homeownerUsers = new Map<string, { id: string }>();
+  for (const h of DEMO_HOMEOWNERS) {
+    const u = await prisma.user.create({
+      data: {
+        orgId: org.id,
+        authId: auth[h.email],
+        email: h.email,
+        fullName: h.fullName,
+        role: h.role,
+        acceptedAt: new Date(),
+      },
+    });
+    homeownerUsers.set(h.email, u);
+  }
+  const homeownerUser = homeownerUsers.get("juan@example.com")!;
+  const anaUser = homeownerUsers.get("ana@example.com")!;
   const admin = await prisma.user.findFirstOrThrow({
     where: { orgId: org.id, role: "ADMIN" },
   });
@@ -324,14 +372,19 @@ async function main() {
     },
   });
 
-  // Link the demo homeowner login to Blk 1 Lot 1's owner.
-  const juan = await prisma.homeowner.findFirstOrThrow({
-    where: { property: { orgId: org.id, unitNumber: "Blk 1 Lot 1" }, fullName: "Juan Dela Cruz" },
-  });
-  await prisma.homeowner.update({
-    where: { id: juan.id },
-    data: { userId: homeownerUser.id },
-  });
+  // Link each demo homeowner login to the named person on their unit.
+  for (const h of DEMO_HOMEOWNERS) {
+    const record = await prisma.homeowner.findFirstOrThrow({
+      where: {
+        property: { orgId: org.id, unitNumber: h.unit },
+        fullName: h.person,
+      },
+    });
+    await prisma.homeowner.update({
+      where: { id: record.id },
+      data: { userId: homeownerUsers.get(h.email)!.id },
+    });
+  }
 
   // Pending payments submitted from the portal, awaiting reconciliation.
   await prisma.payment.create({
@@ -446,11 +499,131 @@ async function main() {
     ],
   });
 
+  // ── Resident marketplace ──────────────────────────────────────────
+  const mkListing = (
+    seller: { id: string },
+    data: {
+      title: string;
+      description: string;
+      category:
+        | "FURNITURE"
+        | "APPLIANCES"
+        | "ELECTRONICS"
+        | "HOME_GARDEN"
+        | "VEHICLES"
+        | "CLOTHING"
+        | "KIDS"
+        | "SERVICES"
+        | "OTHER";
+      price: number;
+    }
+  ) =>
+    prisma.marketplaceListing.create({
+      data: { orgId: org.id, sellerId: seller.id, photos: [], ...data },
+    });
+
+  const mattress = await mkListing(homeownerUser, {
+    title: "Uratex foam mattress — double size",
+    description:
+      "Selling our double-size Uratex foam mattress, about 2 years old, used in the guest room only. No stains, no bed bugs. Pick up at Blk 1 Lot 1.",
+    category: "FURNITURE",
+    price: 3500,
+  });
+  await mkListing(homeownerUser, {
+    title: "1.0HP window-type aircon (Carrier)",
+    description:
+      "Carrier 1.0HP window-type unit, cools a small bedroom fast. Recently cleaned and vacuumed. Some scratches on the casing. Bring your own tools for uninstall.",
+    category: "APPLIANCES",
+    price: 6500,
+  });
+  await mkListing(anaUser, {
+    title: "Kids' mountain bike — 20-inch",
+    description:
+      "20-inch kids' mountain bike, 6-speed. My daughter outgrew it. Tires still good, brakes recently adjusted. Minor rust on the kickstand.",
+    category: "KIDS",
+    price: 2800,
+  });
+  await mkListing(anaUser, {
+    title: "Math tutoring — high school & college",
+    description:
+      "Licensed teacher offering weekend math tutoring (algebra, trig, calculus). Sessions at the clubhouse or your unit. ₱400/hour, package rates available.",
+    category: "SERVICES",
+    price: 400,
+  });
+
+  // A real photo, to exercise the Storage upload/serve path.
+  try {
+    const pngBytes = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64"
+    );
+    const paths = await uploadListingPhotos(
+      [new File([pngBytes], "mattress.png", { type: "image/png" })],
+      { orgId: org.id, listingId: mattress.id }
+    );
+    if (paths.length)
+      await prisma.marketplaceListing.update({
+        where: { id: mattress.id },
+        data: { photos: paths },
+      });
+  } catch (e) {
+    console.log("  (seed listing photo skipped:", (e as Error).message, ")");
+  }
+
+  // Ana is interested in Juan's mattress — a live thread with one unread reply.
+  const convo = await prisma.marketConversation.create({
+    data: {
+      orgId: org.id,
+      listingId: mattress.id,
+      buyerId: anaUser.id,
+      sellerId: homeownerUser.id,
+      lastMessageAt: new Date(Date.now() - 20 * 60 * 1000),
+    },
+  });
+  await prisma.marketMessage.createMany({
+    data: [
+      {
+        conversationId: convo.id,
+        senderId: anaUser.id,
+        body: "Hi! Is the mattress still available? Any stains or sagging?",
+        readAt: new Date(Date.now() - 90 * 60 * 1000),
+        createdAt: new Date(Date.now() - 120 * 60 * 1000),
+      },
+      {
+        conversationId: convo.id,
+        senderId: homeownerUser.id,
+        body: "Yes, still available! No stains, no sagging — guest room only. You can view it anytime this week.",
+        readAt: new Date(Date.now() - 60 * 60 * 1000),
+        createdAt: new Date(Date.now() - 80 * 60 * 1000),
+      },
+      {
+        conversationId: convo.id,
+        senderId: anaUser.id,
+        body: "Great, I'll drop by Saturday morning if that works for you.",
+        createdAt: new Date(Date.now() - 20 * 60 * 1000),
+      },
+    ],
+  });
+
+  // A reported listing so the moderation view has something to act on.
+  const aircon = await prisma.marketplaceListing.findFirstOrThrow({
+    where: { orgId: org.id, title: { startsWith: "1.0HP window-type" } },
+  });
+  await prisma.listingReport.create({
+    data: {
+      listingId: aircon.id,
+      reporterId: anaUser.id,
+      reason:
+        "Price looks too low for a working Carrier unit — worried it might be misleading or already broken.",
+    },
+  });
+
   console.log(`Seeded "${org.name}" (${org.subdomain})`);
   if (auth["admin@sample-hoa.ph"]) {
     console.log(`  logins (password: ${DEMO_PASSWORD}):`);
     for (const s of DEMO_STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
-    console.log(`    HOMEOWNER    ${DEMO_HOMEOWNER.email}`);
+    for (const h of DEMO_HOMEOWNERS)
+      console.log(`    HOMEOWNER     ${h.email}`);
     if (auth[PLATFORM_ADMIN.email])
       console.log(`    PLATFORM     ${PLATFORM_ADMIN.email}  (sign in at /platform/login)`);
   }

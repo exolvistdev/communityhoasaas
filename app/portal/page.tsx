@@ -36,7 +36,14 @@ export default async function PortalHome() {
   }
 
   const now = new Date();
-  const [statement, invoices, payments, announcementCount] = await Promise.all([
+  const [
+    statement,
+    invoices,
+    payments,
+    announcementCount,
+    listingCount,
+    unreadMessages,
+  ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
     prisma.invoice.findMany({
       where: { propertyId: property.id, status: { notIn: ["PAID", "VOID"] } },
@@ -51,6 +58,16 @@ export default async function PortalHome() {
     }),
     prisma.announcement.count({
       where: { orgId: property.orgId, publishedAt: { not: null } },
+    }),
+    prisma.marketplaceListing.count({
+      where: { orgId: property.orgId, status: "ACTIVE" },
+    }),
+    prisma.marketMessage.count({
+      where: {
+        senderId: { not: user.id },
+        readAt: null,
+        conversation: { OR: [{ buyerId: user.id }, { sellerId: user.id }] },
+      },
     }),
   ]);
 
@@ -148,6 +165,20 @@ export default async function PortalHome() {
           href="/portal/announcements"
           label="Announcements"
           sub={`${announcementCount} posted`}
+        />
+        <Tile
+          href="/portal/market"
+          label="Marketplace"
+          sub={`${listingCount} listing${listingCount === 1 ? "" : "s"}`}
+        />
+        <Tile
+          href="/portal/messages"
+          label="Messages"
+          sub={
+            unreadMessages > 0
+              ? `${unreadMessages} unread`
+              : "Buyer & seller chats"
+          }
         />
       </div>
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
@@ -10,6 +11,16 @@ export default async function PortalLayout({
   children: React.ReactNode;
 }) {
   const { org, user, property, impersonating } = await getHomeownerContext();
+
+  const unread = await prisma.marketMessage.count({
+    where: {
+      senderId: { not: user.id },
+      readAt: null,
+      conversation: {
+        OR: [{ buyerId: user.id }, { sellerId: user.id }],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -40,6 +51,28 @@ export default async function PortalLayout({
             </form>
           </div>
         </div>
+        <nav className="mx-auto flex max-w-md gap-4 px-4 pb-2 text-xs">
+          <Link href="/portal" className="text-gray-500 hover:text-gray-900">
+            Home
+          </Link>
+          <Link
+            href="/portal/market"
+            className="text-gray-500 hover:text-gray-900"
+          >
+            Marketplace
+          </Link>
+          <Link
+            href="/portal/messages"
+            className="flex items-center gap-1 text-gray-500 hover:text-gray-900"
+          >
+            Messages
+            {unread > 0 && (
+              <span className="rounded-full bg-gray-900 px-1.5 text-[10px] font-medium text-white">
+                {unread}
+              </span>
+            )}
+          </Link>
+        </nav>
       </header>
       <main className="mx-auto max-w-md px-4 py-5">{children}</main>
     </div>
