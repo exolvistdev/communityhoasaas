@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
+import { displayUnit, unitLinkSelect } from "@/lib/homeowner";
 import { priceLabel, publicPhotoUrl } from "@/lib/marketplace";
 import { MarkRead } from "./MarkRead";
 import { MessageComposer } from "./MessageComposer";
@@ -20,7 +21,7 @@ const time = (d: Date) =>
 const partySelect = {
   id: true,
   fullName: true,
-  homeowner: { select: { property: { select: { unitNumber: true } } } },
+  homeowners: { select: unitLinkSelect },
 } as const;
 
 export default async function ConversationPage({
@@ -71,7 +72,7 @@ export default async function ConversationPage({
   ]);
 
   const blocked = Boolean(myBlock || theirBlock);
-  const unit = other.homeowner?.property?.unitNumber;
+  const unit = displayUnit(other.homeowners);
 
   return (
     <div className="flex min-h-[70vh] flex-col space-y-3">

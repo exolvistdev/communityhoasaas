@@ -132,7 +132,11 @@ const PROPERTIES: {
     type: "TOWNHOUSE",
     plan: "Townhouse",
     rate: 2200,
-    people: [{ fullName: "Marco Lim", role: "OWNER", isPrimary: true }],
+    people: [
+      { fullName: "Marco Lim", role: "OWNER", isPrimary: true },
+      // Juan also co-owns this townhouse — exercises the multi-unit switcher.
+      { fullName: "Juan Dela Cruz", role: "CO_OWNER" },
+    ],
   },
   {
     unitNumber: "Blk 2 Lot 5",
@@ -411,6 +415,18 @@ async function main() {
       data: { userId: homeownerUsers.get(h.email)!.id },
     });
   }
+
+  // Juan is a co-owner on Blk 1 Lot 3 too — one login, two units.
+  const juanLot3 = await prisma.homeowner.findFirstOrThrow({
+    where: {
+      property: { orgId: org.id, unitNumber: "Blk 1 Lot 3" },
+      fullName: "Juan Dela Cruz",
+    },
+  });
+  await prisma.homeowner.update({
+    where: { id: juanLot3.id },
+    data: { userId: homeownerUsers.get("juan@example.com")!.id },
+  });
 
   // Pending payments submitted from the portal, awaiting reconciliation.
   await prisma.payment.create({

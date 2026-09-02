@@ -37,6 +37,7 @@ const ACTION_LABEL: Record<string, string> = {
   "amenity.booking_approve": "Approved a booking",
   "amenity.booking_reject": "Rejected a booking",
   "amenity.booking_cancel": "Cancelled a booking",
+  "homeowner.link_existing": "Linked an existing login to a unit",
   "document.upload": "Uploaded a document",
   "document.update": "Updated a document",
   "document.delete": "Deleted a document",

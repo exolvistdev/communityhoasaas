@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
+import { displayUnit, unitLinkSelect } from "@/lib/homeowner";
 import {
   CATEGORY_LABEL,
   LISTING_STATUS_BADGE,
@@ -39,7 +40,7 @@ export default async function AdminListingPage({
         select: {
           fullName: true,
           email: true,
-          homeowner: { select: { property: { select: { unitNumber: true } } } },
+          homeowners: { select: unitLinkSelect },
         },
       },
       reports: {
@@ -99,8 +100,8 @@ export default async function AdminListingPage({
         <div className="text-fg-muted">Seller</div>
         <div className="text-fg">
           {listing.seller.fullName}
-          {listing.seller.homeowner?.property
-            ? ` · ${listing.seller.homeowner.property.unitNumber}`
+          {displayUnit(listing.seller.homeowners)
+            ? ` · ${displayUnit(listing.seller.homeowners)}`
             : ""}
         </div>
         <div className="text-xs text-fg-subtle">{listing.seller.email}</div>

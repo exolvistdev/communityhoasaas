@@ -238,8 +238,23 @@ export async function inviteHomeowner(
   const existing = await prisma.user.findUnique({
     where: { email: person.email },
   });
-  if (existing)
+  if (existing) {
+    // Same person already has a portal login (they own another unit here) —
+    // just link this record to it, no new invite.
+    if (existing.orgId === org.id && existing.role === "HOMEOWNER") {
+      await prisma.homeowner.update({
+        where: { id },
+        data: { userId: existing.id },
+      });
+      await logAudit({
+        action: "homeowner.link_existing",
+        target: `${person.fullName} · ${person.property.id}`,
+      });
+      revalidateProperty(person.property.id);
+      return { ok: true, actionLink: null };
+    }
     return { ok: false, error: "That email already has an account" };
+  }
 
   const invite = await generateInviteLink(person.email, person.fullName);
   if (!invite.ok) return invite;

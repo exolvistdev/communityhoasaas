@@ -1,14 +1,33 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getHomeownerContext } from "@/lib/portal";
+import { getHomeownerContext, ACTIVE_UNIT_COOKIE } from "@/lib/portal";
 import { generateGatePassCode } from "@/lib/gatepass";
 import { deliver, staffRecipients } from "@/lib/notifications";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
+
+/* ────────────────────────── switch active unit ───────────────────── */
+
+export async function setActiveUnit(propertyId: string): Promise<Result> {
+  const { homeowners } = await getHomeownerContext();
+  if (!homeowners.some((h) => h.propertyId === propertyId))
+    return { ok: false, error: "That unit isn't linked to your account" };
+
+  cookies().set(ACTIVE_UNIT_COOKIE, propertyId, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  revalidatePath("/portal", "layout");
+  revalidatePath("/account");
+  return { ok: true };
+}
 
 /* ─────────────────────────── submit payment ──────────────────────── */
 

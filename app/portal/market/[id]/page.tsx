@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
+import { displayUnit, unitLinkSelect } from "@/lib/homeowner";
 import {
   CATEGORY_LABEL,
   LISTING_STATUS_BADGE,
@@ -29,11 +30,7 @@ export default async function ListingDetailPage({
     where: { id: params.id, orgId: org.id },
     include: {
       seller: {
-        select: {
-          id: true,
-          fullName: true,
-          homeowner: { select: { property: { select: { unitNumber: true } } } },
-        },
+        select: { id: true, fullName: true, homeowners: { select: unitLinkSelect } },
       },
     },
   });
@@ -124,8 +121,8 @@ export default async function ListingDetailPage({
         <div className="text-fg-muted">Seller</div>
         <div className="text-fg">
           {listing.seller.fullName}
-          {listing.seller.homeowner?.property
-            ? ` · ${listing.seller.homeowner.property.unitNumber}`
+          {displayUnit(listing.seller.homeowners)
+            ? ` · ${displayUnit(listing.seller.homeowners)}`
             : ""}
         </div>
       </div>

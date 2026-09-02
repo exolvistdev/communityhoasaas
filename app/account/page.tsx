@@ -30,10 +30,11 @@ const HOME_HREF: Record<string, string> = {
 export default async function AccountPage() {
   const { user, org } = await getCurrentOrgContext();
 
-  const homeowner =
-    user.role === "HOMEOWNER"
-      ? await prisma.homeowner.findFirst({ where: { userId: user.id } })
-      : null;
+  const homeownerLinks = await prisma.homeowner.findMany({
+    where: { userId: user.id },
+    include: { property: { select: { unitNumber: true } } },
+    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+  });
 
   const base = defaultPrefs();
   const stored = (user.notificationPrefs ?? {}) as Record<
@@ -118,19 +119,31 @@ export default async function AccountPage() {
         </section>
       )}
 
-      {homeowner && (
-        <section className="space-y-3 rounded-lg border border-border bg-surface p-4">
+      {homeownerLinks.map((h) => (
+        <section
+          key={h.id}
+          className="space-y-3 rounded-lg border border-border bg-surface p-4"
+        >
           <div>
             <h2 className="text-sm font-semibold text-fg">
               Contact info
+              {homeownerLinks.length > 1 && (
+                <span className="ml-2 font-normal text-fg-muted">
+                  · {h.property.unitNumber}
+                </span>
+              )}
             </h2>
             <p className="text-xs text-fg-subtle">
               Shown to your HOA office — separate from your login email.
             </p>
           </div>
-          <ContactForm phone={homeowner.phone} email={homeowner.email} />
+          <ContactForm
+            homeownerId={h.id}
+            phone={h.phone}
+            email={h.email}
+          />
         </section>
-      )}
+      ))}
     </main>
   );
 }

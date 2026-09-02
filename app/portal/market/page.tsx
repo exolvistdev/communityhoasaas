@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
+import { displayUnit, unitLinkSelect } from "@/lib/homeowner";
 import {
   CATEGORY_LABEL,
   LISTING_CATEGORIES,
@@ -67,13 +68,7 @@ export default async function MarketplacePage({
     take: PAGE_SIZE,
     include: {
       seller: {
-        select: {
-          id: true,
-          fullName: true,
-          homeowner: {
-            select: { property: { select: { unitNumber: true } } },
-          },
-        },
+        select: { id: true, fullName: true, homeowners: { select: unitLinkSelect } },
       },
     },
   });
@@ -205,8 +200,8 @@ export default async function MarketplacePage({
                     </div>
                     <div className="mt-0.5 truncate text-xs text-fg-subtle">
                       {CATEGORY_LABEL[l.category]}
-                      {l.seller.homeowner?.property
-                        ? ` · ${l.seller.homeowner.property.unitNumber}`
+                      {displayUnit(l.seller.homeowners)
+                        ? ` · ${displayUnit(l.seller.homeowners)}`
                         : ""}
                       {l.seller.id === user.id ? " · Your listing" : ""}
                     </div>

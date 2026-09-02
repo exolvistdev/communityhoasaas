@@ -34,7 +34,7 @@ walkthrough of the admin app.
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Password recovery (self-service + admin reset-link fallback), `/account` self-service profile/password/contact | ✅ |
 | Gate activity log + admin audit trail (`/gate-passes?view=activity`, `/audit`) | ✅ |
-| Homeowner portal (§4.4) — balance + breakdown, payment history w/ pending/rejected status, Pay Now, own statement, gate-pass request (QR), announcements | ✅ |
+| Homeowner portal (§4.4) — balance + breakdown, payment history w/ pending/rejected status, Pay Now, own statement, gate-pass request (QR), announcements; one login can own several units (unit switcher) | ✅ |
 | Guard portal (§4.5) — QR camera scan or manual code, valid/expired/revoked/used verdict + scan log | ✅ |
 | Visitor pass page `/pass/<code>` — public QR + validity for the visitor to show at the gate | ✅ |
 | Platform operator console `/platform` — cross-tenant org directory + full user impersonation for support | ✅ |

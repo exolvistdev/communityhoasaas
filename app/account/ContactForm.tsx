@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { updateHomeownerContact } from "./actions";
 
 export function ContactForm({
+  homeownerId,
   phone,
   email,
 }: {
+  homeownerId: string;
   phone: string | null;
   email: string | null;
 }) {
@@ -23,6 +25,7 @@ export function ContactForm({
     setSaved(false);
     start(async () => {
       const res = await updateHomeownerContact({
+        homeownerId,
         phone: fd.get("phone"),
         email: fd.get("email"),
       });

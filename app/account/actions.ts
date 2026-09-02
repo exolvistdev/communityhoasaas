@@ -35,6 +35,7 @@ export async function updateProfile(input: unknown): Promise<Result> {
 }
 
 const contactSchema = z.object({
+  homeownerId: z.string().uuid(),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   email: z.string().trim().email("Invalid email").optional().or(z.literal("")),
 });
@@ -46,9 +47,9 @@ export async function updateHomeownerContact(input: unknown): Promise<Result> {
 
   const { user } = await getCurrentOrgContext();
   const homeowner = await prisma.homeowner.findFirst({
-    where: { userId: user.id },
+    where: { id: parsed.data.homeownerId, userId: user.id },
   });
-  if (!homeowner) return { ok: false, error: "No unit linked to your account" };
+  if (!homeowner) return { ok: false, error: "That unit isn't linked to your account" };
 
   await prisma.homeowner.update({
     where: { id: homeowner.id },

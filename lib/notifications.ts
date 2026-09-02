@@ -212,12 +212,17 @@ export async function generateOverdueNotifications(orgId?: string) {
     const remaining = Number(inv.amount) - paid;
     if (remaining <= 0.005) continue;
 
+    const title = `Overdue balance — ${inv.property.unitNumber}`;
+
     for (const h of inv.property.homeowners) {
       if (!h.user) continue;
+      // Dedupe per unit (title carries the unit) — a multi-unit owner still
+      // gets one notice per overdue unit rather than one total.
       const recentlyPinged = await prisma.notification.count({
         where: {
           userId: h.user.id,
           type: "INVOICE_OVERDUE",
+          title,
           createdAt: { gt: cutoff },
         },
       });
@@ -226,7 +231,7 @@ export async function generateOverdueNotifications(orgId?: string) {
       await deliver({
         users: [h.user],
         type: "INVOICE_OVERDUE",
-        title: `Overdue balance — ${inv.property.unitNumber}`,
+        title,
         body: `₱${remaining.toLocaleString("en-PH")} is past due (was due ${inv.dueDate.toLocaleDateString(
           "en-PH",
           { day: "numeric", month: "long", year: "numeric" }

@@ -135,7 +135,7 @@ model User {
   gatePassesCreated GatePass[]
   gatePassScans     GatePassScan[]
   announcements     Announcement[]
-  homeowner         Homeowner?
+  homeowners        Homeowner[]
   paymentsSubmitted Payment[] @relation("PaymentSubmittedBy")
   paymentsConfirmed Payment[] @relation("PaymentConfirmedBy")
   auditEvents       AuditEvent[]
@@ -250,7 +250,7 @@ model Homeowner {
   id         String   @id @default(uuid())
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id])
-  userId     String?  @unique // linked login for the homeowner portal
+  userId     String?  // linked portal login — one login may own several units
   user       User?    @relation(fields: [userId], references: [id])
   fullName   String
   role       HomeownerRole @default(OWNER)
@@ -260,6 +260,7 @@ model Homeowner {
   createdAt  DateTime @default(now())
 
   @@index([propertyId])
+  @@index([userId])
   @@map("homeowners")
 }
 

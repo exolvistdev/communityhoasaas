@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { peso } from "@/lib/format";
 import { AMENITY_BOOKING_STATUS_BADGE, fmtSlot, fmtDateTime } from "@/lib/amenity";
+import { displayUnit, unitLinkSelect } from "@/lib/homeowner";
 import { BookingDecision, StaffCancelButton } from "../BookingActions";
 
 export const metadata = { title: "Booking requests · HOA SaaS" };
@@ -10,16 +11,15 @@ export const metadata = { title: "Booking requests · HOA SaaS" };
 const bookingInclude = {
   amenity: { select: { name: true, fee: true } },
   requester: {
-    select: {
-      fullName: true,
-      homeowner: { select: { property: { select: { unitNumber: true } } } },
-    },
+    select: { fullName: true, homeowners: { select: unitLinkSelect } },
   },
   decidedBy: { select: { fullName: true } },
 } as const;
 
-function unit(b: { requester: { homeowner: { property: { unitNumber: string } | null } | null } }) {
-  return b.requester.homeowner?.property?.unitNumber ?? "—";
+function unit(b: {
+  requester: { homeowners: { isPrimary: boolean; property: { unitNumber: string } | null }[] };
+}) {
+  return displayUnit(b.requester.homeowners) ?? "—";
 }
 
 export default async function AmenityBookingsPage() {

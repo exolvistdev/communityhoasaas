@@ -116,15 +116,15 @@ export async function removeMember(
 
   const target = await prisma.user.findFirst({
     where: { id: userId, orgId: org.id },
-    include: { homeowner: true },
+    include: { homeowners: { select: { id: true } } },
   });
   if (!target) return { ok: false, error: "Member not found" };
   if (target.role === "ADMIN" && (await countAdmins(org.id)) <= 1)
     return { ok: false, error: "The HOA needs at least one admin" };
 
-  if (target.homeowner)
-    await prisma.homeowner.update({
-      where: { id: target.homeowner.id },
+  if (target.homeowners.length)
+    await prisma.homeowner.updateMany({
+      where: { userId },
       data: { userId: null },
     });
 

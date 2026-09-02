@@ -20,7 +20,7 @@ async function notifyPublished(
       orgId,
       role: "HOMEOWNER",
       deactivatedAt: null,
-      homeowner: { isNot: null },
+      homeowners: { some: {} },
     },
     select: recipientSelect,
   });
