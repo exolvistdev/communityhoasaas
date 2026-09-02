@@ -17,6 +17,7 @@ export type AmenityRow = {
   closeHour: number;
   minNoticeHours: number;
   maxHours: number;
+  cancellationCutoffHours: number;
   requiresApproval: boolean;
   archived: boolean;
   upcomingCount: number;
@@ -104,9 +105,19 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
                     Edit
                   </button>
                   <button
-                    onClick={() =>
-                      act(() => setAmenityArchived(a.id, !a.archived))
-                    }
+                    onClick={() => {
+                      if (
+                        !a.archived &&
+                        a.upcomingCount > 0 &&
+                        !confirm(
+                          `${a.name} has ${a.upcomingCount} upcoming booking${
+                            a.upcomingCount === 1 ? "" : "s"
+                          }. Archiving hides it from residents but keeps those bookings. Continue?`
+                        )
+                      )
+                        return;
+                      act(() => setAmenityArchived(a.id, !a.archived));
+                    }}
                     className="text-gray-500 underline hover:text-gray-900"
                   >
                     {a.archived ? "Restore" : "Archive"}
@@ -151,6 +162,7 @@ type FormData = {
   closeHour: number;
   minNoticeHours: number;
   maxHours: number;
+  cancellationCutoffHours: number;
   requiresApproval: boolean;
 };
 
@@ -175,6 +187,7 @@ function AmenityForm({
     closeHour: initial?.closeHour ?? 22,
     minNoticeHours: initial?.minNoticeHours ?? 24,
     maxHours: initial?.maxHours ?? 4,
+    cancellationCutoffHours: initial?.cancellationCutoffHours ?? 48,
     requiresApproval: initial?.requiresApproval ?? true,
   });
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
@@ -220,6 +233,7 @@ function AmenityForm({
         {num("Close hour", "closeHour", 1)}
         {num("Min notice (h)", "minNoticeHours")}
         {num("Max length (h)", "maxHours", 1)}
+        {num("Cancel cutoff (h)", "cancellationCutoffHours")}
       </div>
 
       <label className="block text-xs">
@@ -235,10 +249,14 @@ function AmenityForm({
       <label className="flex items-center gap-2 text-xs text-gray-700">
         <input
           type="checkbox"
-          checked={f.requiresApproval}
+          checked={f.fee > 0 ? true : f.requiresApproval}
+          disabled={f.fee > 0}
           onChange={(e) => set("requiresApproval", e.target.checked)}
         />
         Bookings need staff approval
+        {f.fee > 0 && (
+          <span className="text-gray-400">(fee amenities always need approval)</span>
+        )}
       </label>
 
       <div className="flex gap-2">

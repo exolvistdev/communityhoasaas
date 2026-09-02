@@ -26,11 +26,16 @@ export default async function AmenityBookingsPage() {
   const { org } = await requirePermission("amenity:manage");
   const now = new Date();
 
-  const [pending, upcoming, recent] = await Promise.all([
+  const [pending, staleRequests, upcoming, recent] = await Promise.all([
     prisma.amenityBooking.findMany({
-      where: { orgId: org.id, status: "PENDING" },
+      where: { orgId: org.id, status: "PENDING", startAt: { gt: now } },
       include: bookingInclude,
       orderBy: { startAt: "asc" },
+    }),
+    prisma.amenityBooking.findMany({
+      where: { orgId: org.id, status: "PENDING", startAt: { lte: now } },
+      include: bookingInclude,
+      orderBy: { startAt: "desc" },
     }),
     prisma.amenityBooking.findMany({
       where: { orgId: org.id, status: "CONFIRMED", startAt: { gt: now } },
@@ -107,6 +112,39 @@ export default async function AmenityBookingsPage() {
           </div>
         )}
       </section>
+
+      {staleRequests.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-gray-900">
+            Requested but never actioned ({staleRequests.length})
+          </h2>
+          <p className="text-xs text-gray-400">
+            The requested date has passed. Reject to clear them.
+          </p>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <table className="w-full text-sm">
+              <tbody>
+                {staleRequests.map((b) => (
+                  <tr key={b.id} className="border-t border-gray-100 first:border-t-0">
+                    <td className="px-4 py-2.5 font-medium text-gray-900">
+                      {b.amenity.name}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500">
+                      {fmtSlot(b.startAt, b.endAt)}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500">
+                      {b.requester.fullName} · {unit(b)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <BookingDecision id={b.id} rejectOnly />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {upcoming.length > 0 && (
         <section className="space-y-2">

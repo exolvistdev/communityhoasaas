@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   bookingRuleViolations,
   labelHour,
-  toDateInput,
+  zonedDateInput,
+  zonedInstant,
 } from "@/lib/amenity";
 import { bookAmenity } from "../actions";
 
@@ -16,19 +17,18 @@ type Rules = {
   maxHours: number;
 };
 
-function combine(dateStr: string, hour: number) {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d, hour, 0, 0, 0);
-}
-
 export function BookAmenityForm({
   amenityId,
   amenity,
   defaultDate,
+  takenHours,
+  minStartMs,
 }: {
   amenityId: string;
   amenity: Rules;
   defaultDate: string;
+  takenHours: number[];
+  minStartMs: number;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -39,6 +39,8 @@ export function BookAmenityForm({
   const [startHour, setStartHour] = useState(amenity.openHour);
   const [duration, setDuration] = useState(1);
   const [purpose, setPurpose] = useState("");
+
+  const [y, mo, d] = date.split("-").map(Number);
 
   const startHours = useMemo(
     () =>
@@ -54,11 +56,15 @@ export function BookAmenityForm({
   );
 
   const { startAt, endAt } = useMemo(() => {
-    const s = combine(date, startHour);
+    const s = zonedInstant(y, mo, d, startHour);
     return { startAt: s, endAt: new Date(s.getTime() + duration * 3_600_000) };
-  }, [date, startHour, duration]);
+  }, [y, mo, d, startHour, duration]);
 
   const clientViolation = bookingRuleViolations(amenity, startAt, endAt)[0];
+
+  const hourDisabled = (h: number) =>
+    takenHours.includes(h) ||
+    zonedInstant(y, mo, d, h).getTime() < minStartMs;
 
   function submit() {
     setError(null);
@@ -94,8 +100,15 @@ export function BookAmenityForm({
         <input
           type="date"
           value={date}
-          min={toDateInput(new Date())}
-          onChange={(e) => setDate(e.target.value)}
+          min={zonedDateInput(new Date())}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (!v) return;
+            setDate(v);
+            router.replace(`/portal/amenities/${amenityId}?date=${v}`, {
+              scroll: false,
+            });
+          }}
           className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-gray-900"
         />
       </label>
@@ -109,8 +122,9 @@ export function BookAmenityForm({
             className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none focus:border-gray-900"
           >
             {startHours.map((h) => (
-              <option key={h} value={h}>
+              <option key={h} value={h} disabled={hourDisabled(h)}>
                 {labelHour(h)}
+                {takenHours.includes(h) ? " (booked)" : ""}
               </option>
             ))}
           </select>

@@ -26,7 +26,7 @@ export default async function AmenitiesPage() {
       },
     }),
     prisma.amenityBooking.count({
-      where: { orgId: org.id, status: "PENDING" },
+      where: { orgId: org.id, status: "PENDING", startAt: { gt: new Date() } },
     }),
   ]);
 
@@ -41,6 +41,7 @@ export default async function AmenitiesPage() {
     closeHour: a.closeHour,
     minNoticeHours: a.minNoticeHours,
     maxHours: a.maxHours,
+    cancellationCutoffHours: a.cancellationCutoffHours,
     requiresApproval: a.requiresApproval,
     archived: a.archivedAt !== null,
     upcomingCount: a._count.bookings,

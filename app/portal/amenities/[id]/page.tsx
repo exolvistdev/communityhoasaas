@@ -3,7 +3,13 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { peso } from "@/lib/format";
-import { bookingHoursLabel, labelHour, toDateInput } from "@/lib/amenity";
+import {
+  APP_TZ,
+  bookingHoursLabel,
+  labelHour,
+  zonedDateInput,
+  zonedInstant,
+} from "@/lib/amenity";
 import { BookAmenityForm } from "./BookAmenityForm";
 
 export const metadata = { title: "Amenity · HOA SaaS" };
@@ -22,18 +28,17 @@ export default async function AmenityDetailPage({
   });
   if (!amenity) notFound();
 
-  // Default the availability view to the earliest bookable day.
-  const earliest = new Date(
-    Date.now() + amenity.minNoticeHours * 3_600_000
-  );
+  const now = Date.now();
+  const minStartMs = now + amenity.minNoticeHours * 3_600_000;
+
   const dateStr =
     searchParams.date && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.date)
       ? searchParams.date
-      : toDateInput(earliest);
+      : zonedDateInput(new Date(minStartMs));
 
   const [y, m, d] = dateStr.split("-").map(Number);
-  const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
-  const dayEnd = new Date(y, m - 1, d, 23, 59, 59, 999);
+  const dayStart = zonedInstant(y, m, d, 0);
+  const dayEnd = zonedInstant(y, m, d + 1, 0);
 
   const dayBookings = await prisma.amenityBooking.findMany({
     where: {
@@ -49,18 +54,20 @@ export default async function AmenityDetailPage({
     { length: Math.max(0, amenity.closeHour - amenity.openHour) },
     (_, i) => amenity.openHour + i
   );
-  const takenCount = (h: number) => {
-    const cellStart = new Date(y, m - 1, d, h).getTime();
+  const cellState = (h: number) => {
+    const cellStart = zonedInstant(y, m, d, h).getTime();
     const cellEnd = cellStart + 3_600_000;
-    return dayBookings.filter(
+    const taken = dayBookings.filter(
       (b) => b.startAt.getTime() < cellEnd && b.endAt.getTime() > cellStart
     ).length;
+    if (taken >= amenity.capacity) return "full" as const;
+    if (cellStart < minStartMs) return "past" as const;
+    return "open" as const;
   };
+  const takenHours = hours.filter((h) => cellState(h) === "full");
 
-  const shiftDate = (delta: number) => {
-    const nd = new Date(y, m - 1, d + delta);
-    return `/portal/amenities/${amenity.id}?date=${toDateInput(nd)}`;
-  };
+  const shiftDate = (delta: number) =>
+    `/portal/amenities/${amenity.id}?date=${zonedDateInput(zonedInstant(y, m, d + delta, 12))}`;
 
   return (
     <div className="space-y-4">
@@ -92,6 +99,12 @@ export default async function AmenityDetailPage({
             ? "staff approval required"
             : "confirmed instantly"}
         </div>
+        <div>
+          Free cancellation up to {amenity.cancellationCutoffHours}h before
+          {Number(amenity.fee) > 0
+            ? " — after that, contact the office"
+            : ""}
+        </div>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-3">
@@ -100,7 +113,8 @@ export default async function AmenityDetailPage({
             ‹ Prev
           </Link>
           <span className="font-medium text-gray-900">
-            {dayStart.toLocaleDateString("en-PH", {
+            {zonedInstant(y, m, d, 12).toLocaleDateString("en-PH", {
+              timeZone: APP_TZ,
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -112,13 +126,15 @@ export default async function AmenityDetailPage({
         </div>
         <div className="mt-3 grid grid-cols-4 gap-1.5">
           {hours.map((h) => {
-            const full = takenCount(h) >= amenity.capacity;
+            const state = cellState(h);
             return (
               <div
                 key={h}
                 className={`rounded-md px-1 py-2 text-center text-xs ${
-                  full
+                  state === "full"
                     ? "bg-gray-200 text-gray-400 line-through"
+                    : state === "past"
+                    ? "bg-gray-100 text-gray-300"
                     : "bg-green-50 text-green-800"
                 }`}
               >
@@ -138,6 +154,8 @@ export default async function AmenityDetailPage({
           maxHours: amenity.maxHours,
         }}
         defaultDate={dateStr}
+        takenHours={takenHours}
+        minStartMs={minStartMs}
       />
     </div>
   );

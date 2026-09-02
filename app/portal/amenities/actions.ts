@@ -129,7 +129,10 @@ export async function cancelBooking(id: string): Promise<Result> {
 
   const booking = await prisma.amenityBooking.findUnique({
     where: { id },
-    include: { invoice: { include: { payments: true } } },
+    include: {
+      amenity: { select: { cancellationCutoffHours: true } },
+      invoice: { include: { payments: true } },
+    },
   });
   if (!booking || booking.requesterId !== user.id)
     return { ok: false, error: "Booking not found" };
@@ -144,6 +147,13 @@ export async function cancelBooking(id: string): Promise<Result> {
         ok: false,
         error:
           "A fee has been paid on this booking — contact the HOA office to cancel.",
+      };
+    const hoursOut =
+      (booking.startAt.getTime() - Date.now()) / 3_600_000;
+    if (hoursOut < booking.amenity.cancellationCutoffHours)
+      return {
+        ok: false,
+        error: `Cancellations within ${booking.amenity.cancellationCutoffHours} hours of the booking must go through the HOA office.`,
       };
     const { postInvoiceVoided } = await import("@/lib/ledger");
     await postInvoiceVoided(booking.invoice.id);

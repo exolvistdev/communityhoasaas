@@ -560,6 +560,7 @@ model Amenity {
   closeHour        Int      @default(22)
   minNoticeHours   Int      @default(24)
   maxHours         Int      @default(4)
+  cancellationCutoffHours Int @default(48) // inside this window, fee bookings can't be self-cancelled
   requiresApproval Boolean  @default(true)
   archivedAt       DateTime?
   createdAt        DateTime @default(now())

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail, emailShell } from "@/lib/email";
+import { APP_TZ } from "@/lib/amenity";
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) =>
@@ -174,12 +175,17 @@ const bookingInclude = {
 
 function slotText(startAt: Date, endAt: Date) {
   const day = startAt.toLocaleDateString("en-PH", {
+    timeZone: APP_TZ,
     weekday: "long",
     day: "numeric",
     month: "long",
   });
   const t = (d: Date) =>
-    d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
+    d.toLocaleTimeString("en-PH", {
+      timeZone: APP_TZ,
+      hour: "numeric",
+      minute: "2-digit",
+    });
   return `${day}, ${t(startAt)}–${t(endAt)}`;
 }
 

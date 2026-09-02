@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decideBooking, cancelBookingAsStaff } from "./actions";
 
-export function BookingDecision({ id }: { id: string }) {
+export function BookingDecision({
+  id,
+  rejectOnly = false,
+}: {
+  id: string;
+  rejectOnly?: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [rejecting, setRejecting] = useState(false);
@@ -57,13 +63,15 @@ export function BookingDecision({ id }: { id: string }) {
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex gap-2">
-        <button
-          onClick={() => run(() => decideBooking(id, "CONFIRMED"))}
-          disabled={pending}
-          className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-        >
-          Approve
-        </button>
+        {!rejectOnly && (
+          <button
+            onClick={() => run(() => decideBooking(id, "CONFIRMED"))}
+            disabled={pending}
+            className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          >
+            Approve
+          </button>
+        )}
         <button
           onClick={() => setRejecting(true)}
           className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"

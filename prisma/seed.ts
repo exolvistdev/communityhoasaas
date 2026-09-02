@@ -6,6 +6,7 @@ import {
 } from "../lib/ledger";
 import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
+import { zonedInstant, zonedParts } from "../lib/amenity";
 import {
   ensureMarketplaceBucket,
   uploadListingPhotos,
@@ -682,6 +683,7 @@ async function main() {
       closeHour: 22,
       minNoticeHours: 24,
       maxHours: 6,
+      cancellationCutoffHours: 72,
       requiresApproval: true,
     },
   });
@@ -696,6 +698,7 @@ async function main() {
       closeHour: 22,
       minNoticeHours: 2,
       maxHours: 2,
+      cancellationCutoffHours: 24,
       requiresApproval: false,
     },
   });
@@ -704,13 +707,15 @@ async function main() {
     where: { orgId: org.id, name: "Basketball Court" },
   });
 
-  const at = (daysFromNow: number, hour: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() + daysFromNow);
-    d.setHours(hour, 0, 0, 0);
-    return d;
-  };
-  const daysToSat = (new Date().getDay() <= 6 ? 6 - new Date().getDay() : 0) || 7;
+  // All amenity times are the HOA's wall-clock (Asia/Manila), regardless of
+  // where the seed runs.
+  const nowParts = zonedParts(new Date());
+  const at = (daysFromNow: number, hour: number) =>
+    zonedInstant(nowParts.year, nowParts.month, nowParts.day + daysFromNow, hour);
+  const dow = new Date(
+    Date.UTC(nowParts.year, nowParts.month - 1, nowParts.day)
+  ).getUTCDay(); // 0=Sun … 6=Sat
+  const daysToSat = Math.max(((6 - dow) % 7) || 7, 3); // next Sat, ≥3 days out
 
   // Juan — confirmed court booking tomorrow evening (auto-confirm, no fee).
   await prisma.amenityBooking.create({

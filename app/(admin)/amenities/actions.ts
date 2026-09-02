@@ -34,6 +34,7 @@ const amenitySchema = z.object({
   closeHour: z.coerce.number().int().min(1).max(24),
   minNoticeHours: z.coerce.number().int().min(0).max(720),
   maxHours: z.coerce.number().int().min(1).max(24),
+  cancellationCutoffHours: z.coerce.number().int().min(0).max(720),
   requiresApproval: z.coerce.boolean(),
 });
 
@@ -47,6 +48,7 @@ type AmenityData = {
   closeHour: number;
   minNoticeHours: number;
   maxHours: number;
+  cancellationCutoffHours: number;
   requiresApproval: boolean;
 };
 
@@ -71,7 +73,9 @@ function parseAmenity(
       closeHour: d.closeHour,
       minNoticeHours: d.minNoticeHours,
       maxHours: d.maxHours,
-      requiresApproval: d.requiresApproval,
+      cancellationCutoffHours: d.cancellationCutoffHours,
+      // A fee can't be issued as an invoice without a human in the loop.
+      requiresApproval: d.fee > 0 ? true : d.requiresApproval,
     },
   };
 }
@@ -189,17 +193,35 @@ export async function decideBooking(
     return { ok: true };
   }
 
-  // CONFIRMED — re-check the slot against confirmed bookings only.
-  const clash = await prisma.amenityBooking.count({
-    where: {
-      amenityId: booking.amenityId,
-      status: "CONFIRMED",
-      id: { not: id },
-      startAt: { lt: booking.endAt },
-      endAt: { gt: booking.startAt },
-    },
+  if (booking.startAt <= new Date())
+    return { ok: false, error: "This slot has already passed — reject it instead." };
+
+  // CONFIRMED — re-check the slot against confirmed bookings only, serialized
+  // against other confirms + resident bookings for the same amenity.
+  const confirmed = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.amenityId}))`;
+    const clash = await tx.amenityBooking.count({
+      where: {
+        amenityId: booking.amenityId,
+        status: "CONFIRMED",
+        id: { not: id },
+        startAt: { lt: booking.endAt },
+        endAt: { gt: booking.startAt },
+      },
+    });
+    if (clash >= booking.amenity.capacity) return false;
+    await tx.amenityBooking.update({
+      where: { id },
+      data: {
+        status: "CONFIRMED",
+        decidedById: user.id,
+        decidedAt: new Date(),
+        decisionNote: parsedNote.data || null,
+      },
+    });
+    return true;
   });
-  if (clash >= booking.amenity.capacity)
+  if (!confirmed)
     return {
       ok: false,
       error: "That slot is now taken by another confirmed booking.",
@@ -219,18 +241,11 @@ export async function decideBooking(
     });
     await postInvoiceIssued(invoice.id);
     invoiceId = invoice.id;
+    await prisma.amenityBooking.update({
+      where: { id },
+      data: { invoiceId },
+    });
   }
-
-  await prisma.amenityBooking.update({
-    where: { id },
-    data: {
-      status: "CONFIRMED",
-      decidedById: user.id,
-      decidedAt: new Date(),
-      decisionNote: parsedNote.data || null,
-      invoiceId,
-    },
-  });
 
   await logAudit({
     action: "amenity.booking_approve",
