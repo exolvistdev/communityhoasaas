@@ -29,6 +29,12 @@ const ACTION_LABEL: Record<string, string> = {
   "marketplace.conversation_close": "Closed a conversation",
   "marketplace.conversation_reopen": "Reopened a conversation",
   "marketplace.conversation_reports_dismiss": "Dismissed conversation reports",
+  "amenity.create": "Added an amenity",
+  "amenity.update": "Updated an amenity",
+  "amenity.archive": "Archived / restored an amenity",
+  "amenity.booking_approve": "Approved a booking",
+  "amenity.booking_reject": "Rejected a booking",
+  "amenity.booking_cancel": "Cancelled a booking",
 };
 
 const fmt = (d: Date) =>

@@ -43,6 +43,8 @@ export default async function PortalHome() {
     announcementCount,
     listingCount,
     unreadMessages,
+    amenityCount,
+    upcomingBookings,
   ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
     prisma.invoice.findMany({
@@ -67,6 +69,16 @@ export default async function PortalHome() {
         senderId: { not: user.id },
         readAt: null,
         conversation: { OR: [{ buyerId: user.id }, { sellerId: user.id }] },
+      },
+    }),
+    prisma.amenity.count({
+      where: { orgId: property.orgId, archivedAt: null },
+    }),
+    prisma.amenityBooking.count({
+      where: {
+        requesterId: user.id,
+        status: { in: ["PENDING", "CONFIRMED"] },
+        startAt: { gt: now },
       },
     }),
   ]);
@@ -180,6 +192,17 @@ export default async function PortalHome() {
               : "Buyer & seller chats"
           }
         />
+        {amenityCount > 0 && (
+          <Tile
+            href="/portal/amenities"
+            label="Amenities"
+            sub={
+              upcomingBookings > 0
+                ? `${upcomingBookings} upcoming`
+                : "Book the clubhouse & courts"
+            }
+          />
+        )}
       </div>
 
       {/* payment history */}

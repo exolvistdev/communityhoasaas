@@ -56,6 +56,12 @@ export default async function PortalLayout({
             Home
           </Link>
           <Link
+            href="/portal/amenities"
+            className="text-gray-500 hover:text-gray-900"
+          >
+            Amenities
+          </Link>
+          <Link
             href="/portal/market"
             className="text-gray-500 hover:text-gray-900"
           >

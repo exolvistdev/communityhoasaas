@@ -157,3 +157,136 @@ export async function areUsersBlocked(aId: string, bId: string) {
   });
   return Boolean(block);
 }
+
+/* ── amenity bookings ───────────────────────────────────────────────── */
+
+const bookingInclude = {
+  amenity: { select: { name: true, feeNote: true } },
+  requester: {
+    select: {
+      fullName: true,
+      email: true,
+      emailNotifications: true,
+      deactivatedAt: true,
+    },
+  },
+} as const;
+
+function slotText(startAt: Date, endAt: Date) {
+  const day = startAt.toLocaleDateString("en-PH", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const t = (d: Date) =>
+    d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
+  return `${day}, ${t(startAt)}–${t(endAt)}`;
+}
+
+export async function notifyBookingRequested(bookingId: string) {
+  const booking = await prisma.amenityBooking.findUnique({
+    where: { id: bookingId },
+    include: bookingInclude,
+  });
+  if (!booking) return;
+
+  const mods = await moderators(booking.orgId);
+  if (mods.length === 0) return;
+
+  const subject = `Amenity booking request: ${booking.amenity.name}`;
+  const html = emailShell({
+    heading: "A booking needs your review",
+    bodyHtml: `<p><strong>${esc(booking.requester.fullName)}</strong> requested
+      <strong>${esc(booking.amenity.name)}</strong> for
+      ${esc(slotText(booking.startAt, booking.endAt))}.</p>
+      ${booking.purpose ? `<p>Purpose: ${esc(booking.purpose)}</p>` : ""}`,
+    ctaHref: `/amenities/bookings`,
+    ctaLabel: "Review requests",
+  });
+  await Promise.all(mods.map((m) => sendEmail({ to: m.email, subject, html })));
+}
+
+export async function notifyBookingDecision(bookingId: string) {
+  const booking = await prisma.amenityBooking.findUnique({
+    where: { id: bookingId },
+    include: { ...bookingInclude, invoice: { select: { amount: true } } },
+  });
+  if (!booking || !canEmail(booking.requester)) return;
+
+  const confirmed = booking.status === "CONFIRMED";
+  const feeLine = booking.invoice
+    ? `<p>A ₱${Number(booking.invoice.amount).toLocaleString("en-PH")} fee has
+       been added to your account.${
+         booking.amenity.feeNote
+           ? ` ${esc(booking.amenity.feeNote)}`
+           : ""
+       }</p>`
+    : "";
+
+  await sendEmail({
+    to: booking.requester.email,
+    subject: confirmed
+      ? `Booking confirmed: ${booking.amenity.name}`
+      : `Booking declined: ${booking.amenity.name}`,
+    html: emailShell({
+      heading: confirmed ? "Your booking is confirmed" : "Your booking was declined",
+      bodyHtml: `<p><strong>${esc(booking.amenity.name)}</strong> —
+        ${esc(slotText(booking.startAt, booking.endAt))}.</p>
+        ${
+          confirmed
+            ? feeLine
+            : booking.decisionNote
+            ? `<p>Reason: ${esc(booking.decisionNote)}</p>`
+            : ""
+        }`,
+      ctaHref: `/portal/amenities`,
+      ctaLabel: "View bookings",
+    }),
+  });
+}
+
+export async function notifyBookingCancelled(
+  bookingId: string,
+  by: "requester" | "staff"
+) {
+  const booking = await prisma.amenityBooking.findUnique({
+    where: { id: bookingId },
+    include: bookingInclude,
+  });
+  if (!booking) return;
+
+  if (by === "requester") {
+    // Tell the managers a slot freed up.
+    const mods = await moderators(booking.orgId);
+    if (mods.length === 0) return;
+    const subject = `Booking cancelled: ${booking.amenity.name}`;
+    const html = emailShell({
+      heading: "A booking was cancelled",
+      bodyHtml: `<p><strong>${esc(booking.requester.fullName)}</strong> cancelled
+        <strong>${esc(booking.amenity.name)}</strong> for
+        ${esc(slotText(booking.startAt, booking.endAt))}.</p>`,
+      ctaHref: `/amenities/bookings`,
+      ctaLabel: "Booking requests",
+    });
+    await Promise.all(
+      mods.map((m) => sendEmail({ to: m.email, subject, html }))
+    );
+    return;
+  }
+
+  // Staff cancelled — tell the requester.
+  if (!canEmail(booking.requester)) return;
+  await sendEmail({
+    to: booking.requester.email,
+    subject: `Booking cancelled: ${booking.amenity.name}`,
+    html: emailShell({
+      heading: "Your booking was cancelled",
+      bodyHtml: `<p>The HOA cancelled your booking of
+        <strong>${esc(booking.amenity.name)}</strong> for
+        ${esc(slotText(booking.startAt, booking.endAt))}.</p>
+        ${booking.decisionNote ? `<p>Reason: ${esc(booking.decisionNote)}</p>` : ""}`,
+      ctaHref: `/portal/amenities`,
+      ctaLabel: "View bookings",
+    }),
+  });
+}

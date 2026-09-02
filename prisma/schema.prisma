@@ -66,6 +66,8 @@ model Organization {
   marketplaceListings MarketplaceListing[]
   marketConversations MarketConversation[]
   marketplaceBlocks   MarketplaceBlock[]
+  amenities           Amenity[]
+  amenityBookings     AmenityBooking[]
 
   @@map("organizations")
 }
@@ -138,6 +140,8 @@ model User {
   conversationReports   ConversationReport[]  @relation("ConvReportReporter")
   blocksMade            MarketplaceBlock[]    @relation("BlockBlocker")
   blocksAgainst         MarketplaceBlock[]    @relation("BlockBlocked")
+  amenityBookings       AmenityBooking[]      @relation("BookingRequester")
+  amenityBookingsDecided AmenityBooking[]     @relation("BookingDecidedBy")
 
   @@index([orgId])
   @@map("users")
@@ -243,6 +247,7 @@ model Invoice {
 
   payments      Payment[]
   journalEntry  JournalEntry?
+  amenityBooking AmenityBooking?
 
   @@unique([propertyId, period])
   @@index([propertyId])
@@ -529,4 +534,65 @@ model MarketplaceBlock {
   @@unique([blockerId, blockedId])
   @@index([orgId])
   @@map("marketplace_blocks")
+}
+
+// ─────────────────────────────────────────────
+// Amenity booking (Phase 2)
+// ─────────────────────────────────────────────
+
+enum AmenityBookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+model Amenity {
+  id               String   @id @default(uuid())
+  orgId            String
+  org              Organization @relation(fields: [orgId], references: [id])
+  name             String
+  description      String?
+  fee              Decimal  @default(0) @db.Decimal(12, 2) // 0 = free (no invoice)
+  feeNote          String?  // informational, e.g. "+ ₱3,000 refundable deposit at the office"
+  capacity         Int      @default(1)  // concurrent CONFIRMED bookings allowed
+  openHour         Int      @default(8)  // local hour 0–23
+  closeHour        Int      @default(22)
+  minNoticeHours   Int      @default(24)
+  maxHours         Int      @default(4)
+  requiresApproval Boolean  @default(true)
+  archivedAt       DateTime?
+  createdAt        DateTime @default(now())
+
+  bookings AmenityBooking[]
+
+  @@index([orgId])
+  @@map("amenities")
+}
+
+model AmenityBooking {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  amenityId    String
+  amenity      Amenity  @relation(fields: [amenityId], references: [id])
+  requesterId  String
+  requester    User     @relation("BookingRequester", fields: [requesterId], references: [id])
+  propertyId   String?  // requester's unit at request time — fee invoice target
+  startAt      DateTime
+  endAt        DateTime
+  status       AmenityBookingStatus @default(PENDING)
+  purpose      String?
+  invoiceId    String?  @unique
+  invoice      Invoice? @relation(fields: [invoiceId], references: [id])
+  decidedById  String?
+  decidedBy    User?    @relation("BookingDecidedBy", fields: [decidedById], references: [id])
+  decidedAt    DateTime?
+  decisionNote String?
+  createdAt    DateTime @default(now())
+
+  @@index([amenityId, startAt])
+  @@index([orgId, status])
+  @@index([requesterId])
+  @@map("amenity_bookings")
 }

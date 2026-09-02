@@ -34,7 +34,8 @@ export async function postInvoiceIssued(invoiceId: string) {
       orgId: invoice.property.orgId,
       sourceType: "invoice",
       invoiceId: invoice.id,
-      memo: `Dues invoice — unit ${invoice.property.unitNumber}`,
+      memo:
+        invoice.memo ?? `Dues invoice — unit ${invoice.property.unitNumber}`,
       lines: {
         create: [
           { accountId: ar.id, debit: invoice.amount, credit: 0 },

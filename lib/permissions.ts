@@ -9,7 +9,8 @@ export type Action =
   | "announcement:write"
   | "settings:write"
   | "team:write"
-  | "marketplace:moderate";
+  | "marketplace:moderate"
+  | "amenity:manage";
 
 const PERMISSIONS: Record<Action, UserRole[]> = {
   "billing:write": ["ADMIN", "TREASURER"],
@@ -19,6 +20,7 @@ const PERMISSIONS: Record<Action, UserRole[]> = {
   "settings:write": ["ADMIN"],
   "team:write": ["ADMIN"],
   "marketplace:moderate": ["ADMIN", "BOARD_MEMBER"],
+  "amenity:manage": ["ADMIN", "TREASURER", "BOARD_MEMBER"],
 };
 
 export const STAFF_ROLES: UserRole[] = ["ADMIN", "TREASURER", "BOARD_MEMBER"];

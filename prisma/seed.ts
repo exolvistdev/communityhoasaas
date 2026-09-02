@@ -177,6 +177,8 @@ async function resetDemoOrg() {
   await prisma.listingReport.deleteMany({ where: { listing: { orgId } } });
   await prisma.marketplaceListing.deleteMany({ where: { orgId } });
   await prisma.marketplaceBlock.deleteMany({ where: { orgId } });
+  await prisma.amenityBooking.deleteMany({ where: { orgId } });
+  await prisma.amenity.deleteMany({ where: { orgId } });
   await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
   await prisma.journalEntry.deleteMany({ where: { orgId } });
   await prisma.payment.deleteMany({
@@ -665,6 +667,122 @@ async function main() {
       reason: "Buyer is being rude and pushy after I said the price was firm.",
     },
   });
+
+  // ── Amenity booking ───────────────────────────────────────────────
+  const hall = await prisma.amenity.create({
+    data: {
+      orgId: org.id,
+      name: "Clubhouse Function Hall",
+      description:
+        "Air-conditioned hall, seats ~60. Tables and chairs included; bring your own decor and caterer.",
+      fee: 2000,
+      feeNote: "+ ₱3,000 refundable deposit, settled at the HOA office",
+      capacity: 1,
+      openHour: 8,
+      closeHour: 22,
+      minNoticeHours: 24,
+      maxHours: 6,
+      requiresApproval: true,
+    },
+  });
+  await prisma.amenity.create({
+    data: {
+      orgId: org.id,
+      name: "Basketball Court",
+      description: "Half-court with lights. First come, first served after hours.",
+      fee: 0,
+      capacity: 1,
+      openHour: 6,
+      closeHour: 22,
+      minNoticeHours: 2,
+      maxHours: 2,
+      requiresApproval: false,
+    },
+  });
+
+  const court = await prisma.amenity.findFirstOrThrow({
+    where: { orgId: org.id, name: "Basketball Court" },
+  });
+
+  const at = (daysFromNow: number, hour: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + daysFromNow);
+    d.setHours(hour, 0, 0, 0);
+    return d;
+  };
+  const daysToSat = (new Date().getDay() <= 6 ? 6 - new Date().getDay() : 0) || 7;
+
+  // Juan — confirmed court booking tomorrow evening (auto-confirm, no fee).
+  await prisma.amenityBooking.create({
+    data: {
+      orgId: org.id,
+      amenityId: court.id,
+      requesterId: homeownerUser.id,
+      propertyId: firstProperty.id,
+      startAt: at(1, 18),
+      endAt: at(1, 20),
+      status: "CONFIRMED",
+      purpose: "Evening practice",
+      decidedById: admin.id,
+      decidedAt: new Date(),
+    },
+  });
+
+  // Ana — pending hall request for the coming Saturday (fills the admin queue).
+  await prisma.amenityBooking.create({
+    data: {
+      orgId: org.id,
+      amenityId: hall.id,
+      requesterId: anaUser.id,
+      propertyId: lot2.id,
+      startAt: at(daysToSat, 14),
+      endAt: at(daysToSat, 20),
+      status: "PENDING",
+      purpose: "Daughter's christening reception",
+    },
+  });
+
+  // Juan — a past confirmed hall booking whose ₱2,000 fee was invoiced and paid.
+  const pastHall = await prisma.amenityBooking.create({
+    data: {
+      orgId: org.id,
+      amenityId: hall.id,
+      requesterId: homeownerUser.id,
+      propertyId: firstProperty.id,
+      startAt: at(-12, 15),
+      endAt: at(-12, 21),
+      status: "CONFIRMED",
+      purpose: "Birthday party",
+      decidedById: admin.id,
+      decidedAt: at(-14, 9),
+    },
+  });
+  const hallInvoice = await prisma.invoice.create({
+    data: {
+      propertyId: firstProperty.id,
+      amount: 2000,
+      period: null,
+      dueDate: at(-12, 15),
+      status: "SENT",
+      memo: "Amenity — Clubhouse Function Hall (birthday party)",
+    },
+  });
+  await postInvoiceIssued(hallInvoice.id);
+  await prisma.amenityBooking.update({
+    where: { id: pastHall.id },
+    data: { invoiceId: hallInvoice.id },
+  });
+  const hallPay = await prisma.payment.create({
+    data: {
+      invoiceId: hallInvoice.id,
+      amount: 2000,
+      method: "GCASH",
+      status: "CONFIRMED",
+      confirmedById: admin.id,
+      confirmedAt: at(-13, 10),
+    },
+  });
+  await postPaymentReceived(hallPay.id);
 
   console.log(`Seeded "${org.name}" (${org.subdomain})`);
   if (auth["admin@sample-hoa.ph"]) {
