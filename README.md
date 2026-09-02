@@ -34,6 +34,7 @@ walkthrough of the admin app.
 | Visitor pass page `/pass/<code>` — public QR + validity for the visitor to show at the gate | ✅ |
 | Platform operator console `/platform` — cross-tenant org directory + full user impersonation for support | ✅ |
 | Resident marketplace (Phase 2) — listings with photos, buyer-seller message threads, admin moderation | ✅ |
+| Amenity booking (Phase 2) — bookable amenities, time-slot reservations, staff approval, invoiced fees | ✅ |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
 portal) and submit the reference; an admin confirms it in **Reconciliation**,
