@@ -53,6 +53,12 @@ model Organization {
   mayaNumber          String?
   mayaName            String?
   paymentInstructions String? // bank transfer + cash / office-hours notes
+  // Late fees (opt-in, per HOA). amount is pesos when FIXED, a percent when PERCENT.
+  lateFeeEnabled        Boolean     @default(false)
+  lateFeeType           LateFeeType @default(FIXED)
+  lateFeeAmount         Decimal     @default(0) @db.Decimal(12, 2)
+  lateFeeGraceDays      Int         @default(0)
+  lateFeeMaxOccurrences Int         @default(1) // cap of late-fee charges per overdue invoice
   createdAt     DateTime @default(now())
 
   users        User[]
@@ -166,6 +172,7 @@ enum NotificationType {
   MARKETPLACE_LISTING_REPORTED
   MARKETPLACE_LISTING_MODERATED
   MARKETPLACE_CONVERSATION_REPORTED
+  LATE_FEE_APPLIED
 }
 
 model Notification {
@@ -269,6 +276,11 @@ enum InvoiceStatus {
   VOID
 }
 
+enum LateFeeType {
+  FIXED   // flat peso amount
+  PERCENT // percentage of the overdue balance
+}
+
 model Invoice {
   id         String   @id @default(uuid())
   propertyId String
@@ -281,6 +293,10 @@ model Invoice {
   voidedAt   DateTime?
   voidReason String?
   createdAt  DateTime @default(now())
+  // A late-fee invoice points back at the overdue dues invoice it was charged on.
+  lateFeeParentId String?
+  lateFeeParent   Invoice?  @relation("InvoiceLateFees", fields: [lateFeeParentId], references: [id])
+  lateFeeChildren Invoice[] @relation("InvoiceLateFees")
 
   payments      Payment[]
   journalEntry  JournalEntry?
@@ -289,6 +305,7 @@ model Invoice {
   @@unique([propertyId, period])
   @@index([propertyId])
   @@index([status])
+  @@index([lateFeeParentId])
   @@map("invoices")
 }
 

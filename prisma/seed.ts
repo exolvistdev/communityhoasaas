@@ -9,6 +9,7 @@ import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
 import { zonedInstant, zonedParts } from "../lib/amenity";
 import { generateOverdueNotifications } from "../lib/notifications";
+import { applyLateFees } from "../lib/late-fees";
 import {
   ensureMarketplaceBucket,
   uploadListingPhotos,
@@ -244,6 +245,11 @@ async function main() {
       paymentInstructions:
         "Bank: BDO 1234-5678-90 (Sample Subdivision HOA Inc.). " +
         "Cash: HOA office, Mon–Fri 9am–5pm.",
+      lateFeeEnabled: true,
+      lateFeeType: "FIXED",
+      lateFeeAmount: 200,
+      lateFeeGraceDays: 3,
+      lateFeeMaxOccurrences: 2,
     },
   });
 
@@ -953,6 +959,8 @@ async function main() {
   });
   // Juan's prior-month invoice is past due → one INVOICE_OVERDUE (unread).
   await generateOverdueNotifications(org.id);
+  // …and the same overdue invoice picks up a ₱200 late fee.
+  await applyLateFees(org.id);
 
   console.log(`Seeded "${org.name}" (${org.subdomain})`);
   if (auth["admin@sample-hoa.ph"]) {

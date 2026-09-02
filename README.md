@@ -28,7 +28,8 @@ walkthrough of the admin app.
 | Gate passes — create / list / revoke, scannable code | ✅ |
 | Announcements — draft / publish | ✅ |
 | Team — invite staff/guard by email, role management | ✅ |
-| Settings — HOA name, billing due-day, rate plans, GCash/Maya payment details | ✅ |
+| Settings — HOA name, billing due-day, rate plans, GCash/Maya payment details, late-fee policy | ✅ |
+| Late fees — opt-in per HOA (flat ₱ or %, grace period, monthly recurrence cap); a daily sweep posts a late-fee invoice + ledger entry and notifies the homeowner | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Password recovery (self-service + admin reset-link fallback), `/account` self-service profile/password/contact | ✅ |
 | Gate activity log + admin audit trail (`/gate-passes?view=activity`, `/audit`) | ✅ |
@@ -62,7 +63,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="…"                    # Supabase → Settings �
 SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth users, marketplace photos, document library
 RESEND_API_KEY=""                                    # optional — email notifications no-op without it (in-app center still works)
 EMAIL_FROM="HOA SaaS <onboarding@resend.dev>"        # sender for notification emails
-CRON_SECRET=""                                       # optional — gates GET /api/cron/overdue (daily overdue-invoice sweep)
+CRON_SECRET=""                                       # optional — gates the daily sweeps GET /api/cron/overdue and /api/cron/late-fees (vercel.json)
 ```
 
 Use the **transaction-mode pooler** (`:6543`, `pgbouncer=true`) for `DATABASE_URL`
@@ -145,4 +146,5 @@ scripts/
 | `npm run db:migrate` | `prisma migrate dev` (authoring) |
 | `npm run db:seed` | reseed the demo HOA |
 | `npm run db:studio` | Prisma Studio |
-| `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/notify-overdue.ts` | overdue-invoice notification sweep (wire to a daily cron, or hit `GET /api/cron/overdue`) |
+| `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/notify-overdue.ts` | overdue-invoice notification sweep (daily cron, or `GET /api/cron/overdue`) |
+| `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/apply-late-fees.ts` | late-fee sweep — adds a late-fee invoice to overdue dues (daily cron, or `GET /api/cron/late-fees`) |

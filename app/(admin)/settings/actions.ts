@@ -95,6 +95,50 @@ export async function updatePaymentSettings(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
+/* ───────────────────────────── late fees ─────────────────────────── */
+
+const lateFeeSchema = z.object({
+  lateFeeEnabled: z.preprocess(
+    (v) => v === true || v === "true" || v === "on",
+    z.boolean()
+  ),
+  lateFeeType: z.enum(["FIXED", "PERCENT"]),
+  lateFeeAmount: z.coerce.number().min(0, "Enter 0 or more").max(1_000_000),
+  lateFeeGraceDays: z.coerce
+    .number()
+    .int("Whole days only")
+    .min(0)
+    .max(90, "Keep the grace period under 90 days"),
+  lateFeeMaxOccurrences: z.coerce
+    .number()
+    .int("Whole number")
+    .min(1)
+    .max(12, "12 at most"),
+});
+
+export async function updateLateFeeSettings(input: unknown): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const parsed = lateFeeSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const d = parsed.data;
+  if (d.lateFeeType === "PERCENT" && d.lateFeeAmount > 100)
+    return { ok: false, error: "A percentage late fee can't exceed 100%" };
+
+  const { org } = await getCurrentOrgContext();
+  await prisma.organization.update({ where: { id: org.id }, data: d });
+
+  revalidatePath("/settings");
+  await logAudit({
+    action: "settings.late_fees_update",
+    detail: d.lateFeeEnabled ? "enabled" : "disabled",
+  });
+  return { ok: true };
+}
+
 /* ───────────────────────────── rate plans ────────────────────────── */
 
 const planSchema = z.object({

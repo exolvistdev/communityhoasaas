@@ -33,6 +33,7 @@ export const NOTIFICATION_CATALOG: Record<NotificationType, CatalogEntry> = {
   PAYMENT_REJECTED: { category: "billing", defaultEmail: true, defaultInApp: true },
   PAYMENT_SUBMITTED: { category: "billing", defaultEmail: false, defaultInApp: true },
   INVOICE_OVERDUE: { category: "billing", defaultEmail: true, defaultInApp: true },
+  LATE_FEE_APPLIED: { category: "billing", defaultEmail: true, defaultInApp: true },
   ANNOUNCEMENT: { category: "announcements", defaultEmail: true, defaultInApp: true },
   AMENITY_BOOKING_REQUESTED: { category: "amenities", defaultEmail: true, defaultInApp: true },
   AMENITY_BOOKING_DECIDED: { category: "amenities", defaultEmail: true, defaultInApp: true },
@@ -185,6 +186,7 @@ export async function generateOverdueNotifications(orgId?: string) {
       status: { notIn: ["PAID", "VOID"] },
       property: {
         ...(orgId ? { orgId } : {}),
+        archivedAt: null, // a moved-out unit shouldn't keep nagging
         homeowners: { some: { userId: { not: null } } },
       },
     },

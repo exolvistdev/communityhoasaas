@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
 import { OrgSettingsForm } from "./OrgSettingsForm";
 import { PaymentSettingsForm } from "./PaymentSettingsForm";
+import { LateFeeSettingsForm } from "./LateFeeSettingsForm";
 import { RatePlansManager } from "./RatePlansManager";
 
 export const metadata = { title: "Settings · HOA SaaS" };
@@ -65,6 +66,26 @@ export default async function SettingsPage() {
             mayaNumber: org.mayaNumber,
             mayaName: org.mayaName,
             paymentInstructions: org.paymentInstructions,
+          }}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">Late fees</h2>
+          <p className="text-xs text-fg-muted">
+            When enabled, a daily sweep adds a late-fee charge to each overdue
+            dues invoice. The fee posts as its own line on the homeowner&apos;s
+            statement.
+          </p>
+        </div>
+        <LateFeeSettingsForm
+          policy={{
+            lateFeeEnabled: org.lateFeeEnabled,
+            lateFeeType: org.lateFeeType,
+            lateFeeAmount: Number(org.lateFeeAmount),
+            lateFeeGraceDays: org.lateFeeGraceDays,
+            lateFeeMaxOccurrences: org.lateFeeMaxOccurrences,
           }}
         />
       </section>

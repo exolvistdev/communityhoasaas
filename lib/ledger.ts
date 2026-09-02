@@ -60,6 +60,36 @@ export async function postInvoiceIssued(invoiceId: string) {
   });
 }
 
+/** Late-fee invoice issued — AR up (1100), Late Fee Income up (4100). */
+export async function postLateFeeIssued(invoiceId: string) {
+  const invoice = await prisma.invoice.findUniqueOrThrow({
+    where: { id: invoiceId },
+    include: { property: true },
+  });
+
+  const [ar, income] = await Promise.all([
+    getAccount(invoice.property.orgId, "1100"),
+    getAccount(invoice.property.orgId, "4100"),
+  ]);
+
+  return prisma.journalEntry.create({
+    data: {
+      orgId: invoice.property.orgId,
+      sourceType: "late_fee",
+      invoiceId: invoice.id,
+      entryDate: new Date(),
+      memo: invoice.memo ?? `Late fee — unit ${invoice.property.unitNumber}`,
+      lines: {
+        create: [
+          { accountId: ar.id, debit: invoice.amount, credit: 0 },
+          { accountId: income.id, debit: 0, credit: invoice.amount },
+        ],
+      },
+    },
+    include: { lines: true },
+  });
+}
+
 /**
  * Reverse the original "invoice issued" entry when an invoice is voided.
  * The original entry is left intact for audit; a fresh entry with the

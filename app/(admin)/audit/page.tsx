@@ -17,6 +17,8 @@ const ACTION_LABEL: Record<string, string> = {
   "rateplan.delete": "Deleted rate plan",
   "settings.update": "Updated HOA settings",
   "settings.payments_update": "Updated payment settings",
+  "settings.late_fees_update": "Updated late-fee settings",
+  "invoice.late_fee": "Applied a late fee",
   "gatepass.revoke": "Revoked gate pass",
   "announcement.delete": "Deleted announcement",
   "team.invite": "Invited team member",
