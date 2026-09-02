@@ -68,7 +68,7 @@ const propertyInclude = {
   invoices: { include: { payments: { where: { status: "CONFIRMED" } } } },
 } satisfies Prisma.PropertyInclude;
 
-type PropertyWithLedger = Prisma.PropertyGetPayload<{
+export type PropertyWithLedger = Prisma.PropertyGetPayload<{
   include: typeof propertyInclude;
 }>;
 
@@ -78,7 +78,9 @@ function daysBetween(a: Date, b: Date) {
   return Math.floor((b.getTime() - a.getTime()) / 86_400_000);
 }
 
-function assembleStatement(
+/** Pure statement math for one property's ledger data + a date range.
+ *  Exported for unit testing; app code goes through `buildStatement`. */
+export function assembleStatement(
   property: PropertyWithLedger,
   { from, to }: StatementRange
 ): Statement {

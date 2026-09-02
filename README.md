@@ -132,6 +132,26 @@ scripts/
   init-storage.ts     one-off: create the "marketplace" + "documents" Storage buckets
 ```
 
+## Tests
+
+```bash
+npm test            # vitest — unit suite always runs; integration skips without a DB
+npm run test:unit   # pure-function suite only (no database)
+npm run typecheck   # tsc --noEmit
+```
+
+- **Unit** (`test/unit/`) — pure helpers: permissions, CSV import, statement math
+  (`assembleStatement`), late-fee policy, gate-pass validation, amenity time rules,
+  formatting, notification preferences. No database; always runs.
+- **Integration** (`test/integration/`) — the double-entry ledger invariants, late-fee
+  sweep dedupe, and move-out close-out against a real Postgres. Each suite is
+  `describe.skipIf(!process.env.DATABASE_URL_TEST)`, so it no-ops unless you point
+  `DATABASE_URL_TEST` at a throwaway database (`npm run test:integration`).
+
+CI (`.github/workflows/ci.yml`) runs three jobs on every push / PR and blocks on all of
+them: **check** (typecheck + lint + unit tests), **integration** (a `postgres:16` service
++ `prisma migrate deploy` + the integration suite), and **build** (`next build`).
+
 ## Deployment
 
 - **App**: Vercel (or any Node host). Set all `.env` vars in the host.
@@ -146,6 +166,8 @@ scripts/
 | --- | --- |
 | `npm run dev` | dev server |
 | `npm run build` / `npm start` | production build / serve |
+| `npm test` / `npm run test:unit` / `npm run test:integration` | vitest suites |
+| `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:migrate` | `prisma migrate dev` (authoring) |
 | `npm run db:seed` | reseed the demo HOA |
 | `npm run db:studio` | Prisma Studio |
