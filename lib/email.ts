@@ -62,7 +62,8 @@ export function emailShell(opts: {
     <a href="${href}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:500;padding:10px 16px;border-radius:8px">${opts.ctaLabel}</a>
   </p>
   <p style="font-size:12px;color:#9ca3af;margin-top:24px">
-    You can turn these emails off in your account settings.
+    You can turn these emails off in your
+    <a href="${emailOrigin()}/account" style="color:#9ca3af">account settings</a>.
   </p>
 </div>`;
 }

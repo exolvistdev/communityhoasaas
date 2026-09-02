@@ -91,7 +91,7 @@ export async function sendMessage(
     }),
   ]);
 
-  void notifyNewMessage(conversationId, user.id).catch(() => {});
+  await notifyNewMessage(conversationId, user.id).catch(() => {});
   revalidatePath("/portal/messages");
   revalidatePath(`/portal/messages/${conversationId}`);
   revalidatePath("/portal");
@@ -189,7 +189,7 @@ export async function reportConversation(
     },
   });
 
-  void notifyConversationReported(conversationId).catch(() => {});
+  await notifyConversationReported(conversationId).catch(() => {});
   revalidatePath(`/portal/messages/${conversationId}`);
   return { ok: true };
 }

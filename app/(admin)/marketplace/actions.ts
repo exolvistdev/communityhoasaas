@@ -65,7 +65,7 @@ export async function removeListing(
     target: listing.title,
     detail: parsed.data,
   });
-  void notifyListingModerated(id, "removed", parsed.data).catch(() => {});
+  await notifyListingModerated(id, "removed", parsed.data).catch(() => {});
   revalidate(id);
   return { ok: true };
 }
@@ -84,7 +84,7 @@ export async function restoreListing(id: string): Promise<Result> {
     data: { status: "ACTIVE", removedReason: null },
   });
   await logAudit({ action: "marketplace.restore", target: listing.title });
-  void notifyListingModerated(id, "restored").catch(() => {});
+  await notifyListingModerated(id, "restored").catch(() => {});
   revalidate(id);
   return { ok: true };
 }

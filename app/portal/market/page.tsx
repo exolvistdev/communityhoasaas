@@ -37,7 +37,6 @@ export default async function MarketplacePage({
   const sort = LISTING_SORTS.some((s) => s.value === searchParams.sort)
     ? searchParams.sort!
     : "recent";
-  const page = Math.max(1, Number(searchParams.page) || 1);
 
   const where: Prisma.MarketplaceListingWhereInput = {
     orgId: org.id,
@@ -57,28 +56,27 @@ export default async function MarketplacePage({
       : {}),
   };
 
-  const [total, listings] = await Promise.all([
-    prisma.marketplaceListing.count({ where }),
-    prisma.marketplaceListing.findMany({
-      where,
-      orderBy: listingOrderBy(sort),
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      include: {
-        seller: {
-          select: {
-            id: true,
-            fullName: true,
-            homeowner: {
-              select: { property: { select: { unitNumber: true } } },
-            },
+  const total = await prisma.marketplaceListing.count({ where });
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Number(searchParams.page) || 1), pages);
+
+  const listings = await prisma.marketplaceListing.findMany({
+    where,
+    orderBy: listingOrderBy(sort),
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    include: {
+      seller: {
+        select: {
+          id: true,
+          fullName: true,
+          homeowner: {
+            select: { property: { select: { unitNumber: true } } },
           },
         },
       },
-    }),
-  ]);
-
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    },
+  });
   const qs = (p: number) => {
     const s = new URLSearchParams();
     if (q) s.set("q", q);

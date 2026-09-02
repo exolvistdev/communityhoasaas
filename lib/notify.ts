@@ -67,16 +67,14 @@ export async function notifyListingReported(listingId: string) {
   const mods = await moderators(listing.orgId);
   if (mods.length === 0) return;
 
-  await sendEmail({
-    to: mods.map((m) => m.email),
-    subject: `Marketplace listing reported: "${listing.title}"`,
-    html: emailShell({
-      heading: "A listing was reported",
-      bodyHtml: `<p>A resident reported <strong>${esc(listing.title)}</strong>. Review it and the report reason in the moderation view.</p>`,
-      ctaHref: `/marketplace/${listing.id}`,
-      ctaLabel: "Review listing",
-    }),
+  const subject = `Marketplace listing reported: "${listing.title}"`;
+  const html = emailShell({
+    heading: "A listing was reported",
+    bodyHtml: `<p>A resident reported <strong>${esc(listing.title)}</strong>. Review it and the report reason in the moderation view.</p>`,
+    ctaHref: `/marketplace/${listing.id}`,
+    ctaLabel: "Review listing",
   });
+  await Promise.all(mods.map((m) => sendEmail({ to: m.email, subject, html })));
 }
 
 /* ── conversation reported → moderators ──────────────────────────────── */
@@ -91,16 +89,14 @@ export async function notifyConversationReported(conversationId: string) {
   const mods = await moderators(convo.orgId);
   if (mods.length === 0) return;
 
-  await sendEmail({
-    to: mods.map((m) => m.email),
-    subject: "A marketplace conversation was reported",
-    html: emailShell({
-      heading: "A conversation was reported",
-      bodyHtml: `<p>A resident reported a message thread about <strong>${esc(convo.listing.title)}</strong>. You can read the full thread in the moderation view.</p>`,
-      ctaHref: `/marketplace/conversations/${convo.id}`,
-      ctaLabel: "Read thread",
-    }),
+  const subject = "A marketplace conversation was reported";
+  const html = emailShell({
+    heading: "A conversation was reported",
+    bodyHtml: `<p>A resident reported a message thread about <strong>${esc(convo.listing.title)}</strong>. You can read the full thread in the moderation view.</p>`,
+    ctaHref: `/marketplace/conversations/${convo.id}`,
+    ctaLabel: "Read thread",
   });
+  await Promise.all(mods.map((m) => sendEmail({ to: m.email, subject, html })));
 }
 
 /* ── listing moderated → seller ─────────────────────────────────────── */

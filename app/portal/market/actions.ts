@@ -189,7 +189,7 @@ export async function reportListing(
     update: { reason: parsed.data.reason, createdAt: new Date(), resolvedAt: null },
   });
 
-  void notifyListingReported(id).catch(() => {});
+  await notifyListingReported(id).catch(() => {});
   revalidate(id);
   return { ok: true };
 }

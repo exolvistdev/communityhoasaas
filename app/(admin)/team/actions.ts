@@ -128,16 +128,14 @@ export async function removeMember(
       data: { userId: null },
     });
 
-  // Revoke the Supabase login either way.
-  if (target.authId) {
-    await createAdminClient()
-      .auth.admin.deleteUser(target.authId)
-      .catch(() => {});
-  }
+  const authAdmin = createAdminClient().auth.admin;
 
   let deactivated = false;
   try {
     await prisma.user.delete({ where: { id: userId } });
+    // Row is gone; clean up the now-orphaned Supabase user best-effort.
+    if (target.authId)
+      await authAdmin.deleteUser(target.authId).catch(() => {});
   } catch (e) {
     // They own content the DB won't let us delete (marketplace listings,
     // messages, gate passes…). Keep the row but revoke all access.
@@ -145,6 +143,16 @@ export async function removeMember(
       e instanceof Prisma.PrismaClientKnownRequestError &&
       e.code === "P2003"
     ) {
+      // The login MUST be gone before we soft-deactivate — a live session plus
+      // a nulled authId would let them reach /onboarding as a "new" user.
+      if (target.authId) {
+        const { error } = await authAdmin.deleteUser(target.authId);
+        if (error && !/not\s*found/i.test(error.message))
+          return {
+            ok: false,
+            error: "Couldn't revoke their login — please try again.",
+          };
+      }
       await prisma.$transaction([
         prisma.user.update({
           where: { id: userId },
