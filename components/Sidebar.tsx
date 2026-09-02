@@ -14,6 +14,7 @@ import {
   Megaphone,
   CalendarDays,
   Store,
+  FileText,
   Users,
   ScrollText,
   Settings,
@@ -66,6 +67,7 @@ const GROUPS: Group[] = [
         icon: Store,
         show: (r) => can(r, "marketplace:moderate"),
       },
+      { href: "/documents", label: "Documents", icon: FileText },
     ],
   },
   {

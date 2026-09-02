@@ -68,6 +68,7 @@ model Organization {
   marketplaceBlocks   MarketplaceBlock[]
   amenities           Amenity[]
   amenityBookings     AmenityBooking[]
+  documents           Document[]
 
   @@map("organizations")
 }
@@ -144,6 +145,7 @@ model User {
   amenityBookings       AmenityBooking[]      @relation("BookingRequester")
   amenityBookingsDecided AmenityBooking[]     @relation("BookingDecidedBy")
   notifications         Notification[]
+  documentsUploaded     Document[]            @relation("DocumentUploader")
 
   @@index([orgId])
   @@map("users")
@@ -630,4 +632,40 @@ model AmenityBooking {
   @@index([orgId, status])
   @@index([requesterId])
   @@map("amenity_bookings")
+}
+
+// ─────────────────────────────────────────────
+// Document library
+// ─────────────────────────────────────────────
+
+enum DocumentCategory {
+  BYLAWS
+  BOARD_MINUTES
+  FINANCIAL_STATEMENT
+  FORM
+  POLICY
+  NEWSLETTER
+  OTHER
+}
+
+model Document {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  title        String
+  description  String?
+  category     DocumentCategory @default(OTHER)
+  storagePath  String   // object key in the private "documents" bucket
+  fileName     String   // original filename, shown to the user
+  mimeType     String
+  sizeBytes    Int
+  staffOnly    Boolean  @default(false) // hidden from the homeowner portal
+  uploadedById String?
+  uploadedBy   User?    @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([orgId, category])
+  @@index([orgId, createdAt])
+  @@map("documents")
 }

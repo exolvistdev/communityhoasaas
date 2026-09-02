@@ -13,6 +13,11 @@ import {
   uploadListingPhotos,
   MARKETPLACE_BUCKET,
 } from "../lib/storage";
+import {
+  ensureDocumentsBucket,
+  uploadDocument,
+  clearOrgDocuments,
+} from "../lib/documents";
 import { createAdminClient } from "../lib/supabase/admin";
 
 const prisma = new PrismaClient();
@@ -169,6 +174,8 @@ async function resetDemoOrg() {
   if (!org) return;
   const orgId = org.id;
   await clearOrgListingPhotos(orgId);
+  await clearOrgDocuments(orgId);
+  await prisma.document.deleteMany({ where: { orgId } });
   await prisma.conversationReport.deleteMany({
     where: { conversation: { orgId } },
   });
@@ -208,6 +215,9 @@ async function main() {
   const auth = await createDemoAuthUsers();
   await ensureMarketplaceBucket().catch((e) =>
     console.log("  (marketplace bucket setup skipped:", e.message, ")")
+  );
+  await ensureDocumentsBucket().catch((e) =>
+    console.log("  (documents bucket setup skipped:", e.message, ")")
   );
 
   // Platform operator — decoupled from any org.
@@ -506,6 +516,70 @@ async function main() {
         publishedAt: null,
       },
     ],
+  });
+
+  // ── Document library ──────────────────────────────────────────────
+  // A minimal valid PDF so the Storage upload/serve path is exercised.
+  const pdfBytes = Buffer.from(
+    "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+CmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1MiAwMDAwMCBuIAowMDAwMDAwMTAxIDAwMDAwIG4gCnRyYWlsZXIKPDwvU2l6ZSA0L1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKMTc4CiUlRU9GCg==",
+    "base64"
+  );
+  const seedDoc = async (meta: {
+    title: string;
+    description: string;
+    category:
+      | "BYLAWS"
+      | "BOARD_MINUTES"
+      | "FINANCIAL_STATEMENT"
+      | "FORM"
+      | "POLICY"
+      | "NEWSLETTER"
+      | "OTHER";
+    staffOnly?: boolean;
+    fileName: string;
+  }) => {
+    try {
+      const up = await uploadDocument(
+        new File([pdfBytes], meta.fileName, { type: "application/pdf" }),
+        { orgId: org.id }
+      );
+      if (!up) return;
+      await prisma.document.create({
+        data: {
+          orgId: org.id,
+          title: meta.title,
+          description: meta.description,
+          category: meta.category,
+          staffOnly: meta.staffOnly ?? false,
+          storagePath: up.storagePath,
+          fileName: up.fileName,
+          mimeType: up.mimeType,
+          sizeBytes: up.sizeBytes,
+          uploadedById: admin.id,
+        },
+      });
+    } catch (e) {
+      console.log("  (seed document skipped:", (e as Error).message, ")");
+    }
+  };
+  await seedDoc({
+    title: "HOA Bylaws (2023 revision)",
+    description: "Governing document adopted at the 2023 general assembly.",
+    category: "BYLAWS",
+    fileName: "hoa-bylaws-2023.pdf",
+  });
+  await seedDoc({
+    title: "Audited financial statements — 2025",
+    description: "Year-end statement of financial position and income & expenses.",
+    category: "FINANCIAL_STATEMENT",
+    fileName: "fs-2025.pdf",
+  });
+  await seedDoc({
+    title: "Board meeting minutes — August 2026",
+    description: "Draft minutes pending board approval.",
+    category: "BOARD_MINUTES",
+    staffOnly: true,
+    fileName: "minutes-2026-08.pdf",
   });
 
   // ── Resident marketplace ──────────────────────────────────────────

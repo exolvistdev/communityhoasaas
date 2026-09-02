@@ -39,6 +39,7 @@ walkthrough of the admin app.
 | Resident marketplace (Phase 2) — listings with photos, buyer-seller message threads, admin moderation | ✅ |
 | Amenity booking (Phase 2) — bookable amenities, time-slot reservations, staff approval, invoiced fees | ✅ |
 | Notifications — in-app center (bell + `/notifications`) and email for billing, announcements, amenities, marketplace, with a per-user preferences panel in `/account` | ✅ |
+| Document library — staff upload bylaws / minutes / financials / forms (`/documents`, private Storage bucket, optional staff-only); homeowners browse & download in the portal | ✅ |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
 portal) and submit the reference; an admin confirms it in **Reconciliation**,
@@ -58,7 +59,7 @@ DATABASE_URL="postgresql://…@…pooler.supabase.com:6543/postgres?pgbouncer=tr
 DIRECT_URL="postgresql://…@…pooler.supabase.com:5432/postgres"                                       # session pooler / direct — prisma migrate
 NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="…"                    # Supabase → Settings → API
-SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth users, marketplace photo uploads
+SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth users, marketplace photos, document library
 RESEND_API_KEY=""                                    # optional — email notifications no-op without it (in-app center still works)
 EMAIL_FROM="HOA SaaS <onboarding@resend.dev>"        # sender for notification emails
 CRON_SECRET=""                                       # optional — gates GET /api/cron/overdue (daily overdue-invoice sweep)
@@ -75,7 +76,7 @@ invites use the service role to pre-confirm accounts).
 ```bash
 npx prisma migrate deploy   # apply migrations (use `prisma migrate dev` when authoring new ones)
 npx prisma generate
-node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace Storage bucket
+node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace (public) + documents (private) Storage buckets
 npm run db:seed             # demo HOA "sample-hoa" (also ensures the bucket)
 npm run dev
 ```
@@ -124,7 +125,7 @@ prisma/
   migrations/          hand-written SQL migrations, applied with `migrate deploy`
   seed.ts
 scripts/
-  init-storage.ts     one-off: create the "marketplace" Storage bucket
+  init-storage.ts     one-off: create the "marketplace" + "documents" Storage buckets
 ```
 
 ## Deployment

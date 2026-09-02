@@ -5,6 +5,7 @@ import {
   Store,
   MessageSquare,
   CalendarDays,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -50,6 +51,7 @@ export default async function PortalHome() {
     unreadMessages,
     amenityCount,
     upcomingBookings,
+    documentCount,
   ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
     prisma.invoice.findMany({
@@ -85,6 +87,9 @@ export default async function PortalHome() {
         status: { in: ["PENDING", "CONFIRMED"] },
         startAt: { gt: now },
       },
+    }),
+    prisma.document.count({
+      where: { orgId: property.orgId, staffOnly: false },
     }),
   ]);
 
@@ -213,6 +218,14 @@ export default async function PortalHome() {
                 ? `${upcomingBookings} upcoming`
                 : "Book the clubhouse & courts"
             }
+          />
+        )}
+        {documentCount > 0 && (
+          <Tile
+            href="/portal/documents"
+            icon={FileText}
+            label="Documents"
+            sub={`${documentCount} file${documentCount === 1 ? "" : "s"}`}
           />
         )}
       </div>

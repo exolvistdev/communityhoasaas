@@ -15,6 +15,7 @@ const PROTECTED = [
   "/settings",
   "/marketplace",
   "/amenities",
+  "/documents",
   "/guard",
   "/portal",
   "/account",
