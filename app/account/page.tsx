@@ -51,14 +51,16 @@ export default async function AccountPage() {
     ])
   );
 
-  const blocked =
-    user.role === "HOMEOWNER"
-      ? await prisma.marketplaceBlock.findMany({
-          where: { blockerId: user.id },
-          include: { blocked: { select: { id: true, fullName: true } } },
-          orderBy: { createdAt: "desc" },
-        })
-      : [];
+  // "Resident" = a HOMEOWNER, or a staff member who also owns a unit here.
+  const isResident = user.role === "HOMEOWNER" || homeownerLinks.length > 0;
+
+  const blocked = isResident
+    ? await prisma.marketplaceBlock.findMany({
+        where: { blockerId: user.id },
+        include: { blocked: { select: { id: true, fullName: true } } },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
 
   return (
     <main className="mx-auto max-w-md space-y-6 px-6 py-8">
@@ -105,7 +107,7 @@ export default async function AccountPage() {
         />
       </section>
 
-      {user.role === "HOMEOWNER" && (
+      {isResident && (
         <section className="space-y-3 rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold text-fg">
             Blocked residents

@@ -239,16 +239,21 @@ export async function inviteHomeowner(
     where: { email: person.email },
   });
   if (existing) {
-    // Same person already has a portal login (they own another unit here) —
-    // just link this record to it, no new invite.
-    if (existing.orgId === org.id && existing.role === "HOMEOWNER") {
+    // Same email already has a login in this HOA — a co-owner, or a staff
+    // member who also lives here. Link this record to it (no new invite, no
+    // role change) rather than erroring.
+    if (existing.orgId === org.id && !existing.deactivatedAt) {
       await prisma.homeowner.update({
         where: { id },
         data: { userId: existing.id },
       });
       await logAudit({
         action: "homeowner.link_existing",
-        target: `${person.fullName} · ${person.property.id}`,
+        target: person.fullName,
+        detail:
+          existing.role === "HOMEOWNER"
+            ? undefined
+            : `also a ${existing.role.toLowerCase().replace("_", " ")}`,
       });
       revalidateProperty(person.property.id);
       return { ok: true, actionLink: null };

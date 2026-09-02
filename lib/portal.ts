@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requirePortalRole } from "@/lib/rbac";
+import { getCurrentOrgContext } from "@/lib/tenant";
 
 /** Cookie holding the propertyId of the unit the resident is currently viewing. */
 export const ACTIVE_UNIT_COOKIE = "hoa_unit";
@@ -30,19 +31,24 @@ export function pickActiveHomeowner(
 }
 
 /**
- * Resolve the signed-in homeowner, all their linked units, and the active one.
+ * Resolve the signed-in resident, all their linked units, and the active one.
  * `homeowner` / `property` are the active unit and are null when the account
  * isn't linked to any unit yet — pages show a "contact your HOA" message.
  * `homeowners` is the full list (used by the unit switcher).
+ *
+ * Portal access = the HOMEOWNER role, OR any user (e.g. a board member) who is
+ * linked to at least one unit. Everyone else is bounced to their own home.
  */
 export async function getHomeownerContext() {
-  const { user, org, impersonating } = await requirePortalRole("HOMEOWNER");
+  const { user, org, impersonating } = await getCurrentOrgContext();
 
   const homeowners = await prisma.homeowner.findMany({
     where: { userId: user.id },
     include: { property: true },
     orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
   });
+
+  if (user.role !== "HOMEOWNER" && homeowners.length === 0) redirect("/");
 
   const preferred = cookies().get(ACTIVE_UNIT_COOKIE)?.value;
   const active = pickActiveHomeowner(homeowners, preferred);

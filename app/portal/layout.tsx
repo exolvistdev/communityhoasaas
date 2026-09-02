@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Home } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
@@ -18,6 +19,11 @@ export default async function PortalLayout({
   const { org, user, property, homeowners, impersonating } =
     await getHomeownerContext();
   const multiUnit = homeowners.length > 1;
+  const isStaffViewing = user.role !== "HOMEOWNER";
+  const back =
+    user.role === "GUARD"
+      ? { href: "/guard", label: "Back to gate" }
+      : { href: "/dashboard", label: "Back to admin" };
 
   const unread = await prisma.marketMessage.count({
     where: {
@@ -32,6 +38,20 @@ export default async function PortalLayout({
     <div className="min-h-screen bg-bg">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
+      )}
+      {isStaffViewing && !impersonating && (
+        <div className="flex items-center justify-between gap-3 bg-surface-2 px-4 py-1.5 text-xs text-fg-muted">
+          <span className="flex items-center gap-1.5">
+            <Home className="h-3.5 w-3.5" />
+            Resident view
+          </span>
+          <Link
+            href={back.href}
+            className="font-medium text-fg hover:underline"
+          >
+            ← {back.label}
+          </Link>
+        </div>
       )}
       <header className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">

@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/rbac";
 import { Sidebar } from "@/components/Sidebar";
 import { UserMenu } from "@/components/UserMenu";
@@ -11,7 +12,10 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const { org, user, impersonating } = await requireStaff();
-  const notifications = await getNotificationSummary(user.id);
+  const [notifications, homeownerLinks] = await Promise.all([
+    getNotificationSummary(user.id),
+    prisma.homeowner.count({ where: { userId: user.id } }),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -26,7 +30,11 @@ export default async function AdminLayout({
               unread={notifications.unread}
               recent={notifications.recent}
             />
-            <UserMenu name={user.fullName} role={user.role} />
+            <UserMenu
+              name={user.fullName}
+              role={user.role}
+              residentHref={homeownerLinks > 0 ? "/portal" : undefined}
+            />
           </header>
           <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6 lg:p-8">
             {children}

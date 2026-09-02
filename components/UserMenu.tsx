@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, LogOut, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, UserRound, Home } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -19,10 +19,13 @@ export function UserMenu({
   name,
   role,
   accountHref = "/account",
+  residentHref,
 }: {
   name: string;
   role: string;
   accountHref?: string;
+  /** Set when this staff member also owns a unit — links to the resident portal. */
+  residentHref?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -62,6 +65,15 @@ export function UserMenu({
             <ThemeToggle />
           </div>
           <div className="my-1 h-px bg-border" />
+          {residentHref && (
+            <Link
+              href={residentHref}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-fg-muted hover:bg-surface-2 hover:text-fg"
+            >
+              <Home className="h-4 w-4" /> Resident view
+            </Link>
+          )}
           <Link
             href={accountHref}
             onClick={() => setOpen(false)}

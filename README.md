@@ -34,7 +34,7 @@ walkthrough of the admin app.
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Password recovery (self-service + admin reset-link fallback), `/account` self-service profile/password/contact | ✅ |
 | Gate activity log + admin audit trail (`/gate-passes?view=activity`, `/audit`) | ✅ |
-| Homeowner portal (§4.4) — balance + breakdown, payment history w/ pending/rejected status, Pay Now, own statement, gate-pass request (QR), announcements; one login can own several units (unit switcher) | ✅ |
+| Homeowner portal (§4.4) — balance + breakdown, payment history w/ pending/rejected status, Pay Now, own statement, gate-pass request (QR), announcements; one login can own several units (unit switcher); a staff member who also owns a unit gets a "Resident view" | ✅ |
 | Guard portal (§4.5) — QR camera scan or manual code, valid/expired/revoked/used verdict + scan log | ✅ |
 | Visitor pass page `/pass/<code>` — public QR + validity for the visitor to show at the gate | ✅ |
 | Platform operator console `/platform` — cross-tenant org directory + full user impersonation for support | ✅ |
@@ -91,9 +91,9 @@ All use password `demo-password-123`:
 | --- | --- |
 | Admin | `admin@sample-hoa.ph` |
 | Treasurer | `treasurer@sample-hoa.ph` |
-| Board member | `board@sample-hoa.ph` |
+| Board member | `board@sample-hoa.ph` (also owns Blk 2 Lot 5 — "Resident view") |
 | Guard | `guard@sample-hoa.ph` |
-| Homeowner | `juan@example.com` |
+| Homeowner | `juan@example.com` (owns two units — Blk 1 Lot 1 and Blk 1 Lot 3) |
 | Homeowner | `ana@example.com` |
 | Platform operator | `superadmin@hoasaas.ph` (sign in at `/platform/login`) |
 

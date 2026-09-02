@@ -145,6 +145,8 @@ const PROPERTIES: {
     rate: 1650,
     people: [
       { fullName: "Grace Tan", role: "OWNER" },
+      // Elena is on the board AND owns this unit — the dual-role case.
+      { fullName: "Elena Villanueva", role: "CO_OWNER" },
       { fullName: "Peter Uy", role: "RENTER", isPrimary: true },
     ],
   },
@@ -426,6 +428,21 @@ async function main() {
   await prisma.homeowner.update({
     where: { id: juanLot3.id },
     data: { userId: homeownerUsers.get("juan@example.com")!.id },
+  });
+
+  // Elena (a board member) also owns Blk 2 Lot 5 — staff + resident dual role.
+  const elenaUser = await prisma.user.findFirstOrThrow({
+    where: { orgId: org.id, email: "board@sample-hoa.ph" },
+  });
+  const elenaRow = await prisma.homeowner.findFirstOrThrow({
+    where: {
+      property: { orgId: org.id, unitNumber: "Blk 2 Lot 5" },
+      fullName: "Elena Villanueva",
+    },
+  });
+  await prisma.homeowner.update({
+    where: { id: elenaRow.id },
+    data: { userId: elenaUser.id },
   });
 
   // Pending payments submitted from the portal, awaiting reconciliation.
