@@ -18,6 +18,7 @@ import {
   FileText,
   Users,
   ScrollText,
+  ShieldQuestion,
   Settings,
   Menu,
   X,
@@ -85,6 +86,12 @@ const GROUPS: Group[] = [
         href: "/audit",
         label: "Audit log",
         icon: ScrollText,
+        show: (r) => r === "ADMIN",
+      },
+      {
+        href: "/data-requests",
+        label: "Privacy requests",
+        icon: ShieldQuestion,
         show: (r) => r === "ADMIN",
       },
       {

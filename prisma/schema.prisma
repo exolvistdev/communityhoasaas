@@ -59,6 +59,7 @@ model Organization {
   lateFeeAmount         Decimal     @default(0) @db.Decimal(12, 2)
   lateFeeGraceDays      Int         @default(0)
   lateFeeMaxOccurrences Int         @default(1) // cap of late-fee charges per overdue invoice
+  privacyContactEmail   String?     // DPO / data-privacy contact shown to residents
   createdAt     DateTime @default(now())
 
   users        User[]
@@ -76,6 +77,7 @@ model Organization {
   amenityBookings     AmenityBooking[]
   documents           Document[]
   ownershipTransfers  OwnershipTransfer[]
+  dataRequests        DataRequest[]
 
   @@map("organizations")
 }
@@ -155,6 +157,8 @@ model User {
   documentsUploaded     Document[]            @relation("DocumentUploader")
   journalEntriesCreated JournalEntry[]        @relation("JournalEntryCreator")
   ownershipTransfersHandled OwnershipTransfer[] @relation("TransferHandledBy")
+  dataRequests          DataRequest[]
+  dataRequestsHandled   DataRequest[]         @relation("DataRequestHandledBy")
 
   @@index([orgId])
   @@map("users")
@@ -727,4 +731,40 @@ model Document {
   @@index([orgId, category])
   @@index([orgId, createdAt])
   @@map("documents")
+}
+
+// ─────────────────────────────────────────────
+// Data-privacy requests (RA 10173)
+// ─────────────────────────────────────────────
+
+enum DataRequestType {
+  EXPORT
+  DELETION
+}
+
+enum DataRequestStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+model DataRequest {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         DataRequestType
+  status       DataRequestStatus @default(PENDING)
+  reason       String?
+  handledById  String?
+  handledBy    User?    @relation("DataRequestHandledBy", fields: [handledById], references: [id])
+  handledAt    DateTime?
+  decisionNote String?
+  createdAt    DateTime @default(now())
+
+  @@index([orgId, status])
+  @@index([userId])
+  @@map("data_requests")
 }

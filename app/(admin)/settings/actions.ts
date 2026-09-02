@@ -36,6 +36,12 @@ const orgSchema = z.object({
     .int("Enter a whole number")
     .min(1, "Day must be 1–28")
     .max(28, "Use 1–28 so every month has that day"),
+  privacyContactEmail: z
+    .string()
+    .trim()
+    .email("Invalid email")
+    .optional()
+    .or(z.literal("")),
 });
 
 export async function updateOrgSettings(input: unknown): Promise<Result> {
@@ -49,7 +55,11 @@ export async function updateOrgSettings(input: unknown): Promise<Result> {
   const { org } = await getCurrentOrgContext();
   await prisma.organization.update({
     where: { id: org.id },
-    data: parsed.data,
+    data: {
+      name: parsed.data.name,
+      billingDueDay: parsed.data.billingDueDay,
+      privacyContactEmail: parsed.data.privacyContactEmail || null,
+    },
   });
 
   revalidateAll();

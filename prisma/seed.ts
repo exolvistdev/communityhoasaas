@@ -213,6 +213,7 @@ async function resetDemoOrg() {
   await prisma.ratePlan.deleteMany({ where: { orgId } });
   await prisma.account.deleteMany({ where: { orgId } });
   await prisma.notification.deleteMany({ where: { user: { orgId } } });
+  await prisma.dataRequest.deleteMany({ where: { orgId } });
   await prisma.impersonationEvent.deleteMany({
     where: { targetUser: { orgId } },
   });
@@ -258,6 +259,7 @@ async function main() {
       lateFeeAmount: 200,
       lateFeeGraceDays: 3,
       lateFeeMaxOccurrences: 2,
+      privacyContactEmail: "privacy@sample-hoa.ph",
     },
   });
 
@@ -1003,6 +1005,16 @@ async function main() {
       { code: "1000", debit: 850, credit: 0 },
       { code: "4200", debit: 0, credit: 850 },
     ],
+  });
+
+  // ── Data-privacy request (RA 10173) ──────────────────────────────
+  await prisma.dataRequest.create({
+    data: {
+      orgId: org.id,
+      userId: anaUser.id,
+      type: "DELETION",
+      reason: "We're selling the unit and moving out of the country.",
+    },
   });
 
   // ── Notifications ─────────────────────────────────────────────────

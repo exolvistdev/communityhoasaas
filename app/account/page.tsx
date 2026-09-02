@@ -5,6 +5,7 @@ import { ProfileForm } from "./ProfileForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ContactForm } from "./ContactForm";
 import { NotificationPreferences } from "./NotificationPreferences";
+import { PrivacySection } from "./PrivacySection";
 import { BlockedResidents } from "./BlockedResidents";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { CATEGORIES, defaultPrefs } from "@/lib/notifications";
@@ -53,6 +54,11 @@ export default async function AccountPage() {
 
   // "Resident" = a HOMEOWNER, or a staff member who also owns a unit here.
   const isResident = user.role === "HOMEOWNER" || homeownerLinks.length > 0;
+
+  const pendingDeletion = await prisma.dataRequest.findFirst({
+    where: { userId: user.id, type: "DELETION", status: "PENDING" },
+    select: { id: true, createdAt: true },
+  });
 
   const blocked = isResident
     ? await prisma.marketplaceBlock.findMany({
@@ -104,6 +110,21 @@ export default async function AccountPage() {
           categories={CATEGORIES.map((c) => ({ ...c }))}
           emailNotifications={user.emailNotifications}
           prefs={prefs}
+        />
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-border bg-surface p-4">
+        <h2 className="text-sm font-semibold text-fg">Privacy &amp; your data</h2>
+        <PrivacySection
+          privacyContactEmail={org.privacyContactEmail}
+          pendingDeletion={
+            pendingDeletion
+              ? {
+                  id: pendingDeletion.id,
+                  createdAt: pendingDeletion.createdAt.toISOString(),
+                }
+              : null
+          }
         />
       </section>
 

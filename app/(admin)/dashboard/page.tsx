@@ -25,6 +25,7 @@ export default async function DashboardPage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const canModerate = can(user.role, "marketplace:moderate");
   const canAmenities = can(user.role, "amenity:manage");
+  const isAdmin = user.role === "ADMIN";
 
   const [
     propertyCount,
@@ -34,6 +35,7 @@ export default async function DashboardPage() {
     properties,
     marketReports,
     pendingBookings,
+    pendingPrivacy,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
     prisma.payment.aggregate({
@@ -82,6 +84,11 @@ export default async function DashboardPage() {
           where: { orgId: org.id, status: "PENDING", startAt: { gt: now } },
         })
       : Promise.resolve(0),
+    isAdmin
+      ? prisma.dataRequest.count({
+          where: { orgId: org.id, status: "PENDING" },
+        })
+      : Promise.resolve(0),
   ]);
 
   const collected = Number(collectedAgg._sum.amount ?? 0);
@@ -116,6 +123,14 @@ export default async function DashboardPage() {
           text: `${pendingBookings} amenity booking request${
             pendingBookings === 1 ? "" : "s"
           } waiting`,
+        }
+      : null,
+    isAdmin && pendingPrivacy > 0
+      ? {
+          href: "/data-requests",
+          text: `${pendingPrivacy} privacy request${
+            pendingPrivacy === 1 ? "" : "s"
+          } to review`,
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];

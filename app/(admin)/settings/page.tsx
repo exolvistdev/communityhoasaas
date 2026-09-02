@@ -39,7 +39,11 @@ export default async function SettingsPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-fg">Organization</h2>
         <OrgSettingsForm
-          org={{ name: org.name, billingDueDay: org.billingDueDay }}
+          org={{
+            name: org.name,
+            billingDueDay: org.billingDueDay,
+            privacyContactEmail: org.privacyContactEmail,
+          }}
         />
         <dl className="divide-y divide-border rounded-lg border border-border bg-surface text-sm">
           <Row label="Subdomain" value={`${org.subdomain}.hoasaas.ph`} />

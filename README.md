@@ -42,6 +42,7 @@ walkthrough of the admin app.
 | Amenity booking (Phase 2) — bookable amenities, time-slot reservations, staff approval, invoiced fees | ✅ |
 | Notifications — in-app center (bell + `/notifications`) and email for billing, announcements, amenities, marketplace, with a per-user preferences panel in `/account` | ✅ |
 | Document library — staff upload bylaws / minutes / financials / forms (`/documents`, private Storage bucket, optional staff-only); homeowners browse & download in the portal | ✅ |
+| Data privacy (RA 10173) — self-service data export (`/account/export`), account-deletion request queue for admins (`/data-requests`), public `/privacy` policy | ✅ |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
 portal) and submit the reference; an admin confirms it in **Reconciliation**,

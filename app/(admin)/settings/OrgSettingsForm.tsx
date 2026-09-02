@@ -7,7 +7,11 @@ import { updateOrgSettings } from "./actions";
 export function OrgSettingsForm({
   org,
 }: {
-  org: { name: string; billingDueDay: number };
+  org: {
+    name: string;
+    billingDueDay: number;
+    privacyContactEmail: string | null;
+  };
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -23,6 +27,7 @@ export function OrgSettingsForm({
       const res = await updateOrgSettings({
         name: fd.get("name"),
         billingDueDay: fd.get("billingDueDay"),
+        privacyContactEmail: fd.get("privacyContactEmail"),
       });
       if (res.ok) {
         setSaved(true);
@@ -64,6 +69,21 @@ export function OrgSettingsForm({
         The due day applies to invoices generated from now on; existing invoices
         keep their due date.
       </p>
+
+      <label className="block text-sm">
+        <span className="text-fg">Data-privacy contact email</span>
+        <input
+          name="privacyContactEmail"
+          type="email"
+          defaultValue={org.privacyContactEmail ?? ""}
+          placeholder="dpo@yourhoa.ph"
+          className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+        />
+        <span className="mt-1 block text-xs text-fg-subtle">
+          Shown to residents on their account page for data-privacy questions
+          (RA 10173).
+        </span>
+      </label>
 
       {error && <p className="text-sm text-danger-fg">{error}</p>}
 

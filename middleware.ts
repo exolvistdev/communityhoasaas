@@ -13,6 +13,7 @@ const PROTECTED = [
   "/announcements",
   "/team",
   "/audit",
+  "/data-requests",
   "/settings",
   "/marketplace",
   "/amenities",

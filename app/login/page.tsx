@@ -16,6 +16,10 @@ export default function LoginPage() {
           <Link href="/onboarding" className="text-brand-accent hover:underline">
             Set one up
           </Link>
+          <span className="mx-1.5 text-fg-subtle">·</span>
+          <Link href="/privacy" className="text-brand-accent hover:underline">
+            Privacy
+          </Link>
         </>
       }
     >

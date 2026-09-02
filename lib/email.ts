@@ -64,6 +64,7 @@ export function emailShell(opts: {
   <p style="font-size:12px;color:#9ca3af;margin-top:24px">
     You can turn these emails off in your
     <a href="${emailOrigin()}/account" style="color:#9ca3af">account settings</a>.
+    &middot; <a href="${emailOrigin()}/privacy" style="color:#9ca3af">Privacy policy</a>
   </p>
 </div>`;
 }
