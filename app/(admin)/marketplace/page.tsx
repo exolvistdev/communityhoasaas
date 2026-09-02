@@ -63,14 +63,14 @@ export default async function AdminMarketplacePage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Marketplace</h1>
+        <h1 className="text-lg font-semibold text-fg">Marketplace</h1>
         <Link
           href="/marketplace/conversations"
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-fg hover:bg-surface-2"
         >
           Reported conversations
           {openConvoReports > 0 && (
-            <span className="ml-1.5 rounded-full bg-red-100 px-1.5 text-xs font-medium text-red-800">
+            <span className="ml-1.5 rounded-full bg-danger-subtle px-1.5 text-xs font-medium text-danger-fg">
               {openConvoReports}
             </span>
           )}
@@ -90,13 +90,13 @@ export default async function AdminMarketplacePage({
       </div>
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           Nothing here.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Listing</th>
                 <th className="px-4 py-2.5 font-medium">Seller</th>
@@ -110,22 +110,22 @@ export default async function AdminMarketplacePage({
               {rows.map((l) => {
                 const badge = LISTING_STATUS_BADGE[l.status];
                 return (
-                  <tr key={l.id} className="border-t border-gray-100">
+                  <tr key={l.id} className="border-t border-border">
                     <td className="px-4 py-2.5">
                       <Link
                         href={`/marketplace/${l.id}`}
-                        className="font-medium text-gray-900 hover:underline"
+                        className="font-medium text-fg hover:underline"
                       >
                         {l.title}
                       </Link>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-fg-subtle">
                         {CATEGORY_LABEL[l.category]}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-gray-600">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {l.seller.fullName}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-600">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {priceLabel(Number(l.price))}
                     </td>
                     <td className="px-4 py-2.5">
@@ -137,14 +137,14 @@ export default async function AdminMarketplacePage({
                     </td>
                     <td className="px-4 py-2.5">
                       {l._count.reports > 0 ? (
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                        <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger-fg">
                           {l._count.reports}
                         </span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-fg-subtle">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {fmt(l.createdAt)}
                     </td>
                   </tr>
@@ -172,8 +172,8 @@ function Pill({
       href={href}
       className={`rounded-full px-3 py-1 text-sm ${
         active
-          ? "bg-gray-900 text-white"
-          : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+          ? "bg-brand text-white"
+          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
       }`}
     >
       {children}

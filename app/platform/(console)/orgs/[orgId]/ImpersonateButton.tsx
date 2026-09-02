@@ -25,11 +25,11 @@ export function ImpersonateButton({
           });
         }}
         disabled={pending}
-        className="rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+        className="rounded-md border border-border bg-surface-2 px-2.5 py-1 text-xs text-fg hover:brightness-125 disabled:opacity-50"
       >
         {pending ? "…" : "Impersonate"}
       </button>
-      {error && <span className="text-xs text-red-400">{error}</span>}
+      {error && <span className="text-xs text-danger-fg">{error}</span>}
     </div>
   );
 }

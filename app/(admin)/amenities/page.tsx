@@ -50,14 +50,14 @@ export default async function AmenitiesPage() {
   return (
     <div className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Amenities</h1>
+        <h1 className="text-lg font-semibold text-fg">Amenities</h1>
         <Link
           href="/amenities/bookings"
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-fg hover:bg-surface-2"
         >
           Booking requests
           {pendingCount > 0 && (
-            <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-800">
+            <span className="ml-1.5 rounded-full bg-warning-subtle px-1.5 text-xs font-medium text-warning-fg">
               {pendingCount}
             </span>
           )}
@@ -65,7 +65,7 @@ export default async function AmenitiesPage() {
       </div>
 
       {rows.length === 0 && (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-fg-muted">
           No amenities yet. Add the clubhouse, courts, function hall…
         </p>
       )}

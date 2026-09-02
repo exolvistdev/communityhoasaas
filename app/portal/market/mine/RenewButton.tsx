@@ -21,11 +21,11 @@ export function RenewButton({ id }: { id: string }) {
           });
         }}
         disabled={pending}
-        className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        className="rounded-md border border-border px-2 py-1 text-xs font-medium text-fg hover:bg-surface-2 disabled:opacity-50"
       >
         {pending ? "…" : "Renew"}
       </button>
-      {error && <span className="ml-1 text-xs text-red-600">{error}</span>}
+      {error && <span className="ml-1 text-xs text-danger-fg">{error}</span>}
     </span>
   );
 }

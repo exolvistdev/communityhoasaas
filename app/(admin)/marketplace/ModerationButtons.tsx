@@ -27,7 +27,7 @@ export function RemoveListingButton({ id }: { id: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+        className="rounded-md border border-danger/30 px-3 py-1.5 text-sm font-medium text-danger-fg hover:bg-danger-subtle"
       >
         Take down
       </button>
@@ -40,18 +40,18 @@ export function RemoveListingButton({ id }: { id: string }) {
         const reason = new FormData(e.currentTarget).get("reason");
         run(() => removeListing(id, reason));
       }}
-      className="space-y-2 rounded-md border border-gray-200 bg-white p-3"
+      className="space-y-2 rounded-md border border-border bg-surface p-3"
     >
-      <label className="block text-sm text-gray-700">
+      <label className="block text-sm text-fg">
         Reason (the seller sees this)
         <input
           name="reason"
           required
           maxLength={500}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-3 py-1.5 text-sm outline-none focus:border-brand"
         />
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
       <div className="flex gap-2">
         <button
           disabled={pending}
@@ -62,7 +62,7 @@ export function RemoveListingButton({ id }: { id: string }) {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+          className="rounded-md px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2"
         >
           Cancel
         </button>
@@ -78,11 +78,11 @@ export function RestoreListingButton({ id }: { id: string }) {
       <button
         onClick={() => run(() => restoreListing(id))}
         disabled={pending}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-fg hover:bg-surface-2 disabled:opacity-50"
       >
         {pending ? "…" : "Restore"}
       </button>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-danger-fg">{error}</p>}
     </span>
   );
 }
@@ -94,11 +94,11 @@ export function DismissReportsButton({ id }: { id: string }) {
       <button
         onClick={() => run(() => dismissReports(id))}
         disabled={pending}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-fg hover:bg-surface-2 disabled:opacity-50"
       >
         {pending ? "…" : "Dismiss reports"}
       </button>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-danger-fg">{error}</p>}
     </span>
   );
 }

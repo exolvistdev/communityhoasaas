@@ -10,7 +10,10 @@ walkthrough of the admin app.
 - **Next.js 14** (App Router, Server Components, Server Actions)
 - **Prisma** + **PostgreSQL** (hosted on Supabase)
 - **Supabase Auth** for sign-in / invites
-- **Tailwind CSS**
+- **Tailwind CSS** with a semantic token layer (`app/globals.css`) — light + dark
+  (`next-themes`), Inter (`next/font`), `lucide-react` icons, and a small
+  primitive set in `components/ui/` (Button, Card, Field, Badge, Table,
+  EmptyState, Toast)
 
 ## What's built
 

@@ -36,20 +36,20 @@ export function ConversationModeration({
   const [closing, setClosing] = useState(false);
 
   return (
-    <div className="space-y-2 border-t border-gray-200 pt-4">
+    <div className="space-y-2 border-t border-border pt-4">
       <div className="flex flex-wrap gap-2">
         {closed ? (
           <button
             onClick={() => run(() => reopenConversation(id))}
             disabled={pending}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-fg hover:bg-surface-2 disabled:opacity-50"
           >
             Reopen conversation
           </button>
         ) : (
           <button
             onClick={() => setClosing((v) => !v)}
-            className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            className="rounded-md border border-danger/30 px-3 py-1.5 text-sm font-medium text-danger-fg hover:bg-danger-subtle"
           >
             Close conversation
           </button>
@@ -58,7 +58,7 @@ export function ConversationModeration({
           <button
             onClick={() => run(() => resolveConversationReports(id))}
             disabled={pending}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-fg hover:bg-surface-2 disabled:opacity-50"
           >
             Dismiss reports
           </button>
@@ -72,15 +72,15 @@ export function ConversationModeration({
             const reason = new FormData(e.currentTarget).get("reason");
             run(() => closeConversation(id, reason));
           }}
-          className="space-y-2 rounded-md border border-gray-200 bg-white p-3"
+          className="space-y-2 rounded-md border border-border bg-surface p-3"
         >
-          <label className="block text-sm text-gray-700">
+          <label className="block text-sm text-fg">
             Reason (both participants see this)
             <input
               name="reason"
               required
               maxLength={500}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-gray-900"
+              className="mt-1 w-full rounded-md border border-border px-3 py-1.5 text-sm outline-none focus:border-brand"
             />
           </label>
           <button
@@ -92,7 +92,7 @@ export function ConversationModeration({
         </form>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
     </div>
   );
 }

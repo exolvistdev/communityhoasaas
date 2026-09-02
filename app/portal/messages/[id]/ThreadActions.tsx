@@ -39,7 +39,7 @@ export function ThreadActions({
           <button
             onClick={() => run(() => unblockUser(otherUserId))}
             disabled={pending}
-            className="text-gray-500 underline hover:text-gray-900"
+            className="text-fg-muted underline hover:text-fg"
           >
             Unblock {otherName.split(" ")[0]}
           </button>
@@ -51,7 +51,7 @@ export function ThreadActions({
               run(() => blockUser(otherUserId));
             }}
             disabled={pending}
-            className="text-gray-500 underline hover:text-gray-900"
+            className="text-fg-muted underline hover:text-fg"
           >
             Block {otherName.split(" ")[0]}
           </button>
@@ -59,12 +59,12 @@ export function ThreadActions({
         {!reported && !reporting && (
           <button
             onClick={() => setReporting(true)}
-            className="text-gray-500 underline hover:text-gray-900"
+            className="text-fg-muted underline hover:text-fg"
           >
             Report conversation
           </button>
         )}
-        {reported && <span className="text-gray-400">Reported to moderators</span>}
+        {reported && <span className="text-fg-subtle">Reported to moderators</span>}
       </div>
 
       {reporting && (
@@ -82,7 +82,7 @@ export function ThreadActions({
               } else setError(res.error);
             });
           }}
-          className="space-y-2 rounded-md border border-gray-200 bg-white p-2.5"
+          className="space-y-2 rounded-md border border-border bg-surface p-2.5"
         >
           <textarea
             name="reason"
@@ -90,19 +90,19 @@ export function ThreadActions({
             rows={3}
             maxLength={500}
             placeholder="What's wrong with this conversation?"
-            className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-gray-900"
+            className="w-full rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-brand"
           />
           <div className="flex gap-2">
             <button
               disabled={pending}
-              className="rounded-md bg-gray-900 px-2.5 py-1 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="rounded-md bg-brand px-2.5 py-1 font-medium text-white hover:brightness-110 disabled:opacity-50"
             >
               Submit
             </button>
             <button
               type="button"
               onClick={() => setReporting(false)}
-              className="rounded-md px-2.5 py-1 text-gray-600 hover:bg-gray-100"
+              className="rounded-md px-2.5 py-1 text-fg-muted hover:bg-surface-2"
             >
               Cancel
             </button>
@@ -110,7 +110,7 @@ export function ThreadActions({
         </form>
       )}
 
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-danger-fg">{error}</p>}
     </div>
   );
 }

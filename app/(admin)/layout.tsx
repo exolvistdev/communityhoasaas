@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { requireStaff } from "@/lib/rbac";
 import { Sidebar } from "@/components/Sidebar";
+import { UserMenu } from "@/components/UserMenu";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
 export default async function AdminLayout({
@@ -17,13 +17,13 @@ export default async function AdminLayout({
       )}
       <div className="flex flex-1">
         <Sidebar orgName={org.name} role={user.role} />
-        <div className="flex flex-1 flex-col">
-          <header className="flex h-14 items-center justify-end border-b border-gray-200 bg-white px-6 text-sm text-gray-500">
-            <Link href="/account" className="hover:text-gray-900">
-              {user.fullName} · {user.role.toLowerCase().replace("_", " ")}
-            </Link>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-20 hidden h-14 items-center justify-end border-b border-border bg-surface/80 px-6 backdrop-blur lg:flex">
+            <UserMenu name={user.fullName} role={user.role} />
           </header>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
         </div>
       </div>
     </div>

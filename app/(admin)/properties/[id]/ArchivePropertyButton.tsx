@@ -36,7 +36,7 @@ export function ArchivePropertyButton({
     <button
       onClick={toggle}
       disabled={pending}
-      className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+      className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-50"
     >
       {pending
         ? "…"

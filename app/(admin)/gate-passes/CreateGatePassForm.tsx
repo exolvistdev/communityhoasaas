@@ -58,12 +58,12 @@ export function CreateGatePassForm({
             setOpen(true);
             setCreatedCode(null);
           }}
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
         >
           Create gate pass
         </button>
         {createdCode && (
-          <span className="text-sm text-green-700">
+          <span className="text-sm text-success-fg">
             Pass created — code{" "}
             <span className="font-mono font-semibold">{createdCode}</span>
           </span>
@@ -75,17 +75,17 @@ export function CreateGatePassForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="w-full space-y-3 rounded-lg border border-gray-200 bg-white p-4"
+      className="w-full space-y-3 rounded-lg border border-border bg-surface p-4"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         {!fixedPropertyId && (
           <label className="text-sm">
-            <span className="text-gray-700">Property</span>
+            <span className="text-fg">Property</span>
             <select
               name="propertyId"
               required
               defaultValue=""
-              className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+              className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             >
               <option value="" disabled>
                 Select…
@@ -99,42 +99,42 @@ export function CreateGatePassForm({
           </label>
         )}
         <label className="text-sm">
-          <span className="text-gray-700">Visitor name</span>
+          <span className="text-fg">Visitor name</span>
           <input
             name="visitorName"
             required
-            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           />
         </label>
         <label className="text-sm">
-          <span className="text-gray-700">Valid from</span>
+          <span className="text-fg">Valid from</span>
           <input
             name="validFrom"
             type="datetime-local"
             required
             defaultValue={toLocalInput(now)}
-            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           />
         </label>
         <label className="text-sm">
-          <span className="text-gray-700">Valid until</span>
+          <span className="text-fg">Valid until</span>
           <input
             name="validUntil"
             type="datetime-local"
             required
             defaultValue={toLocalInput(tomorrow)}
-            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           />
         </label>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Creating…" : "Create pass"}
         </button>
@@ -144,7 +144,7 @@ export function CreateGatePassForm({
             setOpen(false);
             setError(null);
           }}
-          className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+          className="rounded-md px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2"
         >
           Cancel
         </button>

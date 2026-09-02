@@ -79,16 +79,16 @@ export default async function ConversationPage({
 
       <Link
         href="/portal/messages"
-        className="text-sm text-gray-500 hover:text-gray-900"
+        className="text-sm text-fg-muted hover:text-fg"
       >
         ← Messages
       </Link>
 
       <Link
         href={`/portal/market/${convo.listing.id}`}
-        className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-2.5 hover:border-gray-300"
+        className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2.5 hover:border-border"
       >
-        <div className="h-11 w-11 shrink-0 rounded-md bg-gray-100">
+        <div className="h-11 w-11 shrink-0 rounded-md bg-surface-2">
           {convo.listing.photos[0] && (
             <img
               src={publicPhotoUrl(convo.listing.photos[0])}
@@ -98,10 +98,10 @@ export default async function ConversationPage({
           )}
         </div>
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-gray-900">
+          <div className="truncate text-sm font-medium text-fg">
             {convo.listing.title}
           </div>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-fg-subtle">
             {priceLabel(Number(convo.listing.price))} · with {other.fullName}
             {unit ? ` · ${unit}` : ""}
           </div>
@@ -127,14 +127,14 @@ export default async function ConversationPage({
               <div
                 className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                   mine
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-800 ring-1 ring-gray-200"
+                    ? "bg-brand text-white"
+                    : "bg-surface text-fg ring-1 ring-border"
                 }`}
               >
                 <div className="whitespace-pre-wrap">{m.body}</div>
                 <div
                   className={`mt-0.5 text-[10px] ${
-                    mine ? "text-gray-300" : "text-gray-400"
+                    mine ? "text-fg-subtle" : "text-fg-subtle"
                   }`}
                 >
                   {time(m.createdAt)}
@@ -146,12 +146,12 @@ export default async function ConversationPage({
       </div>
 
       {convo.closedAt ? (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+        <p className="rounded-lg bg-warning-subtle px-3 py-2 text-center text-xs text-warning-fg">
           A moderator closed this conversation.
           {convo.closedReason ? ` ${convo.closedReason}` : ""}
         </p>
       ) : blocked ? (
-        <p className="rounded-lg bg-gray-100 px-3 py-2 text-center text-xs text-gray-600">
+        <p className="rounded-lg bg-surface-2 px-3 py-2 text-center text-xs text-fg-muted">
           {myBlock
             ? "You blocked this person. Unblock them above to message again."
             : "This person isn't accepting messages from you."}

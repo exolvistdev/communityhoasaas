@@ -19,7 +19,7 @@ export function RevokeGatePassButton({ id }: { id: string }) {
         });
       }}
       disabled={pending}
-      className="text-xs text-red-500 underline hover:text-red-700 disabled:opacity-50"
+      className="text-xs text-danger-fg underline hover:text-danger-fg disabled:opacity-50"
     >
       {pending ? "Revoking…" : "Revoke"}
     </button>

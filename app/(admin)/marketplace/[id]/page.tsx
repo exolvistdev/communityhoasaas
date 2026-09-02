@@ -58,15 +58,15 @@ export default async function AdminListingPage({
     <div className="max-w-2xl space-y-5">
       <Link
         href="/marketplace"
-        className="text-sm text-gray-500 hover:text-gray-900"
+        className="text-sm text-fg-muted hover:text-fg"
       >
         ← Marketplace
       </Link>
 
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">{listing.title}</h1>
-          <div className="mt-0.5 text-sm text-gray-500">
+          <h1 className="text-lg font-semibold text-fg">{listing.title}</h1>
+          <div className="mt-0.5 text-sm text-fg-muted">
             {priceLabel(Number(listing.price))} ·{" "}
             {CATEGORY_LABEL[listing.category]} · posted {fmt(listing.createdAt)}
           </div>
@@ -91,50 +91,50 @@ export default async function AdminListingPage({
         </div>
       )}
 
-      <p className="whitespace-pre-wrap text-sm text-gray-700">
+      <p className="whitespace-pre-wrap text-sm text-fg">
         {listing.description}
       </p>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-3 text-sm">
-        <div className="text-gray-500">Seller</div>
-        <div className="text-gray-900">
+      <div className="rounded-lg border border-border bg-surface p-3 text-sm">
+        <div className="text-fg-muted">Seller</div>
+        <div className="text-fg">
           {listing.seller.fullName}
           {listing.seller.homeowner?.property
             ? ` · ${listing.seller.homeowner.property.unitNumber}`
             : ""}
         </div>
-        <div className="text-xs text-gray-400">{listing.seller.email}</div>
-        <div className="mt-1 text-xs text-gray-400">
+        <div className="text-xs text-fg-subtle">{listing.seller.email}</div>
+        <div className="mt-1 text-xs text-fg-subtle">
           {listing._count.conversations} buyer conversation
           {listing._count.conversations === 1 ? "" : "s"}
         </div>
       </div>
 
       {listing.status === "REMOVED" && listing.removedReason && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger-fg">
           Removed: {listing.removedReason}
         </p>
       )}
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-900">
+        <h2 className="mb-2 text-sm font-semibold text-fg">
           Reports ({openReports.length} open)
         </h2>
         {listing.reports.length === 0 ? (
-          <p className="text-sm text-gray-400">No reports.</p>
+          <p className="text-sm text-fg-subtle">No reports.</p>
         ) : (
-          <ul className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
             {listing.reports.map((r) => (
               <li key={r.id} className="px-3 py-2.5 text-sm">
                 <div className="flex justify-between gap-3">
-                  <span className="text-gray-800">{r.reason}</span>
+                  <span className="text-fg">{r.reason}</span>
                   {r.resolvedAt && (
-                    <span className="shrink-0 text-xs text-gray-400">
+                    <span className="shrink-0 text-xs text-fg-subtle">
                       resolved
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 text-xs text-gray-400">
+                <div className="mt-0.5 text-xs text-fg-subtle">
                   {r.reporter.fullName} · {fmt(r.createdAt)}
                 </div>
               </li>
@@ -143,7 +143,7 @@ export default async function AdminListingPage({
         )}
       </div>
 
-      <div className="flex flex-wrap items-start gap-2 border-t border-gray-200 pt-4">
+      <div className="flex flex-wrap items-start gap-2 border-t border-border pt-4">
         {listing.status === "REMOVED" ? (
           <RestoreListingButton id={listing.id} />
         ) : (

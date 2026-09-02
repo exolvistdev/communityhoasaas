@@ -58,21 +58,21 @@ export default async function ReconciliationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-gray-900">Reconciliation</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-lg font-semibold text-fg">Reconciliation</h1>
+        <p className="text-sm text-fg-muted">
           Payments homeowners submitted from the portal, awaiting your
           confirmation.
         </p>
       </div>
 
       {pending.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           Nothing to reconcile. 🎉
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Unit</th>
                 <th className="px-4 py-2.5 font-medium">Period</th>
@@ -84,27 +84,27 @@ export default async function ReconciliationPage() {
             </thead>
             <tbody>
               {pending.map((p) => (
-                <tr key={p.id} className="border-t border-gray-100 align-top">
-                  <td className="px-4 py-2.5 font-medium text-gray-900">
+                <tr key={p.id} className="border-t border-border align-top">
+                  <td className="px-4 py-2.5 font-medium text-fg">
                     {p.invoice.property.unitNumber}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {p.invoice.period ? periodLabel(p.invoice.period) : "—"}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     {peso(Number(p.amount))}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {METHOD_LABEL[p.method]}
                     {p.reference ? ` · ${p.reference}` : ""}
                     {p.note ? (
-                      <div className="text-xs text-gray-400">{p.note}</div>
+                      <div className="text-xs text-fg-subtle">{p.note}</div>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {fmt(p.paidAt)}
                     {p.submittedBy ? (
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-fg-subtle">
                         {p.submittedBy.fullName}
                       </div>
                     ) : null}
@@ -113,7 +113,7 @@ export default async function ReconciliationPage() {
                     {canWrite ? (
                       <ReconciliationActions id={p.id} />
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-fg-subtle">—</span>
                     )}
                   </td>
                 </tr>
@@ -125,36 +125,36 @@ export default async function ReconciliationPage() {
 
       {recent.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-semibold text-gray-900">
+          <h2 className="mb-2 text-sm font-semibold text-fg">
             Recently processed
           </h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {recent.map((p) => (
-                  <tr key={p.id} className="border-t border-gray-100 first:border-t-0">
-                    <td className="px-4 py-2 font-medium text-gray-900">
+                  <tr key={p.id} className="border-t border-border first:border-t-0">
+                    <td className="px-4 py-2 font-medium text-fg">
                       {p.invoice.property.unitNumber}
                     </td>
-                    <td className="px-4 py-2 text-right text-gray-600">
+                    <td className="px-4 py-2 text-right text-fg-muted">
                       {peso(Number(p.amount))}
                     </td>
-                    <td className="px-4 py-2 text-gray-500">
+                    <td className="px-4 py-2 text-fg-muted">
                       {METHOD_LABEL[p.method]}
                       {p.reference ? ` · ${p.reference}` : ""}
                     </td>
                     <td className="px-4 py-2">
                       {p.status === "CONFIRMED" ? (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                        <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
                           Confirmed
                         </span>
                       ) : (
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                        <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger-fg">
                           Rejected
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs text-gray-400">
+                    <td className="px-4 py-2 text-right text-xs text-fg-subtle">
                       {p.confirmedAt ? fmt(p.confirmedAt) : ""}
                       {p.confirmedBy ? ` · ${p.confirmedBy.fullName}` : ""}
                     </td>

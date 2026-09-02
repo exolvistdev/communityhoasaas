@@ -11,7 +11,7 @@ export default async function PayNowPage() {
 
   if (!property) {
     return (
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-fg-muted">
         Your account isn&apos;t linked to a unit yet.
       </p>
     );
@@ -29,17 +29,17 @@ export default async function PayNowPage() {
 
   return (
     <div className="space-y-4">
-      <Link href="/portal" className="text-sm text-gray-500 hover:text-gray-900">
+      <Link href="/portal" className="text-sm text-fg-muted hover:text-fg">
         ← Back
       </Link>
-      <h1 className="text-lg font-semibold text-gray-900">Pay now</h1>
+      <h1 className="text-lg font-semibold text-fg">Pay now</h1>
 
       {balance <= 0.005 ? (
-        <p className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+        <p className="rounded-lg border border-success/30 bg-success-subtle p-4 text-sm text-success-fg">
           You have no balance due right now.
         </p>
       ) : !openInvoice ? (
-        <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
+        <p className="rounded-lg border border-border bg-surface p-4 text-sm text-fg-muted">
           No open invoice to pay.
         </p>
       ) : (

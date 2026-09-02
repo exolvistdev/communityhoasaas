@@ -11,12 +11,12 @@ export default async function NewListingPage() {
     <div className="space-y-4">
       <Link
         href="/portal/market"
-        className="text-sm text-gray-500 hover:text-gray-900"
+        className="text-sm text-fg-muted hover:text-fg"
       >
         ← Marketplace
       </Link>
-      <h1 className="text-lg font-semibold text-gray-900">New listing</h1>
-      <p className="text-sm text-gray-500">
+      <h1 className="text-lg font-semibold text-fg">New listing</h1>
+      <p className="text-sm text-fg-muted">
         Visible to residents of your HOA only. Buyers reach you through in-app
         messages — your contact details stay private.
       </p>

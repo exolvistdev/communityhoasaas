@@ -59,45 +59,45 @@ export default async function AmenityBookingsPage() {
       <div>
         <Link
           href="/amenities"
-          className="text-sm text-gray-500 hover:text-gray-900"
+          className="text-sm text-fg-muted hover:text-fg"
         >
           ← Amenities
         </Link>
-        <h1 className="mt-1 text-lg font-semibold text-gray-900">
+        <h1 className="mt-1 text-lg font-semibold text-fg">
           Booking requests
         </h1>
       </div>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-gray-900">
+        <h2 className="text-sm font-semibold text-fg">
           Awaiting approval ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+          <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-fg-muted">
             Nothing to review. 🎉
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {pending.map((b) => (
-                  <tr key={b.id} className="border-t border-gray-100 first:border-t-0 align-top">
+                  <tr key={b.id} className="border-t border-border first:border-t-0 align-top">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-fg">
                         {b.amenity.name}
                       </div>
-                      <div className="text-gray-600">
+                      <div className="text-fg-muted">
                         {fmtSlot(b.startAt, b.endAt)}
                       </div>
                       {b.purpose && (
-                        <div className="text-xs text-gray-400">{b.purpose}</div>
+                        <div className="text-xs text-fg-subtle">{b.purpose}</div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-fg-muted">
                       {b.requester.fullName}
-                      <div className="text-xs text-gray-400">Unit {unit(b)}</div>
+                      <div className="text-xs text-fg-subtle">Unit {unit(b)}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-fg-muted">
                       {Number(b.amenity.fee) > 0
                         ? peso(Number(b.amenity.fee), { cents: false })
                         : "Free"}
@@ -115,24 +115,24 @@ export default async function AmenityBookingsPage() {
 
       {staleRequests.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-gray-900">
+          <h2 className="text-sm font-semibold text-fg">
             Requested but never actioned ({staleRequests.length})
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-fg-subtle">
             The requested date has passed. Reject to clear them.
           </p>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {staleRequests.map((b) => (
-                  <tr key={b.id} className="border-t border-gray-100 first:border-t-0">
-                    <td className="px-4 py-2.5 font-medium text-gray-900">
+                  <tr key={b.id} className="border-t border-border first:border-t-0">
+                    <td className="px-4 py-2.5 font-medium text-fg">
                       {b.amenity.name}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {fmtSlot(b.startAt, b.endAt)}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {b.requester.fullName} · {unit(b)}
                     </td>
                     <td className="px-4 py-2.5 text-right">
@@ -148,21 +148,21 @@ export default async function AmenityBookingsPage() {
 
       {upcoming.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-gray-900">
+          <h2 className="text-sm font-semibold text-fg">
             Upcoming ({upcoming.length})
           </h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {upcoming.map((b) => (
-                  <tr key={b.id} className="border-t border-gray-100 first:border-t-0">
-                    <td className="px-4 py-2.5 font-medium text-gray-900">
+                  <tr key={b.id} className="border-t border-border first:border-t-0">
+                    <td className="px-4 py-2.5 font-medium text-fg">
                       {b.amenity.name}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-600">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {fmtSlot(b.startAt, b.endAt)}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-600">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {b.requester.fullName} · {unit(b)}
                     </td>
                     <td className="px-4 py-2.5 text-right">
@@ -178,18 +178,18 @@ export default async function AmenityBookingsPage() {
 
       {recent.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-gray-900">Recently decided</h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <h2 className="text-sm font-semibold text-fg">Recently decided</h2>
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {recent.map((b) => {
                   const badge = AMENITY_BOOKING_STATUS_BADGE[b.status];
                   return (
-                    <tr key={b.id} className="border-t border-gray-100 first:border-t-0">
-                      <td className="px-4 py-2 font-medium text-gray-900">
+                    <tr key={b.id} className="border-t border-border first:border-t-0">
+                      <td className="px-4 py-2 font-medium text-fg">
                         {b.amenity.name}
                       </td>
-                      <td className="px-4 py-2 text-gray-500">
+                      <td className="px-4 py-2 text-fg-muted">
                         {fmtSlot(b.startAt, b.endAt)}
                       </td>
                       <td className="px-4 py-2">
@@ -199,7 +199,7 @@ export default async function AmenityBookingsPage() {
                           {badge.label}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-right text-xs text-gray-400">
+                      <td className="px-4 py-2 text-right text-xs text-fg-subtle">
                         {b.decidedAt ? fmtDateTime(b.decidedAt) : ""}
                         {b.decidedBy ? ` · ${b.decidedBy.fullName}` : ""}
                       </td>

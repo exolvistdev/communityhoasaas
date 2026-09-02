@@ -69,28 +69,28 @@ export function TeamManager({
   return (
     <div className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Team</h1>
+        <h1 className="text-lg font-semibold text-fg">Team</h1>
         {!adding && (
           <button
             onClick={() => {
               setAdding(true);
               setLink(null);
             }}
-            className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
           >
             Invite member
           </button>
         )}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
       {link && (
-        <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
+        <div className="rounded-md bg-success-subtle p-3 text-sm text-success-fg">
           <p className="font-medium">Link generated.</p>
           <p className="mt-1 break-all">
             Send them this link to set a password:
           </p>
-          <code className="mt-1 block break-all rounded bg-white px-2 py-1 text-xs text-gray-700">
+          <code className="mt-1 block break-all rounded bg-surface px-2 py-1 text-xs text-fg">
             {link}
           </code>
         </div>
@@ -99,31 +99,31 @@ export function TeamManager({
       {adding && (
         <form
           onSubmit={onInvite}
-          className="flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-white p-4 text-sm"
+          className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-surface p-4 text-sm"
         >
           <label>
-            <span className="block text-xs text-gray-600">Email</span>
+            <span className="block text-xs text-fg-muted">Email</span>
             <input
               name="email"
               type="email"
               required
-              className="mt-1 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+              className="mt-1 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
             />
           </label>
           <label>
-            <span className="block text-xs text-gray-600">Full name</span>
+            <span className="block text-xs text-fg-muted">Full name</span>
             <input
               name="fullName"
               required
-              className="mt-1 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+              className="mt-1 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
             />
           </label>
           <label>
-            <span className="block text-xs text-gray-600">Role</span>
+            <span className="block text-xs text-fg-muted">Role</span>
             <select
               name="role"
               defaultValue="TREASURER"
-              className="mt-1 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+              className="mt-1 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
             >
               {ASSIGNABLE.map((r) => (
                 <option key={r} value={r}>
@@ -135,23 +135,23 @@ export function TeamManager({
           <button
             type="submit"
             disabled={pending}
-            className="rounded-md bg-gray-900 px-3 py-1.5 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="rounded-md bg-brand px-3 py-1.5 font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
             {pending ? "Inviting…" : "Send invite"}
           </button>
           <button
             type="button"
             onClick={() => setAdding(false)}
-            className="px-2 py-1.5 text-gray-500 hover:text-gray-900"
+            className="px-2 py-1.5 text-fg-muted hover:text-fg"
           >
             Cancel
           </button>
         </form>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-surface-2 text-left text-fg-muted">
             <tr>
               <th className="px-4 py-2.5 font-medium">Name</th>
               <th className="px-4 py-2.5 font-medium">Email</th>
@@ -162,14 +162,14 @@ export function TeamManager({
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr key={m.id} className="border-t border-gray-100">
-                <td className="px-4 py-2.5 font-medium text-gray-900">
+              <tr key={m.id} className="border-t border-border">
+                <td className="px-4 py-2.5 font-medium text-fg">
                   {m.fullName}
                   {m.id === selfId && (
-                    <span className="ml-1 text-xs text-gray-400">(you)</span>
+                    <span className="ml-1 text-xs text-fg-subtle">(you)</span>
                   )}
                 </td>
-                <td className="px-4 py-2.5 text-gray-600">{m.email}</td>
+                <td className="px-4 py-2.5 text-fg-muted">{m.email}</td>
                 <td className="px-4 py-2.5">
                   <select
                     defaultValue={m.role}
@@ -177,7 +177,7 @@ export function TeamManager({
                     onChange={(e) =>
                       act(() => updateMemberRole(m.id, e.target.value))
                     }
-                    className="rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-gray-900 disabled:opacity-60"
+                    className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-brand disabled:opacity-60"
                   >
                     {(m.role === "HOMEOWNER"
                       ? (["HOMEOWNER"] as UserRole[])
@@ -191,11 +191,11 @@ export function TeamManager({
                 </td>
                 <td className="px-4 py-2.5">
                   {m.accepted ? (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                    <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
                       Active
                     </span>
                   ) : (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
                       Invited
                     </span>
                   )}
@@ -204,14 +204,14 @@ export function TeamManager({
                   {!m.accepted ? (
                     <button
                       onClick={() => act(() => resendInvite(m.id))}
-                      className="text-xs text-gray-500 underline hover:text-gray-900"
+                      className="text-xs text-fg-muted underline hover:text-fg"
                     >
                       Invite link
                     </button>
                   ) : (
                     <button
                       onClick={() => act(() => sendResetLink(m.id))}
-                      className="text-xs text-gray-500 underline hover:text-gray-900"
+                      className="text-xs text-fg-muted underline hover:text-fg"
                     >
                       Reset link
                     </button>
@@ -227,7 +227,7 @@ export function TeamManager({
                           return;
                         act(() => removeMember(m.id));
                       }}
-                      className="ml-3 text-xs text-red-500 underline hover:text-red-700"
+                      className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
                     >
                       Remove
                     </button>

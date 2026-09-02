@@ -47,7 +47,7 @@ export function RecordPaymentButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-sm font-medium text-gray-900 underline underline-offset-2"
+        className="text-sm font-medium text-fg underline underline-offset-2"
       >
         Record payment
       </button>
@@ -56,17 +56,17 @@ export function RecordPaymentButton({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <form
             onSubmit={onSubmit}
-            className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg"
+            className="w-full max-w-sm rounded-lg bg-surface p-5 shadow-lg"
           >
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-fg">
               Record payment
             </h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-fg-muted">
               Outstanding balance: {peso(outstanding)}
             </p>
 
             <label className="mt-4 block text-sm">
-              <span className="text-gray-700">Amount (₱)</span>
+              <span className="text-fg">Amount (₱)</span>
               <input
                 name="amount"
                 type="number"
@@ -74,16 +74,16 @@ export function RecordPaymentButton({
                 step="0.01"
                 defaultValue={outstanding > 0 ? outstanding.toFixed(2) : ""}
                 required
-                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+                className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
               />
             </label>
 
             <label className="mt-3 block text-sm">
-              <span className="text-gray-700">Method</span>
+              <span className="text-fg">Method</span>
               <select
                 name="method"
                 defaultValue="GCASH"
-                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+                className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
               >
                 {METHODS.map(([v, l]) => (
                   <option key={v} value={v}>
@@ -94,14 +94,14 @@ export function RecordPaymentButton({
             </label>
 
             <label className="mt-3 block text-sm">
-              <span className="text-gray-700">Reference no. (optional)</span>
+              <span className="text-fg">Reference no. (optional)</span>
               <input
                 name="reference"
-                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+                className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
               />
             </label>
 
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-2 text-sm text-danger-fg">{error}</p>}
 
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -110,14 +110,14 @@ export function RecordPaymentButton({
                   setOpen(false);
                   setError(null);
                 }}
-                className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+                className="rounded-md px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={pending}
-                className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
               >
                 {pending ? "Saving…" : "Save payment"}
               </button>

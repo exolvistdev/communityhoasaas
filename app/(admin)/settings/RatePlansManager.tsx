@@ -42,12 +42,12 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
 
   return (
     <div className="space-y-2">
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {notice && <p className="text-sm text-green-700">{notice}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
+      {notice && <p className="text-sm text-success-fg">{notice}</p>}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-surface-2 text-left text-fg-muted">
             <tr>
               <th className="px-4 py-2.5 font-medium">Plan</th>
               <th className="px-4 py-2.5 text-right font-medium">Monthly rate</th>
@@ -58,7 +58,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
           <tbody>
             {plans.length === 0 && !adding && (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={4} className="px-4 py-6 text-center text-fg-subtle">
                   No rate plans yet.
                 </td>
               </tr>
@@ -66,7 +66,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
 
             {plans.map((p) =>
               editingId === p.id ? (
-                <tr key={p.id} className="border-t border-gray-100 bg-gray-50">
+                <tr key={p.id} className="border-t border-border bg-surface-2">
                   <td colSpan={4} className="px-4 py-3">
                     <PlanForm
                       initial={p}
@@ -79,17 +79,17 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
                   </td>
                 </tr>
               ) : (
-                <tr key={p.id} className="border-t border-gray-100 align-top">
-                  <td className="px-4 py-2.5 font-medium text-gray-900">
+                <tr key={p.id} className="border-t border-border align-top">
+                  <td className="px-4 py-2.5 font-medium text-fg">
                     {p.name}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     {peso(p.monthlyRate)}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {p.propertyCount}
                     {p.staleCount > 0 && (
-                      <span className="ml-2 text-xs text-amber-700">
+                      <span className="ml-2 text-xs text-warning-fg">
                         {p.staleCount} on an older rate ·{" "}
                         <button
                           onClick={() =>
@@ -98,7 +98,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
                               "Rate re-applied to matching properties"
                             )
                           }
-                          className="underline hover:text-amber-900"
+                          className="underline hover:text-warning-fg"
                         >
                           re-apply
                         </button>
@@ -111,7 +111,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
                         setEditingId(p.id);
                         setAdding(false);
                       }}
-                      className="text-xs text-gray-500 underline hover:text-gray-900"
+                      className="text-xs text-fg-muted underline hover:text-fg"
                     >
                       Edit
                     </button>
@@ -131,7 +131,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
                           `Deleted "${p.name}"`
                         );
                       }}
-                      className="ml-3 text-xs text-red-500 underline hover:text-red-700"
+                      className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
                     >
                       Delete
                     </button>
@@ -141,7 +141,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
             )}
 
             {adding && (
-              <tr className="border-t border-gray-100 bg-gray-50">
+              <tr className="border-t border-border bg-surface-2">
                 <td colSpan={4} className="px-4 py-3">
                   <PlanForm
                     pending={pending}
@@ -163,7 +163,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
             setAdding(true);
             setEditingId(null);
           }}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
         >
           Add rate plan
         </button>
@@ -191,34 +191,34 @@ function PlanForm({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <label className="text-xs">
-        <span className="text-gray-600">Plan name</span>
+        <span className="text-fg-muted">Plan name</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
       <label className="text-xs">
-        <span className="text-gray-600">Monthly rate (₱)</span>
+        <span className="text-fg-muted">Monthly rate (₱)</span>
         <input
           type="number"
           min="0"
           step="0.01"
           value={rate}
           onChange={(e) => setRate(e.target.value)}
-          className="mt-1 block w-32 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block w-32 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
       <button
         onClick={() => onSubmit({ name, monthlyRate: rate })}
         disabled={pending}
-        className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+        className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save"}
       </button>
       <button
         onClick={onCancel}
-        className="text-xs text-gray-500 hover:text-gray-900"
+        className="text-xs text-fg-muted hover:text-fg"
       >
         Cancel
       </button>

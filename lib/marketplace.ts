@@ -68,8 +68,8 @@ export const LISTING_STATUS_BADGE: Record<
   ListingStatus,
   { label: string; className: string }
 > = {
-  ACTIVE: { label: "Active", className: "bg-green-100 text-green-800" },
-  SOLD: { label: "Sold", className: "bg-gray-200 text-gray-700" },
-  WITHDRAWN: { label: "Withdrawn", className: "bg-amber-100 text-amber-800" },
-  REMOVED: { label: "Removed", className: "bg-red-100 text-red-800" },
+  ACTIVE: { label: "Active", className: "bg-success-subtle text-success-fg ring-1 ring-inset ring-success/25" },
+  SOLD: { label: "Sold", className: "bg-surface-2 text-fg-muted ring-1 ring-inset ring-border" },
+  WITHDRAWN: { label: "Withdrawn", className: "bg-warning-subtle text-warning-fg ring-1 ring-inset ring-warning/25" },
+  REMOVED: { label: "Removed", className: "bg-danger-subtle text-danger-fg ring-1 ring-inset ring-danger/25" },
 };

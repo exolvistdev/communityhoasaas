@@ -40,7 +40,7 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+        className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
       >
         Edit property
       </button>
@@ -86,24 +86,24 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
+      className="space-y-3 rounded-lg border border-border bg-surface p-4"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm">
-          <span className="text-gray-700">Unit number</span>
+          <span className="text-fg">Unit number</span>
           <input
             name="unitNumber"
             defaultValue={property.unitNumber}
             required
-            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           />
         </label>
         <label className="text-sm">
-          <span className="text-gray-700">Type</span>
+          <span className="text-fg">Type</span>
           <select
             name="type"
             defaultValue={property.type}
-            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           >
             <option value="RESIDENTIAL">Residential</option>
             <option value="COMMERCIAL">Commercial</option>
@@ -113,11 +113,11 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
       </div>
 
       <div className="text-sm">
-        <span className="text-gray-700">Rate</span>
+        <span className="text-fg">Rate</span>
         <select
           value={rateChoice}
           onChange={(e) => setRateChoice(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
         >
           {plans.map((p) => (
             <option key={p.id} value={p.id}>
@@ -135,7 +135,7 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
             value={customRate}
             onChange={(e) => setCustomRate(e.target.value)}
             required
-            className="mt-2 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+            className="mt-2 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             placeholder="Monthly rate (₱)"
           />
         )}
@@ -144,43 +144,43 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
           <button
             type="button"
             onClick={() => setShowNewPlan(true)}
-            className="mt-2 text-xs text-gray-500 underline hover:text-gray-900"
+            className="mt-2 text-xs text-fg-muted underline hover:text-fg"
           >
             ＋ New rate plan
           </button>
         ) : (
-          <div className="mt-2 flex flex-wrap items-end gap-2 rounded-md bg-gray-50 p-2">
+          <div className="mt-2 flex flex-wrap items-end gap-2 rounded-md bg-surface-2 p-2">
             <label className="text-xs">
-              <span className="text-gray-600">Plan name</span>
+              <span className="text-fg-muted">Plan name</span>
               <input
                 value={newPlanName}
                 onChange={(e) => setNewPlanName(e.target.value)}
-                className="mt-1 block rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+                className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
               />
             </label>
             <label className="text-xs">
-              <span className="text-gray-600">Rate (₱)</span>
+              <span className="text-fg-muted">Rate (₱)</span>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={newPlanRate}
                 onChange={(e) => setNewPlanRate(e.target.value)}
-                className="mt-1 block w-28 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+                className="mt-1 block w-28 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
               />
             </label>
             <button
               type="button"
               onClick={addPlan}
               disabled={creatingPlan}
-              className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
             >
               {creatingPlan ? "Adding…" : "Add plan"}
             </button>
             <button
               type="button"
               onClick={() => setShowNewPlan(false)}
-              className="text-xs text-gray-500 hover:text-gray-900"
+              className="text-xs text-fg-muted hover:text-fg"
             >
               Cancel
             </button>
@@ -188,13 +188,13 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
         )}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save"}
         </button>
@@ -204,7 +204,7 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
             setOpen(false);
             setError(null);
           }}
-          className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+          className="rounded-md px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2"
         >
           Cancel
         </button>

@@ -11,7 +11,7 @@ export function NotificationToggle({ enabled }: { enabled: boolean }) {
 
   return (
     <label className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-gray-700">
+      <span className="text-fg">
         Email me about new marketplace messages and moderation
       </span>
       <input

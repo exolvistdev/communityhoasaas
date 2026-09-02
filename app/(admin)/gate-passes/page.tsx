@@ -18,16 +18,16 @@ const fmt = (d: Date) =>
   });
 
 const RESULT_CHIP: Record<string, string> = {
-  VALID: "bg-green-100 text-green-800",
-  EXPIRED: "bg-red-100 text-red-800",
-  NOT_YET_VALID: "bg-red-100 text-red-800",
-  REVOKED: "bg-red-100 text-red-800",
-  USED: "bg-red-100 text-red-800",
-  NOT_FOUND: "bg-gray-200 text-gray-700",
+  VALID: "bg-success-subtle text-success-fg",
+  EXPIRED: "bg-danger-subtle text-danger-fg",
+  NOT_YET_VALID: "bg-danger-subtle text-danger-fg",
+  REVOKED: "bg-danger-subtle text-danger-fg",
+  USED: "bg-danger-subtle text-danger-fg",
+  NOT_FOUND: "bg-surface-2 text-fg",
 };
 
 const usedTag = (d: Date) => (
-  <span className="ml-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+  <span className="ml-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-fg-muted">
     Used {d.toLocaleString("en-PH", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
   </span>
 );
@@ -53,7 +53,7 @@ export default async function GatePassesPage({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-gray-900">Gate passes</h1>
+        <h1 className="text-lg font-semibold text-fg">Gate passes</h1>
         {view === "passes" && canWrite && (
           <CreateGatePassFormLoader orgId={org.id} />
         )}
@@ -133,13 +133,13 @@ async function PassesList({
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           No gate passes yet. Create one for a visitor and share the code.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Code</th>
                 <th className="px-4 py-2.5 font-medium">Visitor</th>
@@ -151,18 +151,18 @@ async function PassesList({
             </thead>
             <tbody>
               {visible.map(({ p, display, active }) => (
-                <tr key={p.id} className="border-t border-gray-100">
+                <tr key={p.id} className="border-t border-border">
                   <td className="px-4 py-2.5 font-mono font-medium">
                     <Link
                       href={`/pass/${p.code}`}
                       target="_blank"
-                      className="text-gray-900 underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+                      className="text-fg underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
                     >
                       {p.code}
                     </Link>
                   </td>
                   <td className="px-4 py-2.5">{p.visitorName}</td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     <Link
                       href={`/properties/${p.property.id}`}
                       className="hover:underline"
@@ -170,7 +170,7 @@ async function PassesList({
                       {p.property.unitNumber}
                     </Link>
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {fmt(p.validFrom)} – {fmt(p.validUntil)}
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap">
@@ -181,7 +181,7 @@ async function PassesList({
                     {canWrite && active ? (
                       <RevokeGatePassButton id={p.id} />
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-fg-subtle">—</span>
                     )}
                   </td>
                 </tr>
@@ -190,7 +190,7 @@ async function PassesList({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-gray-400"
+                    className="px-4 py-8 text-center text-sm text-fg-subtle"
                   >
                     Nothing here.
                   </td>
@@ -222,16 +222,16 @@ async function ActivityLog({ orgId }: { orgId: string }) {
 
   if (scans.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+      <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
         No gate checks yet.
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-border bg-surface">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
+        <thead className="bg-surface-2 text-left text-fg-muted">
           <tr>
             <th className="px-4 py-2.5 font-medium">Time</th>
             <th className="px-4 py-2.5 font-medium">Code</th>
@@ -242,10 +242,10 @@ async function ActivityLog({ orgId }: { orgId: string }) {
         </thead>
         <tbody>
           {scans.map((s) => (
-            <tr key={s.id} className="border-t border-gray-100">
-              <td className="px-4 py-2.5 text-gray-600">{fmt(s.scannedAt)}</td>
+            <tr key={s.id} className="border-t border-border">
+              <td className="px-4 py-2.5 text-fg-muted">{fmt(s.scannedAt)}</td>
               <td className="px-4 py-2.5 font-mono">{s.code}</td>
-              <td className="px-4 py-2.5 text-gray-600">
+              <td className="px-4 py-2.5 text-fg-muted">
                 {s.gatePass
                   ? `${s.gatePass.visitorName} · ${s.gatePass.property.unitNumber}`
                   : "—"}
@@ -253,13 +253,13 @@ async function ActivityLog({ orgId }: { orgId: string }) {
               <td className="px-4 py-2.5">
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    RESULT_CHIP[s.result] ?? "bg-gray-100 text-gray-700"
+                    RESULT_CHIP[s.result] ?? "bg-surface-2 text-fg"
                   }`}
                 >
                   {s.result === "VALID" ? "Valid" : s.result.replace(/_/g, " ")}
                 </span>
               </td>
-              <td className="px-4 py-2.5 text-gray-600">
+              <td className="px-4 py-2.5 text-fg-muted">
                 {s.scannedBy.fullName}
               </td>
             </tr>
@@ -284,8 +284,8 @@ function Pill({
       href={href}
       className={`rounded-full px-3 py-1 text-sm ${
         active
-          ? "bg-gray-900 text-white"
-          : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+          ? "bg-brand text-white"
+          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
       }`}
     >
       {children}

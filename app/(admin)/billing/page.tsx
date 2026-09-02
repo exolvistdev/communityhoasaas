@@ -57,8 +57,8 @@ export default async function BillingPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">Billing</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-lg font-semibold text-fg">Billing</h1>
+          <p className="text-sm text-fg-muted">
             Current period: {periodLabel(period)}
           </p>
         </div>
@@ -71,7 +71,7 @@ export default async function BillingPage({
       {pendingCount > 0 && (
         <Link
           href="/reconciliation"
-          className="block rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 hover:bg-amber-100"
+          className="block rounded-md bg-warning-subtle px-3 py-2 text-sm text-warning-fg hover:bg-warning-subtle"
         >
           {pendingCount} payment{pendingCount === 1 ? "" : "s"} awaiting
           confirmation → Reconciliation
@@ -98,14 +98,14 @@ export default async function BillingPage({
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           No invoices yet. Use “Generate monthly invoices” to bill every property
           for {periodLabel(period)}.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Unit</th>
                 <th className="px-4 py-2.5 font-medium">Period</th>
@@ -117,17 +117,17 @@ export default async function BillingPage({
             </thead>
             <tbody>
               {visible.map(({ inv, outstanding, display }) => (
-                <tr key={inv.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2.5 font-medium text-gray-900">
+                <tr key={inv.id} className="border-t border-border">
+                  <td className="px-4 py-2.5 font-medium text-fg">
                     {inv.property.unitNumber}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {inv.period ?? "—"}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     {peso(Number(inv.amount))}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {inv.dueDate.toLocaleDateString("en-PH", {
                       day: "numeric",
                       month: "short",
@@ -141,7 +141,7 @@ export default async function BillingPage({
                     {display === "PAID" || display === "VOID" ? (
                       <Link
                         href={`/statements/${inv.propertyId}`}
-                        className="text-sm font-medium text-gray-900 underline underline-offset-2"
+                        className="text-sm font-medium text-fg underline underline-offset-2"
                       >
                         View SOA
                       </Link>
@@ -158,7 +158,7 @@ export default async function BillingPage({
                         )}
                         <Link
                           href={`/statements/${inv.propertyId}`}
-                          className="text-xs text-gray-400 underline underline-offset-2"
+                          className="text-xs text-fg-subtle underline underline-offset-2"
                         >
                           SOA
                         </Link>
@@ -171,7 +171,7 @@ export default async function BillingPage({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-gray-400"
+                    className="px-4 py-8 text-center text-sm text-fg-subtle"
                   >
                     Nothing overdue. 🎉
                   </td>
@@ -195,13 +195,13 @@ function Summary({
   tone?: "neutral" | "success" | "warning";
 }) {
   const t = {
-    neutral: "text-gray-900",
-    success: "text-green-700",
-    warning: "text-amber-700",
+    neutral: "text-fg",
+    success: "text-success-fg",
+    warning: "text-warning-fg",
   }[tone];
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <div className="text-sm text-gray-500">{label}</div>
+    <div className="rounded-lg border border-border bg-surface p-4">
+      <div className="text-sm text-fg-muted">{label}</div>
       <div className={`mt-1 text-xl font-semibold ${t}`}>{value}</div>
     </div>
   );
@@ -221,8 +221,8 @@ function FilterPill({
       href={href}
       className={`rounded-full px-3 py-1 text-sm ${
         active
-          ? "bg-gray-900 text-white"
-          : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+          ? "bg-brand text-white"
+          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
       }`}
     >
       {children}

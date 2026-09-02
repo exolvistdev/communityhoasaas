@@ -17,13 +17,13 @@ export default async function PortalAnnouncementsPage() {
 
   return (
     <div className="space-y-4">
-      <Link href="/portal" className="text-sm text-gray-500 hover:text-gray-900">
+      <Link href="/portal" className="text-sm text-fg-muted hover:text-fg">
         ← Back
       </Link>
-      <h1 className="text-lg font-semibold text-gray-900">Announcements</h1>
+      <h1 className="text-lg font-semibold text-fg">Announcements</h1>
 
       {announcements.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface p-6 text-center text-sm text-fg-muted">
           No announcements yet.
         </p>
       ) : (
@@ -31,13 +31,13 @@ export default async function PortalAnnouncementsPage() {
           {announcements.map((a) => (
             <li
               key={a.id}
-              className="rounded-lg border border-gray-200 bg-white p-4"
+              className="rounded-lg border border-border bg-surface p-4"
             >
-              <h2 className="font-medium text-gray-900">{a.title}</h2>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-gray-600">
+              <h2 className="font-medium text-fg">{a.title}</h2>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-fg-muted">
                 {a.body}
               </p>
-              <p className="mt-2 text-xs text-gray-400">
+              <p className="mt-2 text-xs text-fg-subtle">
                 {a.publishedAt ? fmt(a.publishedAt) : ""}
               </p>
             </li>

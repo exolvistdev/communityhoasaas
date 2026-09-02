@@ -1,3 +1,117 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root,
+  .force-light {
+    --bg: 249 250 251;
+    --surface: 255 255 255;
+    --surface-2: 244 244 247;
+    --overlay: 17 24 39;
+    --border: 228 228 233;
+    --border-strong: 209 213 220;
+    --fg: 16 20 30;
+    --fg-muted: 82 88 102;
+    --fg-subtle: 141 148 163;
+    --brand: 79 70 229;
+    --brand-hi: 99 102 241;
+    --brand-hover: 67 56 202;
+    --brand-fg: 255 255 255;
+    --brand-subtle: 238 240 255;
+    --brand-accent: 79 70 229;
+    --ring: 99 102 241;
+    --success: 5 150 105;
+    --success-subtle: 235 253 245;
+    --success-fg: 4 108 78;
+    --warning: 217 119 6;
+    --warning-subtle: 255 250 235;
+    --warning-fg: 146 64 14;
+    --danger: 225 29 72;
+    --danger-subtle: 255 241 242;
+    --danger-fg: 159 18 57;
+    --info: 2 132 199;
+    --info-subtle: 240 249 255;
+    --info-fg: 7 89 133;
+    --shadow-xs: 0 1px 2px 0 rgb(17 24 39 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(17 24 39 / 0.09), 0 1px 2px -1px rgb(17 24 39 / 0.06);
+    --shadow-md: 0 6px 18px -4px rgb(17 24 39 / 0.12), 0 2px 6px -2px rgb(17 24 39 / 0.06);
+    --shadow-lg: 0 18px 44px -12px rgb(17 24 39 / 0.2), 0 6px 14px -6px rgb(17 24 39 / 0.1);
+    color-scheme: light;
+  }
+
+  .dark,
+  .force-dark {
+    --bg: 9 9 12;
+    --surface: 22 22 27;
+    --surface-2: 33 33 40;
+    --overlay: 0 0 0;
+    --border: 40 40 48;
+    --border-strong: 63 63 73;
+    --fg: 244 244 247;
+    --fg-muted: 162 162 174;
+    --fg-subtle: 115 115 128;
+    --brand: 99 102 241;
+    --brand-hi: 129 140 248;
+    --brand-hover: 129 140 248;
+    --brand-fg: 255 255 255;
+    --brand-subtle: 33 31 68;
+    --brand-accent: 165 180 252;
+    --ring: 129 140 248;
+    --success: 16 185 129;
+    --success-subtle: 6 46 37;
+    --success-fg: 110 231 183;
+    --warning: 245 158 11;
+    --warning-subtle: 54 40 10;
+    --warning-fg: 252 211 77;
+    --danger: 244 63 94;
+    --danger-subtle: 60 16 27;
+    --danger-fg: 253 164 175;
+    --info: 14 165 233;
+    --info-subtle: 12 40 62;
+    --info-fg: 125 211 252;
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5);
+    --shadow-md: 0 8px 24px -6px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 22px 50px -12px rgb(0 0 0 / 0.72);
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-bg text-fg antialiased;
+  }
+
+  ::selection {
+    background: rgb(var(--brand) / 0.2);
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.011em;
+  }
+}
+
+@layer utilities {
+  .tabnums {
+    font-variant-numeric: tabular-nums;
+  }
+  .font-display {
+    letter-spacing: -0.014em;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--border-strong)) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--border-strong));
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}

@@ -27,25 +27,25 @@ export function ProfileForm({ fullName }: { fullName: string }) {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <label className="block text-sm">
-        <span className="text-gray-700">Full name</span>
+        <span className="text-fg">Full name</span>
         <input
           name="fullName"
           defaultValue={fullName}
           required
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 outline-none focus:border-brand"
         />
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save"}
         </button>
         {saved && !pending && (
-          <span className="text-sm text-green-700">Saved</span>
+          <span className="text-sm text-success-fg">Saved</span>
         )}
       </div>
     </form>

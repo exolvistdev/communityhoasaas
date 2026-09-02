@@ -35,7 +35,7 @@ export default async function LedgerPage({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Ledger</h1>
+      <h1 className="text-lg font-semibold text-fg">Ledger</h1>
 
       <div className="flex gap-2">
         <Tab href="/ledger" active={view === "trial-balance"}>
@@ -65,9 +65,9 @@ async function TrialBalance({ orgId }: { orgId: string }) {
 
   return (
     <div className="space-y-2">
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-surface-2 text-left text-fg-muted">
             <tr>
               <th className="px-4 py-2.5 font-medium">Code</th>
               <th className="px-4 py-2.5 font-medium">Account</th>
@@ -79,10 +79,10 @@ async function TrialBalance({ orgId }: { orgId: string }) {
           </thead>
           <tbody>
             {tb.rows.map((r) => (
-              <tr key={r.id} className="border-t border-gray-100">
-                <td className="px-4 py-2.5 font-mono text-gray-600">{r.code}</td>
-                <td className="px-4 py-2.5 text-gray-900">{r.name}</td>
-                <td className="px-4 py-2.5 text-gray-500">
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-4 py-2.5 font-mono text-fg-muted">{r.code}</td>
+                <td className="px-4 py-2.5 text-fg">{r.name}</td>
+                <td className="px-4 py-2.5 text-fg-muted">
                   {TYPE_LABEL[r.type]}
                 </td>
                 <td className="px-4 py-2.5 text-right">{peso(r.debit)}</td>
@@ -94,7 +94,7 @@ async function TrialBalance({ orgId }: { orgId: string }) {
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-gray-300 font-semibold">
+            <tr className="border-t-2 border-border font-semibold">
               <td className="px-4 py-2.5" colSpan={3}>
                 Total
               </td>
@@ -107,7 +107,7 @@ async function TrialBalance({ orgId }: { orgId: string }) {
       </div>
       <p
         className={`text-sm ${
-          tb.balanced ? "text-green-700" : "text-red-600"
+          tb.balanced ? "text-success-fg" : "text-danger-fg"
         }`}
       >
         {tb.balanced
@@ -178,33 +178,33 @@ async function Journal({
       <form
         method="GET"
         action="/ledger"
-        className="flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-white p-3 text-sm"
+        className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-surface p-3 text-sm"
       >
         <input type="hidden" name="view" value="journal" />
         <label>
-          <span className="block text-xs text-gray-600">From</span>
+          <span className="block text-xs text-fg-muted">From</span>
           <input
             type="date"
             name="from"
             defaultValue={searchParams.from ?? ""}
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+            className="mt-1 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
           />
         </label>
         <label>
-          <span className="block text-xs text-gray-600">To</span>
+          <span className="block text-xs text-fg-muted">To</span>
           <input
             type="date"
             name="to"
             defaultValue={searchParams.to ?? ""}
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+            className="mt-1 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
           />
         </label>
         <label>
-          <span className="block text-xs text-gray-600">Account</span>
+          <span className="block text-xs text-fg-muted">Account</span>
           <select
             name="account"
             defaultValue={accountCode}
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+            className="mt-1 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
           >
             <option value="">All accounts</option>
             {accounts.map((a) => (
@@ -216,32 +216,32 @@ async function Journal({
         </label>
         <button
           type="submit"
-          className="rounded-md bg-gray-900 px-3 py-1.5 font-medium text-white hover:bg-gray-800"
+          className="rounded-md bg-brand px-3 py-1.5 font-medium text-white hover:brightness-110"
         >
           Apply
         </button>
         <a
           href="/ledger?view=journal"
-          className="px-2 py-1.5 text-gray-500 hover:text-gray-900"
+          className="px-2 py-1.5 text-fg-muted hover:text-fg"
         >
           Reset
         </a>
         <a
           href={`/ledger/export?${exportQs.toString()}`}
-          className="ml-auto rounded-md border border-gray-300 bg-white px-3 py-1.5 hover:bg-gray-50"
+          className="ml-auto rounded-md border border-border bg-surface px-3 py-1.5 hover:bg-surface-2"
         >
           Download CSV
         </a>
       </form>
 
       {entries.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           No journal entries match.
         </p>
       ) : (
         <div className="space-y-3">
           {entries.length === 200 && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-fg-subtle">
               Showing the 200 most recent entries — narrow the date range for
               older ones.
             </p>
@@ -252,35 +252,35 @@ async function Journal({
             return (
               <div
                 key={e.id}
-                className="overflow-hidden rounded-lg border border-gray-200 bg-white"
+                className="overflow-hidden rounded-lg border border-border bg-surface"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-4 py-2 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-surface-2 px-4 py-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs font-medium text-gray-700">
+                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg">
                       {e.sourceType}
                     </span>
-                    <span className="text-gray-900">{e.memo}</span>
+                    <span className="text-fg">{e.memo}</span>
                     {prop && (
                       <Link
                         href={`/properties/${prop.id}`}
-                        className="text-xs text-gray-500 underline hover:text-gray-900"
+                        className="text-xs text-fg-muted underline hover:text-fg"
                       >
                         {prop.unitNumber}
                       </Link>
                     )}
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-fg-subtle">
                     {fmtDate(e.entryDate)}
                   </span>
                 </div>
                 <table className="w-full text-sm">
                   <tbody>
                     {e.lines.map((l) => (
-                      <tr key={l.id} className="border-t border-gray-100">
-                        <td className="px-4 py-1.5 font-mono text-gray-500">
+                      <tr key={l.id} className="border-t border-border">
+                        <td className="px-4 py-1.5 font-mono text-fg-muted">
                           {l.account.code}
                         </td>
-                        <td className="px-4 py-1.5 text-gray-700">
+                        <td className="px-4 py-1.5 text-fg">
                           {l.account.name}
                         </td>
                         <td className="px-4 py-1.5 text-right">
@@ -312,9 +312,9 @@ async function ChartOfAccounts({ orgId }: { orgId: string }) {
   });
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-border bg-surface">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
+        <thead className="bg-surface-2 text-left text-fg-muted">
           <tr>
             <th className="px-4 py-2.5 font-medium">Code</th>
             <th className="px-4 py-2.5 font-medium">Name</th>
@@ -324,11 +324,11 @@ async function ChartOfAccounts({ orgId }: { orgId: string }) {
         </thead>
         <tbody>
           {accounts.map((a) => (
-            <tr key={a.id} className="border-t border-gray-100">
-              <td className="px-4 py-2.5 font-mono text-gray-600">{a.code}</td>
-              <td className="px-4 py-2.5 text-gray-900">{a.name}</td>
-              <td className="px-4 py-2.5 text-gray-500">{TYPE_LABEL[a.type]}</td>
-              <td className="px-4 py-2.5 text-right text-gray-500">
+            <tr key={a.id} className="border-t border-border">
+              <td className="px-4 py-2.5 font-mono text-fg-muted">{a.code}</td>
+              <td className="px-4 py-2.5 text-fg">{a.name}</td>
+              <td className="px-4 py-2.5 text-fg-muted">{TYPE_LABEL[a.type]}</td>
+              <td className="px-4 py-2.5 text-right text-fg-muted">
                 {a._count.journalLines}
               </td>
             </tr>
@@ -355,8 +355,8 @@ function Tab({
       href={href}
       className={`rounded-full px-3 py-1 text-sm ${
         active
-          ? "bg-gray-900 text-white"
-          : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+          ? "bg-brand text-white"
+          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
       }`}
     >
       {children}

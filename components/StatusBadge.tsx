@@ -1,57 +1,72 @@
-import type { InvoiceStatus, GatePassStatus } from "@prisma/client";
+import type {
+  InvoiceStatus,
+  GatePassStatus,
+  AmenityBookingStatus,
+  ListingStatus,
+  PaymentStatus,
+} from "@prisma/client";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
 
-type Tone = "success" | "warning" | "danger" | "neutral" | "info";
+export { Badge } from "@/components/ui/badge";
 
-const toneClass: Record<Tone, string> = {
-  success: "bg-green-100 text-green-800 ring-green-600/20",
-  warning: "bg-amber-100 text-amber-800 ring-amber-600/20",
-  danger: "bg-red-100 text-red-800 ring-red-600/20",
-  neutral: "bg-gray-100 text-gray-700 ring-gray-500/20",
-  info: "bg-blue-100 text-blue-800 ring-blue-600/20",
+const cap = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
+
+const invoice: Record<InvoiceStatus, [BadgeTone, string]> = {
+  DRAFT: ["neutral", "Draft"],
+  SENT: ["info", "Sent"],
+  PARTIALLY_PAID: ["warning", "Partial"],
+  PAID: ["success", "Paid"],
+  OVERDUE: ["danger", "Overdue"],
+  VOID: ["neutral", "Void"],
 };
 
-const invoiceTone: Record<InvoiceStatus, Tone> = {
-  DRAFT: "neutral",
-  SENT: "info",
-  PARTIALLY_PAID: "warning",
-  PAID: "success",
-  OVERDUE: "danger",
-  VOID: "neutral",
-};
-
-const invoiceLabel: Record<InvoiceStatus, string> = {
-  DRAFT: "Draft",
-  SENT: "Sent",
-  PARTIALLY_PAID: "Partial",
-  PAID: "Paid",
-  OVERDUE: "Overdue",
-  VOID: "Void",
-};
-
-const gatePassTone: Record<GatePassStatus, Tone> = {
+const gatePass: Record<GatePassStatus, BadgeTone> = {
   ACTIVE: "success",
   EXPIRED: "neutral",
   REVOKED: "danger",
 };
 
-function Badge({ tone, children }: { tone: Tone; children: React.ReactNode }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${toneClass[tone]}`}
-    >
-      {children}
-    </span>
-  );
-}
+const booking: Record<AmenityBookingStatus, BadgeTone> = {
+  PENDING: "warning",
+  CONFIRMED: "success",
+  REJECTED: "danger",
+  CANCELLED: "neutral",
+};
+
+const listing: Record<ListingStatus, BadgeTone> = {
+  ACTIVE: "success",
+  SOLD: "neutral",
+  WITHDRAWN: "warning",
+  REMOVED: "danger",
+};
+
+const payment: Record<PaymentStatus, BadgeTone> = {
+  PENDING: "warning",
+  CONFIRMED: "success",
+  REJECTED: "danger",
+};
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
-  return <Badge tone={invoiceTone[status]}>{invoiceLabel[status]}</Badge>;
+  const [tone, label] = invoice[status];
+  return <Badge tone={tone}>{label}</Badge>;
 }
 
 export function GatePassStatusBadge({ status }: { status: GatePassStatus }) {
-  return (
-    <Badge tone={gatePassTone[status]}>
-      {status.charAt(0) + status.slice(1).toLowerCase()}
-    </Badge>
-  );
+  return <Badge tone={gatePass[status]}>{cap(status)}</Badge>;
+}
+
+export function AmenityBookingStatusBadge({
+  status,
+}: {
+  status: AmenityBookingStatus;
+}) {
+  return <Badge tone={booking[status]}>{cap(status)}</Badge>;
+}
+
+export function ListingStatusBadge({ status }: { status: ListingStatus }) {
+  return <Badge tone={listing[status]}>{cap(status)}</Badge>;
+}
+
+export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  return <Badge tone={payment[status]}>{cap(status)}</Badge>;
 }

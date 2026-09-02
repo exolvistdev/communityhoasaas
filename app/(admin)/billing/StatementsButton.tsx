@@ -13,7 +13,7 @@ export function StatementsButton() {
     <button
       onClick={() => start(() => router.push("/statements?scope=outstanding"))}
       disabled={pending}
-      className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+      className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium hover:bg-surface-2 disabled:opacity-50"
     >
       {pending ? "Preparing statements…" : "Statements"}
     </button>

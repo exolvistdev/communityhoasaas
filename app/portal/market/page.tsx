@@ -92,17 +92,17 @@ export default async function MarketplacePage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Marketplace</h1>
+        <h1 className="text-lg font-semibold text-fg">Marketplace</h1>
         <div className="flex gap-2">
           <Link
             href="/portal/market/mine"
-            className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
+            className="rounded-md px-2 py-1 text-xs text-fg-muted hover:bg-surface-2"
           >
             My listings
           </Link>
           <Link
             href="/portal/market/new"
-            className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800"
+            className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:brightness-110"
           >
             Sell something
           </Link>
@@ -115,9 +115,9 @@ export default async function MarketplacePage({
             name="q"
             defaultValue={q}
             placeholder="Search listings"
-            className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-gray-900"
+            className="min-w-0 flex-1 rounded-md border border-border px-3 py-1.5 text-sm outline-none focus:border-brand"
           />
-          <button className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+          <button className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-fg hover:bg-surface-2">
             Go
           </button>
         </div>
@@ -125,7 +125,7 @@ export default async function MarketplacePage({
           <select
             name="cat"
             defaultValue={cat ?? ""}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-gray-900"
+            className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
           >
             <option value="">All categories</option>
             {LISTING_CATEGORIES.map((c) => (
@@ -137,7 +137,7 @@ export default async function MarketplacePage({
           <select
             name="sort"
             defaultValue={sort}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-gray-900"
+            className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
           >
             {LISTING_SORTS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -151,7 +151,7 @@ export default async function MarketplacePage({
             min="0"
             defaultValue={min ?? ""}
             placeholder="₱ min"
-            className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-gray-900"
+            className="w-20 rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-brand"
           />
           <input
             name="max"
@@ -159,20 +159,20 @@ export default async function MarketplacePage({
             min="0"
             defaultValue={max ?? ""}
             placeholder="₱ max"
-            className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-gray-900"
+            className="w-20 rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-brand"
           />
         </div>
       </form>
 
       {listings.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-fg-muted">
           {total === 0 && !(q || cat || min || max)
             ? "No listings yet. Be the first to sell something."
             : "Nothing matches that search."}
         </p>
       ) : (
         <>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-fg-subtle">
             Showing {(page - 1) * PAGE_SIZE + 1}–
             {(page - 1) * PAGE_SIZE + listings.length} of {total}
           </p>
@@ -181,9 +181,9 @@ export default async function MarketplacePage({
               <li key={l.id}>
                 <Link
                   href={`/portal/market/${l.id}`}
-                  className="block overflow-hidden rounded-xl border border-gray-200 bg-white hover:border-gray-300"
+                  className="block overflow-hidden rounded-xl border border-border bg-surface hover:border-border"
                 >
-                  <div className="aspect-square bg-gray-100">
+                  <div className="aspect-square bg-surface-2">
                     {l.photos[0] ? (
                       <img
                         src={publicPhotoUrl(l.photos[0])}
@@ -191,19 +191,19 @@ export default async function MarketplacePage({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                      <div className="flex h-full items-center justify-center text-xs text-fg-subtle">
                         No photo
                       </div>
                     )}
                   </div>
                   <div className="p-2.5">
-                    <div className="truncate text-sm font-medium text-gray-900">
+                    <div className="truncate text-sm font-medium text-fg">
                       {l.title}
                     </div>
-                    <div className="text-sm font-semibold text-gray-900">
+                    <div className="text-sm font-semibold text-fg">
                       {priceLabel(Number(l.price))}
                     </div>
-                    <div className="mt-0.5 truncate text-xs text-gray-400">
+                    <div className="mt-0.5 truncate text-xs text-fg-subtle">
                       {CATEGORY_LABEL[l.category]}
                       {l.seller.homeowner?.property
                         ? ` · ${l.seller.homeowner.property.unitNumber}`
@@ -218,17 +218,17 @@ export default async function MarketplacePage({
           {pages > 1 && (
             <div className="flex items-center justify-between text-sm">
               {page > 1 ? (
-                <Link href={qs(page - 1)} className="text-gray-600 hover:text-gray-900">
+                <Link href={qs(page - 1)} className="text-fg-muted hover:text-fg">
                   ← Previous
                 </Link>
               ) : (
                 <span />
               )}
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-fg-subtle">
                 Page {page} of {pages}
               </span>
               {page < pages ? (
-                <Link href={qs(page + 1)} className="text-gray-600 hover:text-gray-900">
+                <Link href={qs(page + 1)} className="text-fg-muted hover:text-fg">
                   Next →
                 </Link>
               ) : (

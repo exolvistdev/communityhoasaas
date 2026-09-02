@@ -14,7 +14,7 @@ export function VoidInvoiceButton({ invoiceId }: { invoiceId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-red-500 underline hover:text-red-700"
+        className="text-xs text-danger-fg underline hover:text-danger-fg"
       >
         Void
       </button>
@@ -36,24 +36,24 @@ export function VoidInvoiceButton({ invoiceId }: { invoiceId: string }) {
             } else setError(res.error);
           });
         }}
-        className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg"
+        className="w-full max-w-sm rounded-lg bg-surface p-5 shadow-lg"
       >
-        <h2 className="text-base font-semibold text-gray-900">Void invoice</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-base font-semibold text-fg">Void invoice</h2>
+        <p className="mt-1 text-sm text-fg-muted">
           Posts a reversing ledger entry and removes this invoice from the
           property&apos;s balance. Can&apos;t be undone.
         </p>
         <label className="mt-3 block text-sm">
-          <span className="text-gray-700">Reason</span>
+          <span className="text-fg">Reason</span>
           <input
             name="reason"
             required
             autoFocus
             placeholder="e.g. wrong amount, unit sold"
-            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           />
         </label>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-sm text-danger-fg">{error}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
@@ -61,7 +61,7 @@ export function VoidInvoiceButton({ invoiceId }: { invoiceId: string }) {
               setOpen(false);
               setError(null);
             }}
-            className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded-md px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2"
           >
             Cancel
           </button>

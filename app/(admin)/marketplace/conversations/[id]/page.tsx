@@ -44,14 +44,14 @@ export default async function AdminConversationPage({
       <div>
         <Link
           href="/marketplace/conversations"
-          className="text-sm text-gray-500 hover:text-gray-900"
+          className="text-sm text-fg-muted hover:text-fg"
         >
           ← Reported conversations
         </Link>
-        <h1 className="mt-1 text-lg font-semibold text-gray-900">
+        <h1 className="mt-1 text-lg font-semibold text-fg">
           {convo.buyer.fullName} ↔ {convo.seller.fullName}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-fg-muted">
           re:{" "}
           <Link
             href={`/marketplace/${convo.listing.id}`}
@@ -65,19 +65,19 @@ export default async function AdminConversationPage({
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-900">
+        <h2 className="mb-2 text-sm font-semibold text-fg">
           Reports ({openReports.length} open)
         </h2>
-        <ul className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
           {convo.reports.map((r) => (
             <li key={r.id} className="px-3 py-2.5 text-sm">
               <div className="flex justify-between gap-3">
-                <span className="text-gray-800">{r.reason}</span>
+                <span className="text-fg">{r.reason}</span>
                 {r.resolvedAt && (
-                  <span className="shrink-0 text-xs text-gray-400">resolved</span>
+                  <span className="shrink-0 text-xs text-fg-subtle">resolved</span>
                 )}
               </div>
-              <div className="mt-0.5 text-xs text-gray-400">
+              <div className="mt-0.5 text-xs text-fg-subtle">
                 {r.reporter.fullName} · {time(r.createdAt)}
               </div>
             </li>
@@ -86,16 +86,16 @@ export default async function AdminConversationPage({
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-900">
+        <h2 className="mb-2 text-sm font-semibold text-fg">
           Full thread ({convo.messages.length})
         </h2>
         <ul className="space-y-2">
           {convo.messages.map((m) => (
-            <li key={m.id} className="rounded-lg border border-gray-200 bg-white p-2.5 text-sm">
-              <div className="text-xs text-gray-400">
+            <li key={m.id} className="rounded-lg border border-border bg-surface p-2.5 text-sm">
+              <div className="text-xs text-fg-subtle">
                 {m.sender.fullName} · {time(m.createdAt)}
               </div>
-              <div className="mt-0.5 whitespace-pre-wrap text-gray-800">
+              <div className="mt-0.5 whitespace-pre-wrap text-fg">
                 {m.body}
               </div>
             </li>
@@ -104,7 +104,7 @@ export default async function AdminConversationPage({
       </div>
 
       {convo.closedAt && convo.closedReason && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-md bg-warning-subtle px-3 py-2 text-sm text-warning-fg">
           Closed: {convo.closedReason}
         </p>
       )}

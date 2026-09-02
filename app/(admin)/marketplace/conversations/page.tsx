@@ -44,11 +44,11 @@ export default async function ReportedConversationsPage({
       <div>
         <Link
           href="/marketplace"
-          className="text-sm text-gray-500 hover:text-gray-900"
+          className="text-sm text-fg-muted hover:text-fg"
         >
           ← Marketplace
         </Link>
-        <h1 className="mt-1 text-lg font-semibold text-gray-900">
+        <h1 className="mt-1 text-lg font-semibold text-fg">
           Reported conversations
         </h1>
       </div>
@@ -63,13 +63,13 @@ export default async function ReportedConversationsPage({
       </div>
 
       {reports.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           Nothing here.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Reason</th>
                 <th className="px-4 py-2.5 font-medium">Reported by</th>
@@ -80,30 +80,30 @@ export default async function ReportedConversationsPage({
             </thead>
             <tbody>
               {reports.map((r) => (
-                <tr key={r.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2.5 text-gray-800">
+                <tr key={r.id} className="border-t border-border">
+                  <td className="px-4 py-2.5 text-fg">
                     {r.reason}
                     {r.resolvedAt && (
-                      <span className="ml-2 text-xs text-gray-400">resolved</span>
+                      <span className="ml-2 text-xs text-fg-subtle">resolved</span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {r.reporter.fullName}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {r.conversation.buyer.fullName} ↔{" "}
                     {r.conversation.seller.fullName}
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-fg-subtle">
                       re: {r.conversation.listing.title}
                     </div>
                   </td>
-                  <td className="px-4 py-2.5 text-gray-500">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {fmt(r.createdAt)}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <Link
                       href={`/marketplace/conversations/${r.conversationId}`}
-                      className="text-sm text-gray-900 hover:underline"
+                      className="text-sm text-fg hover:underline"
                     >
                       Read thread →
                     </Link>
@@ -132,8 +132,8 @@ function Pill({
       href={href}
       className={`rounded-full px-3 py-1 text-sm ${
         active
-          ? "bg-gray-900 text-white"
-          : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+          ? "bg-brand text-white"
+          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
       }`}
     >
       {children}

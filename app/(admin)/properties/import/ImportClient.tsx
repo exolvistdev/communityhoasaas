@@ -8,10 +8,10 @@ export function ImportClient() {
   const router = useRouter();
   return (
     <div className="max-w-xl space-y-4">
-      <Link href="/properties" className="text-sm text-gray-500 hover:text-gray-900">
+      <Link href="/properties" className="text-sm text-fg-muted hover:text-fg">
         ← Properties
       </Link>
-      <h1 className="text-lg font-semibold text-gray-900">Import properties</h1>
+      <h1 className="text-lg font-semibold text-fg">Import properties</h1>
       <PropertyCsvImport
         completeLabel="Back to properties"
         onComplete={() => {

@@ -63,14 +63,14 @@ export function PeopleSection({
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-900">People</h2>
+        <h2 className="text-sm font-semibold text-fg">People</h2>
         {canWrite && !adding && (
           <button
             onClick={() => {
               setAdding(true);
               setEditingId(null);
             }}
-            className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm hover:bg-gray-50"
+            className="rounded-md border border-border bg-surface px-2.5 py-1 text-sm hover:bg-surface-2"
           >
             Add person
           </button>
@@ -78,23 +78,23 @@ export function PeopleSection({
       </div>
 
       {noPrimary && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <p className="rounded-md bg-warning-subtle px-3 py-2 text-xs text-warning-fg">
           No primary contact set — pick one below.
         </p>
       )}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
       {inviteLink && (
-        <div className="rounded-md bg-green-50 p-3 text-xs text-green-800">
+        <div className="rounded-md bg-success-subtle p-3 text-xs text-success-fg">
           Portal invite created — send this link:
-          <code className="mt-1 block break-all rounded bg-white px-2 py-1 text-gray-700">
+          <code className="mt-1 block break-all rounded bg-surface px-2 py-1 text-fg">
             {inviteLink}
           </code>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-surface-2 text-left text-fg-muted">
             <tr>
               <th className="px-4 py-2.5 font-medium">Name</th>
               <th className="px-4 py-2.5 font-medium">Role</th>
@@ -106,7 +106,7 @@ export function PeopleSection({
           <tbody>
             {people.length === 0 && !adding && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={5} className="px-4 py-6 text-center text-fg-subtle">
                   No people on record.
                 </td>
               </tr>
@@ -114,7 +114,7 @@ export function PeopleSection({
 
             {people.map((p) =>
               editingId === p.id ? (
-                <tr key={p.id} className="border-t border-gray-100 bg-gray-50">
+                <tr key={p.id} className="border-t border-border bg-surface-2">
                   <td colSpan={5} className="px-4 py-3">
                     <PersonForm
                       initial={p}
@@ -127,19 +127,19 @@ export function PeopleSection({
                   </td>
                 </tr>
               ) : (
-                <tr key={p.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2.5 font-medium text-gray-900">
+                <tr key={p.id} className="border-t border-border">
+                  <td className="px-4 py-2.5 font-medium text-fg">
                     {p.fullName}
                     {p.isPrimary && (
-                      <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-800">
+                      <span className="ml-2 rounded bg-success-subtle px-1.5 py-0.5 text-xs text-success-fg">
                         Primary
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {ROLE_LABEL[p.role]}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {p.email || p.phone ? (
                       <span>
                         {p.email}
@@ -147,18 +147,18 @@ export function PeopleSection({
                         {p.phone}
                       </span>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-fg-subtle">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5">
                     {p.hasLogin ? (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-fg-muted">
                         Portal: {p.loginAccepted ? "active" : "invited"}
                       </span>
                     ) : canWrite && p.email ? (
                       <button
                         onClick={() => act(() => inviteHomeowner(p.id))}
-                        className="text-xs text-gray-500 underline hover:text-gray-900"
+                        className="text-xs text-fg-muted underline hover:text-fg"
                       >
                         Invite to portal
                       </button>
@@ -172,7 +172,7 @@ export function PeopleSection({
                             onClick={() =>
                               act(() => setPrimaryHomeowner(p.id))
                             }
-                            className="text-xs text-gray-500 underline hover:text-gray-900"
+                            className="text-xs text-fg-muted underline hover:text-fg"
                           >
                             Make primary
                           </button>
@@ -182,13 +182,13 @@ export function PeopleSection({
                             setEditingId(p.id);
                             setAdding(false);
                           }}
-                          className="ml-3 text-xs text-gray-500 underline hover:text-gray-900"
+                          className="ml-3 text-xs text-fg-muted underline hover:text-fg"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => act(() => removeHomeowner(p.id))}
-                          className="ml-3 text-xs text-red-500 underline hover:text-red-700"
+                          className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
                         >
                           Remove
                         </button>
@@ -200,7 +200,7 @@ export function PeopleSection({
             )}
 
             {adding && (
-              <tr className="border-t border-gray-100 bg-gray-50">
+              <tr className="border-t border-border bg-surface-2">
                 <td colSpan={5} className="px-4 py-3">
                   <PersonForm
                     pending={pending}
@@ -248,19 +248,19 @@ function PersonForm({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <label className="text-xs">
-        <span className="text-gray-600">Name</span>
+        <span className="text-fg-muted">Name</span>
         <input
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
       <label className="text-xs">
-        <span className="text-gray-600">Role</span>
+        <span className="text-fg-muted">Role</span>
         <select
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         >
           <option value="OWNER">Owner</option>
           <option value="CO_OWNER">Co-owner</option>
@@ -268,23 +268,23 @@ function PersonForm({
         </select>
       </label>
       <label className="text-xs">
-        <span className="text-gray-600">Email</span>
+        <span className="text-fg-muted">Email</span>
         <input
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
       <label className="text-xs">
-        <span className="text-gray-600">Phone</span>
+        <span className="text-fg-muted">Phone</span>
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
       {showMakePrimary && (
-        <label className="flex items-center gap-1 text-xs text-gray-600">
+        <label className="flex items-center gap-1 text-xs text-fg-muted">
           <input
             type="checkbox"
             checked={makePrimary}
@@ -296,13 +296,13 @@ function PersonForm({
       <button
         onClick={() => onSubmit({ fullName, role, email, phone, makePrimary })}
         disabled={pending}
-        className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+        className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save"}
       </button>
       <button
         onClick={onCancel}
-        className="text-xs text-gray-500 hover:text-gray-900"
+        className="text-xs text-fg-muted hover:text-fg"
       >
         Cancel
       </button>

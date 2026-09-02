@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { UserMenu } from "@/components/UserMenu";
+import { PortalTabBar } from "@/components/PortalTabBar";
 
 export const metadata = { title: "Homeowner portal · HOA SaaS" };
 
@@ -16,71 +18,32 @@ export default async function PortalLayout({
     where: {
       senderId: { not: user.id },
       readAt: null,
-      conversation: {
-        OR: [{ buyerId: user.id }, { sellerId: user.id }],
-      },
+      conversation: { OR: [{ buyerId: user.id }, { sellerId: user.id }] },
     },
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-bg">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
       )}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur">
+        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">
           <Link href="/portal" className="min-w-0">
-            <div className="truncate text-sm font-medium text-gray-900">
+            <div className="truncate text-sm font-semibold text-fg">
               {org.name}
             </div>
-            <div className="truncate text-xs text-gray-400">
+            <div className="truncate text-xs text-fg-subtle">
               {property ? property.unitNumber : user.fullName}
             </div>
           </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/account"
-              className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
-            >
-              Account
-            </Link>
-            <form action="/auth/signout" method="post">
-              <button className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
-                Sign out
-              </button>
-            </form>
-          </div>
+          <UserMenu name={user.fullName} role={user.role} />
         </div>
-        <nav className="mx-auto flex max-w-md gap-4 px-4 pb-2 text-xs">
-          <Link href="/portal" className="text-gray-500 hover:text-gray-900">
-            Home
-          </Link>
-          <Link
-            href="/portal/amenities"
-            className="text-gray-500 hover:text-gray-900"
-          >
-            Amenities
-          </Link>
-          <Link
-            href="/portal/market"
-            className="text-gray-500 hover:text-gray-900"
-          >
-            Marketplace
-          </Link>
-          <Link
-            href="/portal/messages"
-            className="flex items-center gap-1 text-gray-500 hover:text-gray-900"
-          >
-            Messages
-            {unread > 0 && (
-              <span className="rounded-full bg-gray-900 px-1.5 text-[10px] font-medium text-white">
-                {unread}
-              </span>
-            )}
-          </Link>
-        </nav>
       </header>
-      <main className="mx-auto max-w-md px-4 py-5">{children}</main>
+
+      <main className="mx-auto max-w-md px-4 pb-24 pt-5">{children}</main>
+
+      <PortalTabBar unread={unread} />
     </div>
   );
 }

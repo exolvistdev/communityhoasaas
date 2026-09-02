@@ -34,7 +34,7 @@ export function ReconciliationActions({ id }: { id: string }) {
         <input
           name="reason"
           placeholder="Reason (optional)"
-          className="rounded-md border border-gray-300 px-2 py-1 text-xs outline-none focus:border-gray-900"
+          className="rounded-md border border-border px-2 py-1 text-xs outline-none focus:border-brand"
         />
         <button
           type="submit"
@@ -46,7 +46,7 @@ export function ReconciliationActions({ id }: { id: string }) {
         <button
           type="button"
           onClick={() => setRejecting(false)}
-          className="text-xs text-gray-500 hover:text-gray-900"
+          className="text-xs text-fg-muted hover:text-fg"
         >
           Cancel
         </button>
@@ -56,18 +56,18 @@ export function ReconciliationActions({ id }: { id: string }) {
 
   return (
     <div className="flex items-center justify-end gap-2">
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      {error && <span className="text-xs text-danger-fg">{error}</span>}
       <button
         onClick={() => run(() => confirmPayment(id))}
         disabled={pending}
-        className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+        className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
       >
         {pending ? "…" : "Confirm"}
       </button>
       <button
         onClick={() => setRejecting(true)}
         disabled={pending}
-        className="text-xs text-red-500 underline hover:text-red-700"
+        className="text-xs text-danger-fg underline hover:text-danger-fg"
       >
         Reject
       </button>

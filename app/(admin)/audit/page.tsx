@@ -58,20 +58,20 @@ export default async function AuditPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-semibold text-gray-900">Audit log</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-lg font-semibold text-fg">Audit log</h1>
+        <p className="text-sm text-fg-muted">
           Who did what, most recent first.
         </p>
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           Nothing logged yet.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 font-medium">When</th>
                 <th className="px-4 py-2.5 font-medium">Who</th>
@@ -82,18 +82,18 @@ export default async function AuditPage() {
             </thead>
             <tbody>
               {events.map((e) => (
-                <tr key={e.id} className="border-t border-gray-100">
-                  <td className="whitespace-nowrap px-4 py-2.5 text-gray-500">
+                <tr key={e.id} className="border-t border-border">
+                  <td className="whitespace-nowrap px-4 py-2.5 text-fg-muted">
                     {fmt(e.createdAt)}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-900">{e.actorName}</td>
-                  <td className="px-4 py-2.5 text-gray-700">
+                  <td className="px-4 py-2.5 text-fg">{e.actorName}</td>
+                  <td className="px-4 py-2.5 text-fg">
                     {ACTION_LABEL[e.action] ?? e.action}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {e.target ?? "—"}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-400">
+                  <td className="px-4 py-2.5 text-fg-subtle">
                     {e.detail ?? ""}
                   </td>
                 </tr>

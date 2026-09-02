@@ -19,7 +19,7 @@ export function ReportListingForm({
 
   if (done && !open)
     return (
-      <p className="text-center text-xs text-gray-400">
+      <p className="text-center text-xs text-fg-subtle">
         You reported this listing. A moderator will review it.
       </p>
     );
@@ -28,7 +28,7 @@ export function ReportListingForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="mx-auto block text-xs text-gray-400 underline hover:text-gray-600"
+        className="mx-auto block text-xs text-fg-subtle underline hover:text-fg-muted"
       >
         Report this listing
       </button>
@@ -49,31 +49,31 @@ export function ReportListingForm({
           } else setError(res.error);
         });
       }}
-      className="space-y-2 rounded-lg border border-gray-200 bg-white p-3"
+      className="space-y-2 rounded-lg border border-border bg-surface p-3"
     >
-      <label className="block text-sm text-gray-700">
+      <label className="block text-sm text-fg">
         What&apos;s wrong with this listing?
         <textarea
           name="reason"
           required
           rows={3}
           maxLength={500}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-brand"
         />
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Sending…" : "Submit report"}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+          className="rounded-md px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2"
         >
           Cancel
         </button>

@@ -56,8 +56,8 @@ function Step1({ onDone }: { onDone: () => void }) {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Set up your HOA</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-xl font-semibold text-fg">Set up your HOA</h1>
+        <p className="mt-1 text-sm text-fg-muted">
           Create your organization and admin account. Takes about a minute.
         </p>
       </div>
@@ -65,10 +65,10 @@ function Step1({ onDone }: { onDone: () => void }) {
       <Field label="HOA name" name="orgName" placeholder="Sample Subdivision HOA" error={fieldError === "orgName" ? error : undefined} autoFocus />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-fg">
           Subdomain
         </label>
-        <div className="mt-1 flex rounded-md border border-gray-300 focus-within:border-gray-900">
+        <div className="mt-1 flex rounded-md border border-border focus-within:border-gray-900">
           <input
             name="subdomain"
             value={subdomain}
@@ -79,23 +79,23 @@ function Step1({ onDone }: { onDone: () => void }) {
             className="w-full rounded-l-md px-3 py-2 text-sm outline-none"
             required
           />
-          <span className="flex items-center rounded-r-md bg-gray-50 px-3 text-sm text-gray-400">
+          <span className="flex items-center rounded-r-md bg-surface-2 px-3 text-sm text-fg-subtle">
             .hoasaas.ph
           </span>
         </div>
         {fieldError === "subdomain" && (
-          <p className="mt-1 text-xs text-red-600">{error}</p>
+          <p className="mt-1 text-xs text-danger-fg">{error}</p>
         )}
       </div>
 
-      <hr className="border-gray-200" />
+      <hr className="border-border" />
 
       <Field label="Your full name" name="fullName" placeholder="Maria Santos" error={fieldError === "fullName" ? error : undefined} />
       <Field label="Email" name="email" type="email" placeholder="you@example.com" error={fieldError === "email" ? error : undefined} />
       <Field label="Password" name="password" type="password" placeholder="At least 8 characters" error={fieldError === "password" ? error : undefined} />
 
       {error && !fieldError && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger-fg">
           {error}
         </p>
       )}
@@ -103,7 +103,7 @@ function Step1({ onDone }: { onDone: () => void }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+        className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
       >
         {pending ? "Setting upâ€¦" : "Continue"}
       </button>
@@ -128,16 +128,16 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <label className="block text-sm font-medium text-fg">{label}</label>
       <input
         name={name}
         type={type}
         placeholder={placeholder}
         autoFocus={autoFocus}
         required
-        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
+        className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-brand"
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-danger-fg">{error}</p>}
     </div>
   );
 }
@@ -149,10 +149,10 @@ function Step2({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">
+        <h1 className="text-xl font-semibold text-fg">
           Import your property roll
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-fg-muted">
           You can also add properties by hand later.
         </p>
       </div>

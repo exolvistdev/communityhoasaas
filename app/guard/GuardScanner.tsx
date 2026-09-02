@@ -12,37 +12,37 @@ const VERDICT: Record<
     label: "Valid — let them in",
     ok: true,
     panel: "bg-green-600 text-white",
-    chip: "bg-green-100 text-green-800",
+    chip: "bg-success-subtle text-success-fg",
   },
   EXPIRED: {
     label: "Expired",
     ok: false,
     panel: "bg-red-600 text-white",
-    chip: "bg-red-100 text-red-800",
+    chip: "bg-danger-subtle text-danger-fg",
   },
   NOT_YET_VALID: {
     label: "Not valid yet",
     ok: false,
     panel: "bg-red-600 text-white",
-    chip: "bg-red-100 text-red-800",
+    chip: "bg-danger-subtle text-danger-fg",
   },
   REVOKED: {
     label: "Revoked",
     ok: false,
     panel: "bg-red-600 text-white",
-    chip: "bg-red-100 text-red-800",
+    chip: "bg-danger-subtle text-danger-fg",
   },
   USED: {
     label: "Already used",
     ok: false,
     panel: "bg-red-600 text-white",
-    chip: "bg-red-100 text-red-800",
+    chip: "bg-danger-subtle text-danger-fg",
   },
   NOT_FOUND: {
     label: "No matching pass",
     ok: false,
     panel: "bg-red-600 text-white",
-    chip: "bg-gray-200 text-gray-700",
+    chip: "bg-surface-2 text-fg",
   },
 };
 
@@ -112,12 +112,12 @@ export function GuardScanner({
         }}
         className="space-y-3"
       >
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-fg">
           Visitor pass code
         </label>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle">
               <CameraIcon />
             </span>
             <input
@@ -128,13 +128,13 @@ export function GuardScanner({
               autoComplete="off"
               autoCapitalize="characters"
               placeholder="e.g. K7M4PQ2R"
-              className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 font-mono text-lg tracking-widest outline-none focus:border-gray-900"
+              className="w-full rounded-lg border border-border py-3 pl-10 pr-4 font-mono text-lg tracking-widest outline-none focus:border-brand"
             />
           </div>
           <button
             type="submit"
             disabled={pending || !code.trim()}
-            className="shrink-0 rounded-lg bg-gray-900 px-5 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-brand px-5 py-3 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
             {pending ? "…" : "Check"}
           </button>
@@ -142,7 +142,7 @@ export function GuardScanner({
         <button
           type="button"
           onClick={() => setScanning((s) => !s)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface py-2.5 text-sm font-medium text-fg hover:bg-surface-2"
         >
           <CameraIcon />
           {scanning ? "Stop camera" : "Scan QR"}
@@ -153,7 +153,7 @@ export function GuardScanner({
 
       {/* result panel */}
       {!result ? (
-        <div className="rounded-xl border-2 border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
+        <div className="rounded-xl border-2 border-dashed border-border p-10 text-center text-sm text-fg-subtle">
           Scan or type a visitor&apos;s pass code to check it.
         </div>
       ) : (
@@ -184,10 +184,10 @@ export function GuardScanner({
       {/* recent scans */}
       {recent.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-semibold text-gray-900">
+          <h2 className="mb-2 text-sm font-semibold text-fg">
             Recent checks
           </h2>
-          <ul className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
             {recent.map((r, i) => {
               const rv = VERDICT[r.verdict];
               return (
@@ -198,7 +198,7 @@ export function GuardScanner({
                   <div className="min-w-0">
                     <span className="font-mono">{r.code || "—"}</span>
                     {r.visitorName && (
-                      <span className="ml-2 text-gray-500">
+                      <span className="ml-2 text-fg-muted">
                         {r.visitorName} · Unit {r.unitNumber}
                       </span>
                     )}
@@ -209,7 +209,7 @@ export function GuardScanner({
                     >
                       {r.verdict === "VALID" ? "Valid" : rv.label}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-fg-subtle">
                       {new Date(r.scannedAt).toLocaleTimeString("en-PH", {
                         hour: "numeric",
                         minute: "2-digit",
@@ -286,7 +286,7 @@ function CameraScan({
 
   if (error) {
     return (
-      <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      <div className="rounded-lg bg-warning-subtle px-3 py-2 text-sm text-warning-fg">
         {error}{" "}
         <button onClick={onClose} className="underline">
           Close
@@ -296,7 +296,7 @@ function CameraScan({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-300 bg-black">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-black">
       <video
         ref={videoRef}
         muted
@@ -308,7 +308,7 @@ function CameraScan({
       </div>
       <button
         onClick={onClose}
-        className="absolute right-2 top-2 rounded-md bg-black/50 px-2 py-1 text-xs text-white"
+        className="absolute right-2 top-2 rounded-md bg-overlay/60 px-2 py-1 text-xs text-white"
       >
         Close
       </button>

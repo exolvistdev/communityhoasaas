@@ -1,6 +1,7 @@
-import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { requirePortalRole } from "@/lib/rbac";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { UserMenu } from "@/components/UserMenu";
 
 export const metadata = { title: "Gate — pass validation" };
 
@@ -12,36 +13,27 @@ export default async function GuardLayout({
   const { org, user, impersonating } = await requirePortalRole("GUARD");
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-bg">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
       )}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
-          <div className="min-w-0">
-            <div className="truncate text-sm font-medium text-gray-900">
-              {org.name}
-            </div>
-            <div className="text-xs text-gray-400">
-              Gate · {user.fullName}
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto flex max-w-xl items-center justify-between px-5 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand bg-gradient-to-br from-brand-hi to-brand text-brand-fg">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-fg">
+                {org.name}
+              </div>
+              <div className="text-xs text-fg-subtle">Gate security</div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/account"
-              className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
-            >
-              Account
-            </Link>
-            <form action="/auth/signout" method="post">
-              <button className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
-                Sign out
-              </button>
-            </form>
-          </div>
+          <UserMenu name={user.fullName} role={user.role} />
         </div>
       </header>
-      <main className="mx-auto max-w-lg px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-xl px-5 py-8">{children}</main>
     </div>
   );
 }

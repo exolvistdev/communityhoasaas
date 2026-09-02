@@ -44,14 +44,14 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
 
       <div className="space-y-3">
         {amenities.map((a) =>
           editingId === a.id ? (
             <div
               key={a.id}
-              className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+              className="rounded-lg border border-border bg-surface-2 p-4"
             >
               <AmenityForm
                 initial={a}
@@ -63,26 +63,26 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
           ) : (
             <div
               key={a.id}
-              className={`rounded-lg border border-gray-200 bg-white p-4 ${
+              className={`rounded-lg border border-border bg-surface p-4 ${
                 a.archived ? "opacity-60" : ""
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="font-medium text-gray-900">
+                  <div className="font-medium text-fg">
                     {a.name}
                     {a.archived && (
-                      <span className="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-fg-muted">
                         Archived
                       </span>
                     )}
                   </div>
                   {a.description && (
-                    <p className="mt-0.5 text-sm text-gray-500">
+                    <p className="mt-0.5 text-sm text-fg-muted">
                       {a.description}
                     </p>
                   )}
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-fg-subtle">
                     {bookingHoursLabel(a)} · {a.fee > 0 ? peso(a.fee, { cents: false }) : "Free"} ·
                     cap {a.capacity} · {a.minNoticeHours}h notice · max {a.maxHours}h ·{" "}
                     {a.requiresApproval ? "needs approval" : "auto-confirms"}
@@ -91,7 +91,7 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
                       : ""}
                   </p>
                   {a.feeNote && (
-                    <p className="mt-0.5 text-xs text-gray-400">{a.feeNote}</p>
+                    <p className="mt-0.5 text-xs text-fg-subtle">{a.feeNote}</p>
                   )}
                 </div>
                 <div className="flex shrink-0 gap-3 text-xs">
@@ -100,7 +100,7 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
                       setEditingId(a.id);
                       setAdding(false);
                     }}
-                    className="text-gray-500 underline hover:text-gray-900"
+                    className="text-fg-muted underline hover:text-fg"
                   >
                     Edit
                   </button>
@@ -118,7 +118,7 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
                         return;
                       act(() => setAmenityArchived(a.id, !a.archived));
                     }}
-                    className="text-gray-500 underline hover:text-gray-900"
+                    className="text-fg-muted underline hover:text-fg"
                   >
                     {a.archived ? "Restore" : "Archive"}
                   </button>
@@ -130,7 +130,7 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
       </div>
 
       {adding ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <div className="rounded-lg border border-border bg-surface-2 p-4">
           <AmenityForm
             pending={pending}
             onCancel={() => setAdding(false)}
@@ -143,7 +143,7 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
             setAdding(true);
             setEditingId(null);
           }}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
         >
           Add amenity
         </button>
@@ -195,13 +195,13 @@ function AmenityForm({
 
   const num = (label: string, k: keyof FormData, min = 0) => (
     <label className="text-xs">
-      <span className="text-gray-600">{label}</span>
+      <span className="text-fg-muted">{label}</span>
       <input
         type="number"
         min={min}
         value={f[k] as number}
         onChange={(e) => set(k, Number(e.target.value) as never)}
-        className="mt-1 block w-24 rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+        className="mt-1 block w-24 rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
       />
     </label>
   );
@@ -209,20 +209,20 @@ function AmenityForm({
   return (
     <div className="space-y-3">
       <label className="block text-xs">
-        <span className="text-gray-600">Name</span>
+        <span className="text-fg-muted">Name</span>
         <input
           value={f.name}
           onChange={(e) => set("name", e.target.value)}
-          className="mt-1 block w-full max-w-sm rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block w-full max-w-sm rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
       <label className="block text-xs">
-        <span className="text-gray-600">Description</span>
+        <span className="text-fg-muted">Description</span>
         <textarea
           value={f.description}
           onChange={(e) => set("description", e.target.value)}
           rows={2}
-          className="mt-1 block w-full max-w-lg rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block w-full max-w-lg rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
 
@@ -237,16 +237,16 @@ function AmenityForm({
       </div>
 
       <label className="block text-xs">
-        <span className="text-gray-600">Fee note (informational)</span>
+        <span className="text-fg-muted">Fee note (informational)</span>
         <input
           value={f.feeNote}
           onChange={(e) => set("feeNote", e.target.value)}
           placeholder="+ ₱3,000 refundable deposit, settled at the office"
-          className="mt-1 block w-full max-w-lg rounded-md border border-gray-300 px-2 py-1 outline-none focus:border-gray-900"
+          className="mt-1 block w-full max-w-lg rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
         />
       </label>
 
-      <label className="flex items-center gap-2 text-xs text-gray-700">
+      <label className="flex items-center gap-2 text-xs text-fg">
         <input
           type="checkbox"
           checked={f.fee > 0 ? true : f.requiresApproval}
@@ -255,7 +255,7 @@ function AmenityForm({
         />
         Bookings need staff approval
         {f.fee > 0 && (
-          <span className="text-gray-400">(fee amenities always need approval)</span>
+          <span className="text-fg-subtle">(fee amenities always need approval)</span>
         )}
       </label>
 
@@ -263,13 +263,13 @@ function AmenityForm({
         <button
           onClick={() => onSubmit(f)}
           disabled={pending}
-          className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save"}
         </button>
         <button
           onClick={onCancel}
-          className="text-xs text-gray-500 hover:text-gray-900"
+          className="text-xs text-fg-muted hover:text-fg"
         >
           Cancel
         </button>

@@ -1,4 +1,12 @@
 import "./globals.css";
+import { Inter } from "next/font/google";
+import { Providers } from "./providers";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata = {
   title: "HOA SaaS",
@@ -11,8 +19,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-gray-50 text-gray-900">{children}</body>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="font-sans">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

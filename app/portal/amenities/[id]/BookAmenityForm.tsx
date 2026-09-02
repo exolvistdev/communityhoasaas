@@ -92,11 +92,11 @@ export function BookAmenityForm({
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-gray-900">Book this amenity</h2>
+    <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
+      <h2 className="text-sm font-semibold text-fg">Book this amenity</h2>
 
       <label className="block text-sm">
-        <span className="text-gray-700">Date</span>
+        <span className="text-fg">Date</span>
         <input
           type="date"
           value={date}
@@ -109,17 +109,17 @@ export function BookAmenityForm({
               scroll: false,
             });
           }}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 outline-none focus:border-brand"
         />
       </label>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-sm">
-          <span className="text-gray-700">Start</span>
+          <span className="text-fg">Start</span>
           <select
             value={startHour}
             onChange={(e) => setStartHour(Number(e.target.value))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 outline-none focus:border-brand"
           >
             {startHours.map((h) => (
               <option key={h} value={h} disabled={hourDisabled(h)}>
@@ -130,11 +130,11 @@ export function BookAmenityForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="text-gray-700">Length</span>
+          <span className="text-fg">Length</span>
           <select
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 outline-none focus:border-brand"
           >
             {durations.map((h) => (
               <option key={h} value={h}>
@@ -146,29 +146,29 @@ export function BookAmenityForm({
       </div>
 
       <label className="block text-sm">
-        <span className="text-gray-700">Purpose (optional)</span>
+        <span className="text-fg">Purpose (optional)</span>
         <input
           value={purpose}
           onChange={(e) => setPurpose(e.target.value)}
           maxLength={300}
           placeholder="Kids' birthday party"
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 outline-none focus:border-brand"
         />
       </label>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-fg-subtle">
         {labelHour(startHour)}–{labelHour(startHour + duration)} on {date}
       </p>
 
       {(error || clientViolation) && (
-        <p className="text-sm text-red-600">{error ?? clientViolation}</p>
+        <p className="text-sm text-danger-fg">{error ?? clientViolation}</p>
       )}
-      {ok && <p className="text-sm text-green-700">{ok}</p>}
+      {ok && <p className="text-sm text-success-fg">{ok}</p>}
 
       <button
         onClick={submit}
         disabled={pending || Boolean(clientViolation)}
-        className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
       >
         {pending ? "Booking…" : "Request booking"}
       </button>

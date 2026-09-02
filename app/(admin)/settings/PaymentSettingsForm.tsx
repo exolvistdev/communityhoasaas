@@ -41,7 +41,7 @@ export function PaymentSettingsForm({ org }: { org: OrgPayments }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
+      className="space-y-3 rounded-lg border border-border bg-surface p-4"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="GCash number" name="gcashNumber" defaultValue={org.gcashNumber} placeholder="0917 000 0000" />
@@ -50,7 +50,7 @@ export function PaymentSettingsForm({ org }: { org: OrgPayments }) {
         <Field label="Maya account name" name="mayaName" defaultValue={org.mayaName} />
       </div>
       <label className="block text-sm">
-        <span className="text-gray-700">
+        <span className="text-fg">
           Bank transfer &amp; cash instructions
         </span>
         <textarea
@@ -58,22 +58,22 @@ export function PaymentSettingsForm({ org }: { org: OrgPayments }) {
           rows={4}
           defaultValue={org.paymentInstructions ?? ""}
           placeholder="Bank: BDO 1234-5678-90 (Sample HOA). Cash: HOA office, Mon–Fri 9am–5pm."
-          className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-brand"
         />
       </label>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
 
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save"}
         </button>
         {saved && !pending && (
-          <span className="text-sm text-green-700">Saved</span>
+          <span className="text-sm text-success-fg">Saved</span>
         )}
       </div>
     </form>
@@ -93,12 +93,12 @@ function Field({
 }) {
   return (
     <label className="text-sm">
-      <span className="text-gray-700">{label}</span>
+      <span className="text-fg">{label}</span>
       <input
         name={name}
         defaultValue={defaultValue ?? ""}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+        className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
       />
     </label>
   );

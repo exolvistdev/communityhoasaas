@@ -1,34 +1,139 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@prisma/client";
+import {
+  LayoutDashboard,
+  Home,
+  Receipt,
+  CheckCheck,
+  BookOpen,
+  ShieldCheck,
+  Megaphone,
+  CalendarDays,
+  Store,
+  Users,
+  ScrollText,
+  Settings,
+  Menu,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { can } from "@/lib/permissions";
+import { cn } from "@/lib/cn";
+import { Wordmark } from "@/components/Wordmark";
 
-type NavItem = { href: string; label: string; show?: (role: UserRole) => boolean };
+type Item = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  show?: (r: UserRole) => boolean;
+};
+type Group = { label: string; items: Item[] };
 
-const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/properties", label: "Properties" },
-  { href: "/billing", label: "Billing" },
-  { href: "/reconciliation", label: "Reconciliation" },
-  { href: "/ledger", label: "Ledger" },
-  { href: "/gate-passes", label: "Gate passes" },
-  { href: "/announcements", label: "Announcements" },
+const GROUPS: Group[] = [
   {
-    href: "/amenities",
-    label: "Amenities",
-    show: (r) => can(r, "amenity:manage"),
+    label: "Overview",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/properties", label: "Properties", icon: Home },
+    ],
   },
   {
-    href: "/marketplace",
-    label: "Marketplace",
-    show: (r) => can(r, "marketplace:moderate"),
+    label: "Finance",
+    items: [
+      { href: "/billing", label: "Billing", icon: Receipt },
+      { href: "/reconciliation", label: "Reconciliation", icon: CheckCheck },
+      { href: "/ledger", label: "Ledger", icon: BookOpen },
+    ],
   },
-  { href: "/team", label: "Team", show: (r) => can(r, "team:write") },
-  { href: "/audit", label: "Audit log", show: (r) => r === "ADMIN" },
-  { href: "/settings", label: "Settings", show: (r) => can(r, "settings:write") },
+  {
+    label: "Community",
+    items: [
+      { href: "/gate-passes", label: "Gate passes", icon: ShieldCheck },
+      { href: "/announcements", label: "Announcements", icon: Megaphone },
+      {
+        href: "/amenities",
+        label: "Amenities",
+        icon: CalendarDays,
+        show: (r) => can(r, "amenity:manage"),
+      },
+      {
+        href: "/marketplace",
+        label: "Marketplace",
+        icon: Store,
+        show: (r) => can(r, "marketplace:moderate"),
+      },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      {
+        href: "/team",
+        label: "Team",
+        icon: Users,
+        show: (r) => can(r, "team:write"),
+      },
+      {
+        href: "/audit",
+        label: "Audit log",
+        icon: ScrollText,
+        show: (r) => r === "ADMIN",
+      },
+      {
+        href: "/settings",
+        label: "Settings",
+        icon: Settings,
+        show: (r) => can(r, "settings:write"),
+      },
+    ],
+  },
 ];
+
+function Nav({ role, onNavigate }: { role: UserRole; onNavigate?: () => void }) {
+  const pathname = usePathname();
+  return (
+    <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+      {GROUPS.map((g) => {
+        const items = g.items.filter((i) => !i.show || i.show(role));
+        if (items.length === 0) return null;
+        return (
+          <div key={g.label} className="space-y-1">
+            <div className="px-2 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">
+              {g.label}
+            </div>
+            {items.map((item) => {
+              const active =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    "relative flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                    active
+                      ? "bg-brand-subtle font-medium text-brand-accent"
+                      : "text-fg-muted hover:bg-surface-2 hover:text-fg"
+                  )}
+                >
+                  {active && (
+                    <span className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-brand" />
+                  )}
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
 
 export function Sidebar({
   orgName,
@@ -37,42 +142,49 @@ export function Sidebar({
   orgName: string;
   role: UserRole;
 }) {
-  const pathname = usePathname();
-  const items = NAV.filter((i) => !i.show || i.show(role));
+  const [open, setOpen] = useState(false);
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-gray-200 bg-white">
-      <div className="border-b border-gray-200 px-5 py-4">
-        <div className="text-xs uppercase tracking-wide text-gray-400">HOA</div>
-        <div className="truncate font-medium text-gray-900">{orgName}</div>
-      </div>
-      <nav className="flex-1 space-y-1 p-3">
-        {items.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`block rounded-md px-3 py-2 text-sm ${
-                active
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <form action="/auth/signout" method="post" className="p-3">
+    <>
+      <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur lg:hidden">
         <button
-          type="submit"
-          className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-100"
+          onClick={() => setOpen(true)}
+          className="rounded-lg p-1.5 text-fg-muted hover:bg-surface-2"
+          aria-label="Open menu"
         >
-          Sign out
+          <Menu className="h-5 w-5" />
         </button>
-      </form>
-    </aside>
+        <Wordmark subtitle={orgName} />
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-overlay/50"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-border bg-surface">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
+              <Wordmark subtitle={orgName} />
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded-lg p-1.5 text-fg-muted hover:bg-surface-2"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <Nav role={role} onNavigate={() => setOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface lg:flex">
+        <div className="border-b border-border px-4 py-4">
+          <Wordmark subtitle={orgName} />
+        </div>
+        <Nav role={role} />
+      </aside>
+    </>
   );
 }

@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Field, Input, FormError } from "@/components/ui/field";
 import { signIn } from "./actions";
 
 export function LoginForm() {
@@ -29,59 +31,31 @@ export function LoginForm() {
   }
 
   return (
-    <>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            name="email"
-            type="email"
-            required
-            autoFocus
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
-          />
-        </div>
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
+    <form onSubmit={onSubmit} className="space-y-4">
+      <Field label="Email">
+        <Input name="email" type="email" required autoFocus />
+      </Field>
+      <Field
+        label={
+          <span className="flex items-center justify-between">
+            Password
             <Link
               href="/forgot-password"
-              className="text-xs text-gray-500 underline hover:text-gray-900"
+              className="text-xs font-normal text-brand-accent hover:underline"
             >
-              Forgot password?
+              Forgot?
             </Link>
-          </div>
-          <input
-            name="password"
-            type="password"
-            required
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
-          />
-        </div>
+          </span>
+        }
+      >
+        <Input name="password" type="password" required />
+      </Field>
 
-        {error && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+      {error && <FormError>{error}</FormError>}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-        >
-          {pending ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
-
-      <p className="mt-6 text-sm text-gray-500">
-        New HOA?{" "}
-        <Link href="/onboarding" className="text-gray-900 underline">
-          Set one up
-        </Link>
-      </p>
-    </>
+      <Button type="submit" loading={pending} className="w-full">
+        Sign in
+      </Button>
+    </form>
   );
 }

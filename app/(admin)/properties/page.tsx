@@ -45,15 +45,15 @@ export default async function PropertiesPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">
+        <h1 className="text-lg font-semibold text-fg">
           Properties{" "}
-          <span className="text-gray-400">({properties.length})</span>
+          <span className="text-fg-subtle">({properties.length})</span>
         </h1>
         {canWrite && (
           <div className="flex items-center gap-2">
             <Link
               href="/properties/import"
-              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
             >
               Import CSV
             </Link>
@@ -71,13 +71,13 @@ export default async function PropertiesPage({
       {archivedCount > 0 && (
         <div className="text-sm">
           {showArchived ? (
-            <Link href="/properties" className="text-gray-500 underline hover:text-gray-900">
+            <Link href="/properties" className="text-fg-muted underline hover:text-fg">
               Hide archived
             </Link>
           ) : (
             <Link
               href="/properties?archived=1"
-              className="text-gray-500 underline hover:text-gray-900"
+              className="text-fg-muted underline hover:text-fg"
             >
               Show {archivedCount} archived
             </Link>
@@ -86,19 +86,19 @@ export default async function PropertiesPage({
       )}
 
       {properties.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center">
+          <p className="text-sm text-fg-muted">
             No properties yet. Add one above, or{" "}
-            <Link href="/properties/import" className="text-gray-900 underline">
+            <Link href="/properties/import" className="text-fg underline">
               import a CSV
             </Link>
             .
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Unit</th>
                 <th className="px-4 py-2.5 font-medium">Type</th>
@@ -115,34 +115,34 @@ export default async function PropertiesPage({
               {properties.map((p) => (
                 <tr
                   key={p.id}
-                  className={`border-t border-gray-100 ${
-                    p.archivedAt ? "text-gray-400" : ""
+                  className={`border-t border-border ${
+                    p.archivedAt ? "text-fg-subtle" : ""
                   }`}
                 >
                   <td className="px-4 py-2.5 font-medium">
                     <Link
                       href={`/properties/${p.id}`}
-                      className="text-gray-900 hover:underline"
+                      className="text-fg hover:underline"
                     >
                       {p.unitNumber}
                     </Link>
                     {p.archivedAt && (
-                      <span className="ml-2 rounded-full bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                      <span className="ml-2 rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted">
                         Archived
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {TYPE_LABEL[p.type]}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {p.homeowners.map((h) => h.fullName).join(", ") || "—"}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-600">
+                  <td className="px-4 py-2.5 text-fg-muted">
                     {p.ratePlan ? (
                       p.ratePlan.name
                     ) : (
-                      <span className="text-gray-400">Custom</span>
+                      <span className="text-fg-subtle">Custom</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -152,13 +152,13 @@ export default async function PropertiesPage({
                     {p.invoices[0] ? (
                       <InvoiceStatusBadge status={p.invoices[0].status} />
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-fg-subtle">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <Link
                       href={`/statements/${p.id}`}
-                      className="text-sm text-gray-600 underline underline-offset-2 hover:text-gray-900"
+                      className="text-sm text-fg-muted underline underline-offset-2 hover:text-fg"
                     >
                       View
                     </Link>

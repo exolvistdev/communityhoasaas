@@ -1,9 +1,20 @@
 import Link from "next/link";
+import {
+  Home,
+  Wallet,
+  AlertTriangle,
+  ShieldCheck,
+  ArrowUpRight,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { can } from "@/lib/permissions";
 import { MetricCard } from "@/components/MetricCard";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
+import { buttonClass } from "@/components/ui/button";
+import { SectionHeader } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, Thead, Th, Tbody, Tr, Td } from "@/components/ui/table";
 import { peso, periodLabel, currentPeriod } from "@/lib/format";
 
 export const metadata = { title: "Dashboard · HOA SaaS" };
@@ -77,110 +88,145 @@ export default async function DashboardPage() {
 
   if (propertyCount === 0) {
     return (
-      <div className="mx-auto max-w-md rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center">
-        <h1 className="text-lg font-semibold text-gray-900">No properties yet</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Import your property roll to start billing and tracking your HOA.
-        </p>
-        <Link
-          href="/onboarding"
-          className="mt-4 inline-block rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          Import properties
-        </Link>
-      </div>
+      <EmptyState
+        icon={Home}
+        title="No properties yet"
+        description="Import your property roll to start billing and tracking your HOA."
+        action={
+          <Link href="/onboarding" className={buttonClass()}>
+            Import properties
+          </Link>
+        }
+      />
     );
   }
 
+  const alerts = [
+    canModerate && marketReports > 0
+      ? {
+          href: "/marketplace?f=reported",
+          text: `${marketReports} marketplace item${
+            marketReports === 1 ? "" : "s"
+          } need review`,
+        }
+      : null,
+    canAmenities && pendingBookings > 0
+      ? {
+          href: "/amenities/bookings",
+          text: `${pendingBookings} amenity booking request${
+            pendingBookings === 1 ? "" : "s"
+          } waiting`,
+        }
+      : null,
+  ].filter(Boolean) as { href: string; text: string }[];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
-        <Link
-          href="/properties"
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
-        >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-fg">Dashboard</h1>
+          <p className="text-sm text-fg-muted">
+            {org.name} at a glance
+          </p>
+        </div>
+        <Link href="/properties" className={buttonClass({ variant: "secondary" })}>
           Add property
         </Link>
       </div>
 
-      {canModerate && marketReports > 0 && (
-        <Link
-          href="/marketplace?f=reported"
-          className="block rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 hover:bg-amber-100"
-        >
-          {marketReports} marketplace item{marketReports === 1 ? "" : "s"} need
-          review →
-        </Link>
+      {alerts.length > 0 && (
+        <div className="space-y-2">
+          {alerts.map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="flex items-center gap-2.5 rounded-lg border border-warning/30 bg-warning-subtle px-4 py-2.5 text-sm font-medium text-warning-fg transition-colors hover:border-warning/50"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span className="flex-1">{a.text}</span>
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          ))}
+        </div>
       )}
 
-      {canAmenities && pendingBookings > 0 && (
-        <Link
-          href="/amenities/bookings"
-          className="block rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 hover:bg-amber-100"
-        >
-          {pendingBookings} amenity booking request
-          {pendingBookings === 1 ? "" : "s"} waiting →
-        </Link>
-      )}
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard label="Total properties" value={propertyCount} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <MetricCard label="Total properties" value={propertyCount} icon={Home} />
         <MetricCard
-          label={`Collected — ${periodLabel(currentPeriod(now))}`}
+          label={`Collected · ${periodLabel(currentPeriod(now))}`}
           value={peso(collected)}
+          icon={Wallet}
           tone="success"
         />
         <MetricCard
           label="Overdue invoices"
           value={overdueCount}
+          icon={AlertTriangle}
           tone={overdueCount > 0 ? "danger" : "neutral"}
         />
-        <Link href="/gate-passes" className="rounded-lg">
-          <MetricCard label="Active gate passes" value={activeGatePasses} />
+        <Link href="/gate-passes">
+          <MetricCard
+            label="Active gate passes"
+            value={activeGatePasses}
+            icon={ShieldCheck}
+          />
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+      <div className="space-y-2">
+        <SectionHeader
+          label="Properties"
+          action={
+            <Link
+              href="/properties"
+              className="text-xs font-medium text-brand-accent hover:underline"
+            >
+              View all
+            </Link>
+          }
+        />
+        <Table>
+          <Thead>
             <tr>
-              <th className="px-4 py-2.5 font-medium">Unit</th>
-              <th className="px-4 py-2.5 font-medium">Homeowner</th>
-              <th className="px-4 py-2.5 text-right font-medium">Monthly rate</th>
-              <th className="px-4 py-2.5 font-medium">Latest invoice</th>
+              <Th>Unit</Th>
+              <Th>Homeowner</Th>
+              <Th className="text-right">Monthly rate</Th>
+              <Th>Latest invoice</Th>
             </tr>
-          </thead>
-          <tbody>
+          </Thead>
+          <Tbody>
             {properties.map((p) => (
-              <tr key={p.id} className="border-t border-gray-100">
-                <td className="px-4 py-2.5 font-medium text-gray-900">
-                  <Link href={`/properties/${p.id}`} className="hover:underline">
+              <Tr key={p.id}>
+                <Td className="font-medium text-fg">
+                  <Link
+                    href={`/properties/${p.id}`}
+                    className="hover:text-brand-accent"
+                  >
                     {p.unitNumber}
                   </Link>
-                </td>
-                <td className="px-4 py-2.5 text-gray-600">
+                </Td>
+                <Td>
                   {p.homeowners.map((h) => h.fullName).join(", ") || "—"}
-                </td>
-                <td className="px-4 py-2.5 text-right">
+                </Td>
+                <Td className="text-right tabnums">
                   {peso(Number(p.monthlyRate))}
-                </td>
-                <td className="px-4 py-2.5">
+                </Td>
+                <Td>
                   {p.invoices[0] ? (
                     <span className="flex items-center gap-2">
                       <InvoiceStatusBadge status={p.invoices[0].status} />
-                      <span className="text-gray-400">
+                      <span className="tabnums text-fg-subtle">
                         {peso(Number(p.invoices[0].amount))}
                       </span>
                     </span>
                   ) : (
-                    <span className="text-gray-400">No invoices yet</span>
+                    <span className="text-fg-subtle">No invoices yet</span>
                   )}
-                </td>
-              </tr>
+                </Td>
+              </Tr>
             ))}
-          </tbody>
-        </table>
+          </Tbody>
+        </Table>
       </div>
     </div>
   );

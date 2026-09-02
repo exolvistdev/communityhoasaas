@@ -22,11 +22,11 @@ export function CancelBookingButton({ id }: { id: string }) {
           });
         }}
         disabled={pending}
-        className="text-xs text-red-500 underline hover:text-red-700 disabled:opacity-50"
+        className="text-xs text-danger-fg underline hover:text-danger-fg disabled:opacity-50"
       >
         {pending ? "…" : "Cancel"}
       </button>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-danger-fg">{error}</p>}
     </span>
   );
 }

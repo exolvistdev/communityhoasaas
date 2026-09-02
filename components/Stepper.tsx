@@ -16,21 +16,21 @@ export function Stepper({
             <span
               className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
                 active
-                  ? "bg-gray-900 text-white"
+                  ? "bg-brand text-white"
                   : done
                   ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-500"
+                  : "bg-surface-2 text-fg-muted"
               }`}
             >
               {done ? "✓" : n}
             </span>
             <span
-              className={active ? "font-medium text-gray-900" : "text-gray-500"}
+              className={active ? "font-medium text-fg" : "text-fg-muted"}
             >
               {label}
             </span>
             {n < steps.length && (
-              <span className="ml-1 h-px w-8 bg-gray-300" aria-hidden />
+              <span className="ml-1 h-px w-8 bg-border-strong" aria-hidden />
             )}
           </li>
         );

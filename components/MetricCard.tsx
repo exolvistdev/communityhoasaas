@@ -1,34 +1,67 @@
+import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/cn";
+import { Card } from "@/components/ui/card";
+
+type Tone = "neutral" | "success" | "warning" | "danger";
+
+const valueTone: Record<Tone, string> = {
+  neutral: "text-fg",
+  success: "text-success-fg",
+  warning: "text-warning-fg",
+  danger: "text-danger-fg",
+};
+const chipTone: Record<Tone, string> = {
+  neutral: "bg-brand-subtle text-brand-accent",
+  success: "bg-success-subtle text-success-fg",
+  warning: "bg-warning-subtle text-warning-fg",
+  danger: "bg-danger-subtle text-danger-fg",
+};
+
 export function MetricCard({
   label,
   value,
   hint,
+  icon: Icon,
   tone = "neutral",
   loading = false,
 }: {
   label: string;
   value: string | number;
   hint?: string;
-  tone?: "neutral" | "success" | "warning" | "danger";
+  icon?: LucideIcon;
+  tone?: Tone;
   loading?: boolean;
 }) {
-  const valueTone = {
-    neutral: "text-gray-900",
-    success: "text-green-700",
-    warning: "text-amber-700",
-    danger: "text-red-700",
-  }[tone];
-
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <div className="text-sm text-gray-500">{label}</div>
+    <Card className="p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-sm text-fg-muted">{label}</div>
+        {Icon && (
+          <span
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-lg",
+              chipTone[tone]
+            )}
+          >
+            <Icon className="h-4 w-4" />
+          </span>
+        )}
+      </div>
       {loading ? (
-        <div className="mt-2 h-7 w-24 animate-pulse rounded bg-gray-200" />
+        <div className="mt-2 h-7 w-24 animate-pulse rounded bg-surface-2" />
       ) : (
-        <div className={`mt-1 text-2xl font-semibold ${valueTone}`}>{value}</div>
+        <div
+          className={cn(
+            "mt-1 text-2xl font-semibold tabnums",
+            valueTone[tone]
+          )}
+        >
+          {value}
+        </div>
       )}
       {hint && !loading && (
-        <div className="mt-1 text-xs text-gray-400">{hint}</div>
+        <div className="mt-1 text-xs text-fg-subtle">{hint}</div>
       )}
-    </div>
+    </Card>
   );
 }

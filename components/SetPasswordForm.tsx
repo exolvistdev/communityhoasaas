@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { AuthShell } from "@/components/AuthShell";
+import { Button } from "@/components/ui/button";
+import { Field, Input, FormError } from "@/components/ui/field";
 
 type Phase = "checking" | "ready" | "no-session" | "done";
 
@@ -61,51 +64,40 @@ export function SetPasswordForm({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <h1 className="text-xl font-semibold text-gray-900">{heading}</h1>
-
+    <AuthShell
+      title={heading}
+      subtitle={email ? `Signing in as ${email}` : undefined}
+    >
       {phase === "checking" && (
-        <p className="mt-2 text-sm text-gray-500">Checking your link…</p>
+        <p className="text-sm text-fg-muted">Checking your link…</p>
       )}
 
       {phase === "no-session" && (
-        <p className="mt-2 text-sm text-red-600">{invalidLinkMessage}</p>
+        <FormError>{invalidLinkMessage}</FormError>
       )}
 
       {(phase === "ready" || phase === "done") && (
-        <form onSubmit={onSubmit} className="mt-4 space-y-4">
-          {email && (
-            <p className="text-sm text-gray-500">
-              Signing in as <span className="text-gray-900">{email}</span>
-            </p>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              New password
-            </label>
-            <input
+        <form onSubmit={onSubmit} className="space-y-4">
+          <Field label="New password">
+            <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoFocus
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
             />
-          </div>
-          {error && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
-          <button
+          </Field>
+          {error && <FormError>{error}</FormError>}
+          <Button
             type="submit"
-            disabled={busy || phase === "done"}
-            className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            loading={busy}
+            disabled={phase === "done"}
+            className="w-full"
           >
-            {busy ? "Saving…" : ctaLabel}
-          </button>
+            {ctaLabel}
+          </Button>
         </form>
       )}
-    </main>
+    </AuthShell>
   );
 }

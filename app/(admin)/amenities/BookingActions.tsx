@@ -39,7 +39,7 @@ export function BookingDecision({
           name="note"
           placeholder="Reason (optional)"
           maxLength={500}
-          className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-gray-900"
+          className="w-full rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-brand"
         />
         <div className="flex gap-2">
           <button
@@ -51,12 +51,12 @@ export function BookingDecision({
           <button
             type="button"
             onClick={() => setRejecting(false)}
-            className="text-xs text-gray-500 hover:text-gray-900"
+            className="text-xs text-fg-muted hover:text-fg"
           >
             Cancel
           </button>
         </div>
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-danger-fg">{error}</p>}
       </form>
     );
 
@@ -67,19 +67,19 @@ export function BookingDecision({
           <button
             onClick={() => run(() => decideBooking(id, "CONFIRMED"))}
             disabled={pending}
-            className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
             Approve
           </button>
         )}
         <button
           onClick={() => setRejecting(true)}
-          className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-fg hover:bg-surface-2"
         >
           Reject
         </button>
       </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger-fg">{error}</p>}
     </div>
   );
 }
@@ -94,7 +94,7 @@ export function StaffCancelButton({ id }: { id: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-red-500 underline hover:text-red-700"
+        className="text-xs text-danger-fg underline hover:text-danger-fg"
       >
         Cancel
       </button>
@@ -118,7 +118,7 @@ export function StaffCancelButton({ id }: { id: string }) {
         name="note"
         placeholder="Reason (optional)"
         maxLength={500}
-        className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs outline-none focus:border-gray-900"
+        className="w-full rounded-md border border-border px-2 py-1 text-xs outline-none focus:border-brand"
       />
       <div className="flex gap-2">
         <button
@@ -130,12 +130,12 @@ export function StaffCancelButton({ id }: { id: string }) {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs text-gray-500 hover:text-gray-900"
+          className="text-xs text-fg-muted hover:text-fg"
         >
           Keep
         </button>
       </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger-fg">{error}</p>}
     </form>
   );
 }

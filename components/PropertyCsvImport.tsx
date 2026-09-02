@@ -77,15 +77,15 @@ export function PropertyCsvImport({
   if (imported) {
     return (
       <div className="space-y-6 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-subtle text-2xl text-success-fg">
           ✓
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-fg">
             {imported.imported} propert{imported.imported === 1 ? "y" : "ies"}{" "}
             imported
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-fg-muted">
             {imported.skipped > 0
               ? `${imported.skipped} row(s) matched an existing unit and were skipped.`
               : "All rows added."}
@@ -93,7 +93,7 @@ export function PropertyCsvImport({
         </div>
         <button
           onClick={onComplete}
-          className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+          className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:brightness-110"
         >
           {completeLabel}
         </button>
@@ -103,13 +103,13 @@ export function PropertyCsvImport({
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-gray-500">
-        CSV columns: <code className="text-gray-700">unit number</code>,{" "}
-        <code className="text-gray-700">type</code>,{" "}
-        <code className="text-gray-700">monthly rate</code>. Optional:{" "}
-        <code className="text-gray-700">homeowner name</code>,{" "}
-        <code className="text-gray-700">email</code>,{" "}
-        <code className="text-gray-700">phone</code>.
+      <p className="text-sm text-fg-muted">
+        CSV columns: <code className="text-fg">unit number</code>,{" "}
+        <code className="text-fg">type</code>,{" "}
+        <code className="text-fg">monthly rate</code>. Optional:{" "}
+        <code className="text-fg">homeowner name</code>,{" "}
+        <code className="text-fg">email</code>,{" "}
+        <code className="text-fg">phone</code>.
       </p>
 
       <div
@@ -122,8 +122,8 @@ export function PropertyCsvImport({
         onClick={() => inputRef.current?.click()}
         className={`cursor-pointer rounded-lg border-2 border-dashed px-6 py-10 text-center text-sm ${
           dragOver
-            ? "border-gray-900 bg-gray-50"
-            : "border-gray-300 hover:border-gray-400"
+            ? "border-gray-900 bg-surface-2"
+            : "border-border hover:border-border-strong"
         }`}
       >
         <input
@@ -137,36 +137,36 @@ export function PropertyCsvImport({
           }}
         />
         {fileName ? (
-          <span className="text-gray-700">
+          <span className="text-fg">
             <span className="font-medium">{fileName}</span> — click to replace
           </span>
         ) : (
-          <span className="text-gray-500">
+          <span className="text-fg-muted">
             Drag a CSV here, or{" "}
-            <span className="text-gray-900 underline">browse</span>
+            <span className="text-fg underline">browse</span>
           </span>
         )}
       </div>
 
       {parseError && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger-fg">
           {parseError}
         </p>
       )}
 
       {result && result.missingColumns.length > 0 && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger-fg">
           Missing required column(s): {result.missingColumns.join(", ")}. Check
           the header row and re-upload.
         </div>
       )}
 
       {result && result.errors.length > 0 && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm">
-          <p className="font-medium text-amber-800">
+        <div className="rounded-md border border-warning/30 bg-warning-subtle p-3 text-sm">
+          <p className="font-medium text-warning-fg">
             {result.errors.length} row(s) could not be read and will be skipped:
           </p>
-          <ul className="mt-1 max-h-40 space-y-0.5 overflow-auto text-amber-700">
+          <ul className="mt-1 max-h-40 space-y-0.5 overflow-auto text-warning-fg">
             {result.errors.slice(0, 50).map((err, i) => (
               <li key={i}>
                 Row {err.line}: {err.message}
@@ -178,15 +178,15 @@ export function PropertyCsvImport({
 
       {result && result.valid.length > 0 && (
         <div>
-          <div className="mb-2 text-sm font-medium text-gray-700">
+          <div className="mb-2 text-sm font-medium text-fg">
             {result.valid.length} propert
             {result.valid.length === 1 ? "y" : "ies"} detected
             {result.valid.length > preview.length &&
               ` — showing first ${preview.length}`}
           </div>
-          <div className="overflow-hidden rounded-md border border-gray-200">
+          <div className="overflow-hidden rounded-md border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-gray-500">
+              <thead className="bg-surface-2 text-left text-fg-muted">
                 <tr>
                   <th className="px-3 py-2 font-medium">Unit</th>
                   <th className="px-3 py-2 font-medium">Type</th>
@@ -200,14 +200,14 @@ export function PropertyCsvImport({
               </thead>
               <tbody>
                 {preview.map((r, i) => (
-                  <tr key={i} className="border-t border-gray-100">
+                  <tr key={i} className="border-t border-border">
                     <td className="px-3 py-2">{r.unitNumber}</td>
                     <td className="px-3 py-2">{TYPE_LABEL[r.type]}</td>
                     <td className="px-3 py-2 text-right">
                       {peso(r.monthlyRate)}
                     </td>
                     {withOwners && (
-                      <td className="px-3 py-2 text-gray-600">
+                      <td className="px-3 py-2 text-fg-muted">
                         {r.homeownerName ?? "—"}
                       </td>
                     )}
@@ -220,7 +220,7 @@ export function PropertyCsvImport({
       )}
 
       {importErr && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger-fg">
           {importErr}
         </p>
       )}
@@ -229,7 +229,7 @@ export function PropertyCsvImport({
         {onBack ? (
           <button
             onClick={onBack}
-            className="rounded-md px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded-md px-4 py-2 text-sm text-fg-muted hover:bg-surface-2"
           >
             Back
           </button>
@@ -239,7 +239,7 @@ export function PropertyCsvImport({
         <button
           onClick={commit}
           disabled={pending || !result?.valid.length}
-          className="rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending
             ? "Importing…"

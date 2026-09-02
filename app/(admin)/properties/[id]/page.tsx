@@ -75,30 +75,30 @@ export default async function PropertyDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/properties" className="text-sm text-gray-500 hover:text-gray-900">
+        <Link href="/properties" className="text-sm text-fg-muted hover:text-fg">
           ← Properties
         </Link>
       </div>
 
       {/* header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-gray-200 bg-white p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-border bg-surface p-5">
         <div className="space-y-1">
-          <h1 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+          <h1 className="flex items-center gap-2 text-xl font-semibold text-fg">
             {property.unitNumber}
             {property.archivedAt && (
-              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+              <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-fg-muted">
                 Archived
               </span>
             )}
           </h1>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-fg-muted">
             {TYPE_LABEL[property.type]} · {peso(Number(property.monthlyRate))}/mo
             {property.ratePlan ? (
-              <span className="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+              <span className="ml-1 rounded bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted">
                 {property.ratePlan.name}
               </span>
             ) : (
-              <span className="ml-1 text-xs text-gray-400">custom rate</span>
+              <span className="ml-1 text-xs text-fg-subtle">custom rate</span>
             )}
           </div>
           {canWrite && (
@@ -112,17 +112,17 @@ export default async function PropertyDetailPage({
           )}
         </div>
         <div className="text-right">
-          <div className="text-sm text-gray-500">Current balance</div>
+          <div className="text-sm text-fg-muted">Current balance</div>
           <div
             className={`text-lg font-semibold ${
-              balance > 0 ? "text-amber-700" : "text-gray-900"
+              balance > 0 ? "text-warning-fg" : "text-fg"
             }`}
           >
             {peso(balance)}
           </div>
           <Link
             href={`/statements/${property.id}`}
-            className="text-xs text-gray-500 underline underline-offset-2 hover:text-gray-900"
+            className="text-xs text-fg-muted underline underline-offset-2 hover:text-fg"
           >
             View statement
           </Link>
@@ -163,15 +163,15 @@ export default async function PropertyDetailPage({
 
       {/* invoices */}
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-gray-900">Invoices</h2>
+        <h2 className="text-sm font-semibold text-fg">Invoices</h2>
         {property.invoices.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+          <p className="rounded-lg border border-dashed border-border bg-surface p-6 text-center text-sm text-fg-muted">
             No invoices yet.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-gray-500">
+              <thead className="bg-surface-2 text-left text-fg-muted">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Period</th>
                   <th className="px-4 py-2.5 text-right font-medium">Amount</th>
@@ -186,14 +186,14 @@ export default async function PropertyDetailPage({
                   const outstanding =
                     Number(inv.amount) - amountPaid(inv.payments);
                   return (
-                    <tr key={inv.id} className="border-t border-gray-100">
+                    <tr key={inv.id} className="border-t border-border">
                       <td className="px-4 py-2.5">
                         {inv.period ? periodLabel(inv.period) : "—"}
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         {peso(Number(inv.amount))}
                       </td>
-                      <td className="px-4 py-2.5 text-gray-600">
+                      <td className="px-4 py-2.5 text-fg-muted">
                         {fmtDate(inv.dueDate)}
                       </td>
                       <td className="px-4 py-2.5">
@@ -211,7 +211,7 @@ export default async function PropertyDetailPage({
                             <VoidInvoiceButton invoiceId={inv.id} />
                           </span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-fg-subtle">—</span>
                         )}
                       </td>
                     </tr>
@@ -226,7 +226,7 @@ export default async function PropertyDetailPage({
       {/* gate passes */}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">Gate passes</h2>
+          <h2 className="text-sm font-semibold text-fg">Gate passes</h2>
           {canWrite && (
             <CreateGatePassForm
               properties={[]}
@@ -236,13 +236,13 @@ export default async function PropertyDetailPage({
           )}
         </div>
         {property.gatePasses.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+          <p className="rounded-lg border border-dashed border-border bg-surface p-6 text-center text-sm text-fg-muted">
             No gate passes for this property.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-gray-500">
+              <thead className="bg-surface-2 text-left text-fg-muted">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Code</th>
                   <th className="px-4 py-2.5 font-medium">Visitor</th>
@@ -256,24 +256,24 @@ export default async function PropertyDetailPage({
                   const display = effectiveGatePassStatus(gp);
                   const active = display === "ACTIVE" && !gp.usedAt;
                   return (
-                    <tr key={gp.id} className="border-t border-gray-100">
+                    <tr key={gp.id} className="border-t border-border">
                       <td className="px-4 py-2.5 font-mono font-medium">
                         <Link
                           href={`/pass/${gp.code}`}
                           target="_blank"
-                          className="text-gray-900 underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+                          className="text-fg underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
                         >
                           {gp.code}
                         </Link>
                       </td>
                       <td className="px-4 py-2.5">{gp.visitorName}</td>
-                      <td className="px-4 py-2.5 text-gray-600">
+                      <td className="px-4 py-2.5 text-fg-muted">
                         {fmtDate(gp.validFrom)} – {fmtDate(gp.validUntil)}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         <GatePassStatusBadge status={display} />
                         {gp.usedAt && (
-                          <span className="ml-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                          <span className="ml-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-fg-muted">
                             Used {fmtDate(gp.usedAt)}
                           </span>
                         )}
@@ -282,7 +282,7 @@ export default async function PropertyDetailPage({
                         {canWrite && active ? (
                           <RevokeGatePassButton id={gp.id} />
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-fg-subtle">—</span>
                         )}
                       </td>
                     </tr>

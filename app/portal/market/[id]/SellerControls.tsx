@@ -38,12 +38,12 @@ export function SellerControls({
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-3">
-      <div className="text-xs font-medium text-gray-500">Manage your listing</div>
+    <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
+      <div className="text-xs font-medium text-fg-muted">Manage your listing</div>
       <div className="flex flex-wrap gap-2">
         <Link
           href={`/portal/market/${listingId}/edit`}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-fg hover:bg-surface-2"
         >
           Edit
         </Link>
@@ -51,7 +51,7 @@ export function SellerControls({
           <button
             onClick={renew}
             disabled={pending}
-            className="rounded-md border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+            className="rounded-md border border-warning/30 px-3 py-1.5 text-sm font-medium text-warning-fg hover:bg-warning-subtle disabled:opacity-50"
           >
             Renew (expired)
           </button>
@@ -60,7 +60,7 @@ export function SellerControls({
           <button
             onClick={() => change("SOLD")}
             disabled={pending}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-fg hover:bg-surface-2 disabled:opacity-50"
           >
             Mark as sold
           </button>
@@ -69,7 +69,7 @@ export function SellerControls({
           <button
             onClick={() => change("ACTIVE")}
             disabled={pending}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-fg hover:bg-surface-2 disabled:opacity-50"
           >
             Reactivate
           </button>
@@ -78,13 +78,13 @@ export function SellerControls({
           <button
             onClick={() => change("WITHDRAWN")}
             disabled={pending}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-danger-fg hover:bg-danger-subtle disabled:opacity-50"
           >
             Withdraw
           </button>
         )}
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
     </div>
   );
 }

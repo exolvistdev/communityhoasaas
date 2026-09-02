@@ -95,23 +95,23 @@ export function ListingForm({ initial }: { initial?: Initial }) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <label className="block text-sm">
-        <span className="text-gray-700">Title</span>
+        <span className="text-fg">Title</span>
         <input
           name="title"
           required
           defaultValue={initial?.title}
           maxLength={120}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 outline-none focus:border-brand"
         />
       </label>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-sm">
-          <span className="text-gray-700">Category</span>
+          <span className="text-fg">Category</span>
           <select
             name="category"
             defaultValue={initial?.category ?? "OTHER"}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 outline-none focus:border-brand"
           >
             {LISTING_CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>
@@ -121,7 +121,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
           </select>
         </label>
         <label className="block text-sm">
-          <span className="text-gray-700">Price (₱)</span>
+          <span className="text-fg">Price (₱)</span>
           <input
             name="price"
             type="number"
@@ -129,25 +129,25 @@ export function ListingForm({ initial }: { initial?: Initial }) {
             step="1"
             required
             defaultValue={initial?.price}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-gray-900"
+            className="mt-1 w-full rounded-md border border-border px-3 py-2 outline-none focus:border-brand"
           />
         </label>
       </div>
 
       <label className="block text-sm">
-        <span className="text-gray-700">Description</span>
+        <span className="text-fg">Description</span>
         <textarea
           name="description"
           required
           rows={5}
           defaultValue={initial?.description}
           maxLength={4000}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 outline-none focus:border-brand"
         />
       </label>
 
       <div className="text-sm">
-        <span className="text-gray-700">Photos ({slots}/{MAX_PHOTOS})</span>
+        <span className="text-fg">Photos ({slots}/{MAX_PHOTOS})</span>
         <div className="mt-2 flex flex-wrap gap-2">
           {keptPhotos.map((p) => (
             <div key={p} className="relative h-20 w-20">
@@ -161,7 +161,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
                 onClick={() =>
                   setKeptPhotos((cur) => cur.filter((x) => x !== p))
                 }
-                className="absolute -right-1.5 -top-1.5 rounded-full bg-gray-900 px-1.5 text-xs text-white"
+                className="absolute -right-1.5 -top-1.5 rounded-full bg-brand px-1.5 text-xs text-white"
               >
                 ×
               </button>
@@ -179,7 +179,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
                 onClick={() =>
                   setNewFiles((cur) => cur.filter((_, x) => x !== i))
                 }
-                className="absolute -right-1.5 -top-1.5 rounded-full bg-gray-900 px-1.5 text-xs text-white"
+                className="absolute -right-1.5 -top-1.5 rounded-full bg-brand px-1.5 text-xs text-white"
               >
                 ×
               </button>
@@ -189,7 +189,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
             <button
               type="button"
               onClick={() => fileInput.current?.click()}
-              className="h-20 w-20 rounded-md border border-dashed border-gray-300 text-2xl text-gray-400 hover:border-gray-400"
+              className="h-20 w-20 rounded-md border border-dashed border-border text-2xl text-fg-subtle hover:border-border-strong"
             >
               +
             </button>
@@ -205,13 +205,13 @@ export function ListingForm({ initial }: { initial?: Initial }) {
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {pending
             ? "Saving…"
@@ -222,7 +222,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+          className="rounded-lg px-4 py-2 text-sm text-fg-muted hover:bg-surface-2"
         >
           Cancel
         </button>

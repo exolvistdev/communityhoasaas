@@ -11,21 +11,21 @@ export default async function PlatformConsoleLayout({
   const { admin } = await requirePlatformAdmin();
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <header className="border-b border-gray-800 bg-gray-900">
+    <div className="force-dark min-h-screen bg-bg text-fg">
+      <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
           <Link href="/platform" className="flex items-center gap-2">
-            <span className="rounded bg-gray-800 px-2 py-0.5 text-xs font-medium tracking-wide text-gray-300">
-              PLATFORM
+            <span className="rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-fg-muted">
+              Platform
             </span>
-            <span className="text-sm font-medium text-white">
+            <span className="text-sm font-semibold text-fg">
               Operator console
             </span>
           </Link>
-          <div className="flex items-center gap-3 text-sm text-gray-400">
+          <div className="flex items-center gap-3 text-sm text-fg-muted">
             {admin.fullName}
             <form action="/auth/signout" method="post">
-              <button className="rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white">
+              <button className="rounded-md px-2 py-1 text-xs text-fg-muted hover:bg-surface-2 hover:text-fg">
                 Sign out
               </button>
             </form>

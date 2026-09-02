@@ -47,21 +47,21 @@ export function AnnouncementsManager({ items }: { items: Item[] }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Announcements</h1>
+        <h1 className="text-lg font-semibold text-fg">Announcements</h1>
         {!creating && (
           <button
             onClick={() => {
               setCreating(true);
               setEditingId(null);
             }}
-            className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
           >
             New announcement
           </button>
         )}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-fg">{error}</p>}
 
       {creating && (
         <AnnouncementForm
@@ -75,7 +75,7 @@ export function AnnouncementsManager({ items }: { items: Item[] }) {
       )}
 
       {items.length === 0 && !creating ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           No announcements yet. Post one for your homeowners.
         </div>
       ) : (
@@ -95,38 +95,38 @@ export function AnnouncementsManager({ items }: { items: Item[] }) {
             ) : (
               <li
                 key={a.id}
-                className="rounded-lg border border-gray-200 bg-white p-4"
+                className="rounded-lg border border-border bg-surface p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-gray-900">{a.title}</h3>
+                      <h3 className="font-medium text-fg">{a.title}</h3>
                       {a.publishedAt ? (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                        <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
                           Published {fmt(a.publishedAt)}
                         </span>
                       ) : (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-fg-muted">
                           Draft
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-gray-600">
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-fg-muted">
                       {a.body}
                     </p>
-                    <p className="mt-2 text-xs text-gray-400">
+                    <p className="mt-2 text-xs text-fg-subtle">
                       Updated {fmt(a.updatedAt)} · {a.author}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-3 flex gap-3 border-t border-gray-100 pt-3 text-xs">
+                <div className="mt-3 flex gap-3 border-t border-border pt-3 text-xs">
                   <button
                     onClick={() => {
                       setEditingId(a.id);
                       setCreating(false);
                     }}
-                    className="text-gray-500 underline hover:text-gray-900"
+                    className="text-fg-muted underline hover:text-fg"
                   >
                     Edit
                   </button>
@@ -136,7 +136,7 @@ export function AnnouncementsManager({ items }: { items: Item[] }) {
                         setAnnouncementPublished(a.id, !a.publishedAt)
                       )
                     }
-                    className="text-gray-500 underline hover:text-gray-900"
+                    className="text-fg-muted underline hover:text-fg"
                   >
                     {a.publishedAt ? "Unpublish" : "Publish"}
                   </button>
@@ -145,7 +145,7 @@ export function AnnouncementsManager({ items }: { items: Item[] }) {
                       if (!confirm(`Delete "${a.title}"?`)) return;
                       act(() => deleteAnnouncement(a.id));
                     }}
-                    className="text-red-500 underline hover:text-red-700"
+                    className="text-danger-fg underline hover:text-danger-fg"
                   >
                     Delete
                   </button>
@@ -176,22 +176,22 @@ function AnnouncementForm({
   const [body, setBody] = useState(initial?.body ?? "");
 
   return (
-    <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
+    <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
       <label className="block text-sm">
-        <span className="text-gray-700">Title</span>
+        <span className="text-fg">Title</span>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
         />
       </label>
       <label className="block text-sm">
-        <span className="text-gray-700">Message</span>
+        <span className="text-fg">Message</span>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={5}
-          className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 outline-none focus:border-gray-900"
+          className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
         />
       </label>
 
@@ -201,14 +201,14 @@ function AnnouncementForm({
             <button
               onClick={() => onSubmit({ title, body }, false)}
               disabled={pending}
-              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-50"
             >
               Save as draft
             </button>
             <button
               onClick={() => onSubmit({ title, body }, true)}
               disabled={pending}
-              className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
             >
               {pending ? "Publishing…" : "Publish"}
             </button>
@@ -217,14 +217,14 @@ function AnnouncementForm({
           <button
             onClick={() => onSubmit({ title, body })}
             disabled={pending}
-            className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
             {pending ? "Saving…" : "Save"}
           </button>
         )}
         <button
           onClick={onCancel}
-          className="rounded-md px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+          className="rounded-md px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2"
         >
           Cancel
         </button>

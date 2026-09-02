@@ -62,10 +62,10 @@ export const AMENITY_BOOKING_STATUS_BADGE: Record<
   AmenityBookingStatus,
   { label: string; className: string }
 > = {
-  PENDING: { label: "Pending", className: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmed", className: "bg-green-100 text-green-800" },
-  REJECTED: { label: "Rejected", className: "bg-red-100 text-red-800" },
-  CANCELLED: { label: "Cancelled", className: "bg-gray-200 text-gray-700" },
+  PENDING: { label: "Pending", className: "bg-warning-subtle text-warning-fg ring-1 ring-inset ring-warning/25" },
+  CONFIRMED: { label: "Confirmed", className: "bg-success-subtle text-success-fg ring-1 ring-inset ring-success/25" },
+  REJECTED: { label: "Rejected", className: "bg-danger-subtle text-danger-fg ring-1 ring-inset ring-danger/25" },
+  CANCELLED: { label: "Cancelled", className: "bg-surface-2 text-fg-muted ring-1 ring-inset ring-border" },
 };
 
 type Rules = {

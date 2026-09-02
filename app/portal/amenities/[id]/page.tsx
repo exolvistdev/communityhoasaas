@@ -73,19 +73,19 @@ export default async function AmenityDetailPage({
     <div className="space-y-4">
       <Link
         href="/portal/amenities"
-        className="text-sm text-gray-500 hover:text-gray-900"
+        className="text-sm text-fg-muted hover:text-fg"
       >
         ← Amenities
       </Link>
 
       <div>
-        <h1 className="text-lg font-semibold text-gray-900">{amenity.name}</h1>
+        <h1 className="text-lg font-semibold text-fg">{amenity.name}</h1>
         {amenity.description && (
-          <p className="mt-1 text-sm text-gray-600">{amenity.description}</p>
+          <p className="mt-1 text-sm text-fg-muted">{amenity.description}</p>
         )}
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600">
+      <div className="rounded-lg border border-border bg-surface p-3 text-sm text-fg-muted">
         <div>Hours: {bookingHoursLabel(amenity)}</div>
         <div>
           {Number(amenity.fee) > 0
@@ -107,12 +107,12 @@ export default async function AmenityDetailPage({
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-3">
+      <div className="rounded-lg border border-border bg-surface p-3">
         <div className="flex items-center justify-between text-sm">
-          <Link href={shiftDate(-1)} className="text-gray-500 hover:text-gray-900">
+          <Link href={shiftDate(-1)} className="text-fg-muted hover:text-fg">
             ‹ Prev
           </Link>
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-fg">
             {zonedInstant(y, m, d, 12).toLocaleDateString("en-PH", {
               timeZone: APP_TZ,
               weekday: "long",
@@ -120,7 +120,7 @@ export default async function AmenityDetailPage({
               month: "long",
             })}
           </span>
-          <Link href={shiftDate(1)} className="text-gray-500 hover:text-gray-900">
+          <Link href={shiftDate(1)} className="text-fg-muted hover:text-fg">
             Next ›
           </Link>
         </div>
@@ -132,10 +132,10 @@ export default async function AmenityDetailPage({
                 key={h}
                 className={`rounded-md px-1 py-2 text-center text-xs ${
                   state === "full"
-                    ? "bg-gray-200 text-gray-400 line-through"
+                    ? "bg-surface-2 text-fg-subtle line-through"
                     : state === "past"
-                    ? "bg-gray-100 text-gray-300"
-                    : "bg-green-50 text-green-800"
+                    ? "bg-surface-2 text-fg-subtle"
+                    : "bg-success-subtle text-success-fg"
                 }`}
               >
                 {labelHour(h)}

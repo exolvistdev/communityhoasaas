@@ -3,6 +3,9 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { AuthShell } from "@/components/AuthShell";
+import { Button } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/field";
 
 export default function ForgotPasswordPage() {
   const [pending, start] = useTransition();
@@ -17,49 +20,35 @@ export default function ForgotPasswordPage() {
       await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      // Always show the same message — don't reveal whether the email exists.
       setSent(true);
     });
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <h1 className="text-xl font-semibold text-gray-900">Reset your password</h1>
-
+    <AuthShell
+      title="Reset your password"
+      subtitle="We'll email you a link to set a new one."
+      footer={
+        <Link href="/login" className="text-brand-accent hover:underline">
+          Back to sign in
+        </Link>
+      }
+    >
       {sent ? (
-        <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <p className="rounded-lg bg-success-subtle px-3 py-2.5 text-sm text-success-fg">
           If that email has an account, a reset link is on its way. Ask your
           admin for help if it doesn&apos;t arrive.
         </p>
       ) : (
-        <form onSubmit={onSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              name="email"
-              type="email"
-              required
-              autoFocus
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={pending}
-            className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-          >
-            {pending ? "Sending…" : "Send reset link"}
-          </button>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <Field label="Email">
+            <Input name="email" type="email" required autoFocus />
+          </Field>
+          <Button type="submit" loading={pending} className="w-full">
+            Send reset link
+          </Button>
         </form>
       )}
-
-      <p className="mt-6 text-sm text-gray-500">
-        <Link href="/login" className="text-gray-900 underline">
-          Back to sign in
-        </Link>
-      </p>
-    </main>
+    </AuthShell>
   );
 }

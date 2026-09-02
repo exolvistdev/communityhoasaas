@@ -21,11 +21,11 @@ export default async function EditListingPage({
     <div className="space-y-4">
       <Link
         href={`/portal/market/${listing.id}`}
-        className="text-sm text-gray-500 hover:text-gray-900"
+        className="text-sm text-fg-muted hover:text-fg"
       >
         ← Back to listing
       </Link>
-      <h1 className="text-lg font-semibold text-gray-900">Edit listing</h1>
+      <h1 className="text-lg font-semibold text-fg">Edit listing</h1>
       <ListingForm
         initial={{
           id: listing.id,

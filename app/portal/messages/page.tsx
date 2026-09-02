@@ -34,17 +34,17 @@ export default async function MessagesPage() {
 
   return (
     <div className="space-y-4">
-      <Link href="/portal" className="text-sm text-gray-500 hover:text-gray-900">
+      <Link href="/portal" className="text-sm text-fg-muted hover:text-fg">
         ← Back
       </Link>
-      <h1 className="text-lg font-semibold text-gray-900">Messages</h1>
+      <h1 className="text-lg font-semibold text-fg">Messages</h1>
 
       {conversations.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-fg-muted">
           No conversations yet. Message a seller from the marketplace to start one.
         </p>
       ) : (
-        <ul className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
           {conversations.map((c) => {
             const other = c.buyer.id === user.id ? c.seller : c.buyer;
             const role = c.buyer.id === user.id ? "Seller" : "Buyer";
@@ -54,9 +54,9 @@ export default async function MessagesPage() {
               <li key={c.id}>
                 <Link
                   href={`/portal/messages/${c.id}`}
-                  className="flex items-center gap-3 px-3 py-3 hover:bg-gray-50"
+                  className="flex items-center gap-3 px-3 py-3 hover:bg-surface-2"
                 >
-                  <div className="h-12 w-12 shrink-0 rounded-md bg-gray-100">
+                  <div className="h-12 w-12 shrink-0 rounded-md bg-surface-2">
                     {c.listing.photos[0] && (
                       <img
                         src={publicPhotoUrl(c.listing.photos[0])}
@@ -67,22 +67,22 @@ export default async function MessagesPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium text-gray-900">
+                      <span className="truncate text-sm font-medium text-fg">
                         {c.listing.title}
                       </span>
                       {last && (
-                        <span className="shrink-0 text-xs text-gray-400">
+                        <span className="shrink-0 text-xs text-fg-subtle">
                           {rel(last.createdAt)}
                         </span>
                       )}
                     </div>
-                    <div className="truncate text-xs text-gray-500">
+                    <div className="truncate text-xs text-fg-muted">
                       {role}: {other.fullName}
                       {last ? ` · ${last.body}` : ""}
                     </div>
                   </div>
                   {unread > 0 && (
-                    <span className="shrink-0 rounded-full bg-gray-900 px-1.5 py-0.5 text-xs font-medium text-white">
+                    <span className="shrink-0 rounded-full bg-brand px-1.5 py-0.5 text-xs font-medium text-white">
                       {unread}
                     </span>
                   )}
