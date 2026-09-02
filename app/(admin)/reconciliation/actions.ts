@@ -7,6 +7,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { postPaymentReceived } from "@/lib/ledger";
 import { logAudit } from "@/lib/audit";
+import { deliver, recipientSelect } from "@/lib/notifications";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -22,9 +23,14 @@ async function findPending(id: string) {
   const { org } = await getCurrentOrgContext();
   return prisma.payment.findFirst({
     where: { id, status: "PENDING", invoice: { property: { orgId: org.id } } },
-    include: { invoice: { include: { property: { select: { unitNumber: true } } } } },
+    include: {
+      submittedBy: { select: recipientSelect },
+      invoice: { include: { property: { select: { unitNumber: true } } } },
+    },
   });
 }
+
+const peso = (n: unknown) => `₱${Number(n).toLocaleString("en-PH")}`;
 
 export async function confirmPayment(id: string): Promise<Result> {
   const denied = await denyUnless("billing:write");
@@ -46,6 +52,16 @@ export async function confirmPayment(id: string): Promise<Result> {
     target: payment.invoice.property.unitNumber,
     detail: `${payment.method} ₱${payment.amount}`,
   });
+
+  if (payment.submittedBy)
+    await deliver({
+      users: [payment.submittedBy],
+      type: "PAYMENT_CONFIRMED",
+      title: `Payment confirmed — ${payment.invoice.property.unitNumber}`,
+      body: `Your ${peso(payment.amount)} payment was confirmed and applied to your account.`,
+      href: "/portal",
+    }).catch(() => {});
+
   return { ok: true };
 }
 
@@ -77,5 +93,17 @@ export async function rejectPayment(
     target: payment.invoice.property.unitNumber,
     detail: reason ?? undefined,
   });
+
+  if (payment.submittedBy)
+    await deliver({
+      users: [payment.submittedBy],
+      type: "PAYMENT_REJECTED",
+      title: `Payment needs attention — ${payment.invoice.property.unitNumber}`,
+      body: reason
+        ? `Your ${peso(payment.amount)} payment could not be confirmed. ${reason}`
+        : `Your ${peso(payment.amount)} payment could not be confirmed. Please check the reference and resubmit.`,
+      href: "/portal",
+    }).catch(() => {});
+
   return { ok: true };
 }

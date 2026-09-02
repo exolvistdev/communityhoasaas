@@ -7,6 +7,7 @@ import {
 import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
 import { zonedInstant, zonedParts } from "../lib/amenity";
+import { generateOverdueNotifications } from "../lib/notifications";
 import {
   ensureMarketplaceBucket,
   uploadListingPhotos,
@@ -194,6 +195,7 @@ async function resetDemoOrg() {
   await prisma.property.deleteMany({ where: { orgId } });
   await prisma.ratePlan.deleteMany({ where: { orgId } });
   await prisma.account.deleteMany({ where: { orgId } });
+  await prisma.notification.deleteMany({ where: { user: { orgId } } });
   await prisma.impersonationEvent.deleteMany({
     where: { targetUser: { orgId } },
   });
@@ -788,6 +790,41 @@ async function main() {
     },
   });
   await postPaymentReceived(hallPay.id);
+
+  // ── Notifications ─────────────────────────────────────────────────
+  const nDay = 24 * 60 * 60 * 1000;
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: homeownerUser.id,
+        type: "DUES_ISSUED",
+        title: "September 2026 dues are ready",
+        body: "Your statement for September 2026 is posted. Due 15 September 2026.",
+        href: "/portal",
+        readAt: new Date(Date.now() - 2 * nDay),
+        createdAt: new Date(Date.now() - 3 * nDay),
+      },
+      {
+        userId: homeownerUser.id,
+        type: "PAYMENT_CONFIRMED",
+        title: "Payment confirmed — Blk 1 Lot 1",
+        body: "Your ₱2,000 payment was confirmed and applied to your account.",
+        href: "/portal",
+        readAt: new Date(Date.now() - 12 * nDay),
+        createdAt: new Date(Date.now() - 13 * nDay),
+      },
+      {
+        userId: homeownerUser.id,
+        type: "ANNOUNCEMENT",
+        title: "Water interruption — Saturday 6am–10am",
+        body: "Maynilad has scheduled maintenance this Saturday. Please store water the night before.",
+        href: "/portal/announcements",
+        createdAt: new Date(Date.now() - 1 * nDay),
+      },
+    ],
+  });
+  // Juan's prior-month invoice is past due → one INVOICE_OVERDUE (unread).
+  await generateOverdueNotifications(org.id);
 
   console.log(`Seeded "${org.name}" (${org.subdomain})`);
   if (auth["admin@sample-hoa.ph"]) {

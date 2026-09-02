@@ -4,9 +4,10 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { ProfileForm } from "./ProfileForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ContactForm } from "./ContactForm";
-import { NotificationToggle } from "./NotificationToggle";
+import { NotificationPreferences } from "./NotificationPreferences";
 import { BlockedResidents } from "./BlockedResidents";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { CATEGORIES, defaultPrefs } from "@/lib/notifications";
 
 export const metadata = { title: "Account · HOA SaaS" };
 
@@ -33,6 +34,21 @@ export default async function AccountPage() {
     user.role === "HOMEOWNER"
       ? await prisma.homeowner.findFirst({ where: { userId: user.id } })
       : null;
+
+  const base = defaultPrefs();
+  const stored = (user.notificationPrefs ?? {}) as Record<
+    string,
+    { email?: boolean; inApp?: boolean }
+  >;
+  const prefs = Object.fromEntries(
+    CATEGORIES.map((c) => [
+      c.key,
+      {
+        email: stored[c.key]?.email ?? base[c.key].email,
+        inApp: stored[c.key]?.inApp ?? base[c.key].inApp,
+      },
+    ])
+  );
 
   const blocked =
     user.role === "HOMEOWNER"
@@ -81,7 +97,11 @@ export default async function AccountPage() {
 
       <section className="space-y-3 rounded-lg border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold text-fg">Notifications</h2>
-        <NotificationToggle enabled={user.emailNotifications} />
+        <NotificationPreferences
+          categories={CATEGORIES.map((c) => ({ ...c }))}
+          emailNotifications={user.emailNotifications}
+          prefs={prefs}
+        />
       </section>
 
       {user.role === "HOMEOWNER" && (

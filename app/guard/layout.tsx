@@ -2,6 +2,8 @@ import { ShieldCheck } from "lucide-react";
 import { requirePortalRole } from "@/lib/rbac";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { UserMenu } from "@/components/UserMenu";
+import { NotificationBell } from "@/components/NotificationBell";
+import { getNotificationSummary } from "@/lib/notifications";
 
 export const metadata = { title: "Gate — pass validation" };
 
@@ -11,6 +13,7 @@ export default async function GuardLayout({
   children: React.ReactNode;
 }) {
   const { org, user, impersonating } = await requirePortalRole("GUARD");
+  const notifications = await getNotificationSummary(user.id);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -30,7 +33,13 @@ export default async function GuardLayout({
               <div className="text-xs text-fg-subtle">Gate security</div>
             </div>
           </div>
-          <UserMenu name={user.fullName} role={user.role} />
+          <div className="flex items-center gap-1">
+            <NotificationBell
+              unread={notifications.unread}
+              recent={notifications.recent}
+            />
+            <UserMenu name={user.fullName} role={user.role} />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-xl px-5 py-8">{children}</main>

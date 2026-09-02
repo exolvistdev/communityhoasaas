@@ -38,6 +38,7 @@ walkthrough of the admin app.
 | Platform operator console `/platform` — cross-tenant org directory + full user impersonation for support | ✅ |
 | Resident marketplace (Phase 2) — listings with photos, buyer-seller message threads, admin moderation | ✅ |
 | Amenity booking (Phase 2) — bookable amenities, time-slot reservations, staff approval, invoiced fees | ✅ |
+| Notifications — in-app center (bell + `/notifications`) and email for billing, announcements, amenities, marketplace, with a per-user preferences panel in `/account` | ✅ |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
 portal) and submit the reference; an admin confirms it in **Reconciliation**,
@@ -58,8 +59,9 @@ DIRECT_URL="postgresql://…@…pooler.supabase.com:5432/postgres"              
 NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="…"                    # Supabase → Settings → API
 SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth users, marketplace photo uploads
-RESEND_API_KEY=""                                    # optional — marketplace email notifications no-op without it
+RESEND_API_KEY=""                                    # optional — email notifications no-op without it (in-app center still works)
 EMAIL_FROM="HOA SaaS <onboarding@resend.dev>"        # sender for notification emails
+CRON_SECRET=""                                       # optional — gates GET /api/cron/overdue (daily overdue-invoice sweep)
 ```
 
 Use the **transaction-mode pooler** (`:6543`, `pgbouncer=true`) for `DATABASE_URL`
@@ -142,3 +144,4 @@ scripts/
 | `npm run db:migrate` | `prisma migrate dev` (authoring) |
 | `npm run db:seed` | reseed the demo HOA |
 | `npm run db:studio` | Prisma Studio |
+| `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/notify-overdue.ts` | overdue-invoice notification sweep (wire to a daily cron, or hit `GET /api/cron/overdue`) |

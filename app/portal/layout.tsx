@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { UserMenu } from "@/components/UserMenu";
+import { NotificationBell } from "@/components/NotificationBell";
 import { PortalTabBar } from "@/components/PortalTabBar";
+import { getNotificationSummary } from "@/lib/notifications";
 
 export const metadata = { title: "Homeowner portal · HOA SaaS" };
 
@@ -21,6 +23,7 @@ export default async function PortalLayout({
       conversation: { OR: [{ buyerId: user.id }, { sellerId: user.id }] },
     },
   });
+  const notifications = await getNotificationSummary(user.id);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -37,7 +40,13 @@ export default async function PortalLayout({
               {property ? property.unitNumber : user.fullName}
             </div>
           </Link>
-          <UserMenu name={user.fullName} role={user.role} />
+          <div className="flex items-center gap-1">
+            <NotificationBell
+              unread={notifications.unread}
+              recent={notifications.recent}
+            />
+            <UserMenu name={user.fullName} role={user.role} />
+          </div>
         </div>
       </header>
 

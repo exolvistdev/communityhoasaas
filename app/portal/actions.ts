@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { generateGatePassCode } from "@/lib/gatepass";
+import { deliver, staffRecipients } from "@/lib/notifications";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -23,7 +24,7 @@ export async function submitPayment(input: unknown): Promise<Result> {
   if (!parsed.success)
     return { ok: false, error: parsed.error.issues[0].message };
 
-  const { user, property } = await getHomeownerContext();
+  const { user, org, property } = await getHomeownerContext();
   if (!property) return { ok: false, error: "Your account isn't linked to a unit yet" };
 
   // Apply to the oldest still-open invoice for the unit.
@@ -53,6 +54,19 @@ export async function submitPayment(input: unknown): Promise<Result> {
   revalidatePath("/portal");
   revalidatePath("/reconciliation");
   revalidatePath("/billing");
+
+  const staff = await staffRecipients(org.id, ["ADMIN", "TREASURER"]).catch(
+    () => []
+  );
+  if (staff.length)
+    await deliver({
+      users: staff,
+      type: "PAYMENT_SUBMITTED",
+      title: `Payment to reconcile — ${property.unitNumber}`,
+      body: `${user.fullName} submitted ₱${d.amount.toLocaleString("en-PH")} (${d.method}, ref ${d.reference}).`,
+      href: "/reconciliation",
+    }).catch(() => {});
+
   return { ok: true };
 }
 

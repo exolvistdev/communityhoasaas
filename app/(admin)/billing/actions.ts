@@ -12,6 +12,7 @@ import {
 } from "@/lib/ledger";
 import { logAudit } from "@/lib/audit";
 import { periodLabel } from "@/lib/format";
+import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 
 const periodSchema = z
   .string()
@@ -49,9 +50,16 @@ export async function generateMonthlyInvoices(
 
   const properties = await prisma.property.findMany({
     where: { orgId: org.id, archivedAt: null, invoices: { none: { period } } },
+    include: {
+      homeowners: {
+        where: { userId: { not: null } },
+        select: { user: { select: recipientSelect } },
+      },
+    },
   });
 
   let created = 0;
+  const notify: Recipient[] = [];
   for (const property of properties) {
     try {
       const invoice = await prisma.invoice.create({
@@ -66,6 +74,7 @@ export async function generateMonthlyInvoices(
       });
       await postInvoiceIssued(invoice.id);
       created++;
+      for (const h of property.homeowners) if (h.user) notify.push(h.user);
     } catch (e: any) {
       // P2002 = unique violation: another run already billed this property/period
       if (e?.code !== "P2002") throw e;
@@ -80,6 +89,23 @@ export async function generateMonthlyInvoices(
       target: periodLabel(period),
       detail: `${created} invoice${created === 1 ? "" : "s"}`,
     });
+
+  const uniqueNotify = [...new Map(notify.map((u) => [u.id, u])).values()];
+  if (uniqueNotify.length) {
+    const due = dueDate.toLocaleDateString("en-PH", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    await deliver({
+      users: uniqueNotify,
+      type: "DUES_ISSUED",
+      title: `${periodLabel(period)} dues are ready`,
+      body: `Your statement for ${periodLabel(period)} is posted. Due ${due}.`,
+      href: "/portal",
+    }).catch(() => {});
+  }
+
   return { ok: true, created };
 }
 

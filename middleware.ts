@@ -18,6 +18,7 @@ const PROTECTED = [
   "/guard",
   "/portal",
   "/account",
+  "/notifications",
 ];
 
 export async function middleware(request: NextRequest) {

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
+import { CATEGORIES } from "@/lib/notifications";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -62,12 +63,26 @@ export async function updateHomeownerContact(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
-export async function setEmailNotifications(enabled: boolean): Promise<Result> {
+const channelSchema = z.object({ email: z.boolean(), inApp: z.boolean() });
+const categoryKeys = CATEGORIES.map((c) => c.key) as [string, ...string[]];
+const prefsSchema = z.object({
+  emailNotifications: z.boolean(),
+  prefs: z.record(z.enum(categoryKeys), channelSchema),
+});
+
+export async function updateNotificationPrefs(input: unknown): Promise<Result> {
+  const parsed = prefsSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
   const { user } = await getCurrentOrgContext();
   await prisma.user.update({
     where: { id: user.id },
-    data: { emailNotifications: Boolean(enabled) },
+    data: {
+      emailNotifications: parsed.data.emailNotifications,
+      notificationPrefs: parsed.data.prefs,
+    },
   });
-  revalidatePath("/account");
+  revalidateShells();
   return { ok: true };
 }

@@ -1,7 +1,9 @@
 import { requireStaff } from "@/lib/rbac";
 import { Sidebar } from "@/components/Sidebar";
 import { UserMenu } from "@/components/UserMenu";
+import { NotificationBell } from "@/components/NotificationBell";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { getNotificationSummary } from "@/lib/notifications";
 
 export default async function AdminLayout({
   children,
@@ -9,6 +11,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const { org, user, impersonating } = await requireStaff();
+  const notifications = await getNotificationSummary(user.id);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -18,7 +21,11 @@ export default async function AdminLayout({
       <div className="flex flex-1">
         <Sidebar orgName={org.name} role={user.role} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 hidden h-14 items-center justify-end border-b border-border bg-surface/80 px-6 backdrop-blur lg:flex">
+          <header className="sticky top-0 z-20 hidden h-14 items-center justify-end gap-1 border-b border-border bg-surface/80 px-6 backdrop-blur lg:flex">
+            <NotificationBell
+              unread={notifications.unread}
+              recent={notifications.recent}
+            />
             <UserMenu name={user.fullName} role={user.role} />
           </header>
           <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6 lg:p-8">

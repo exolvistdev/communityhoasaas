@@ -6,8 +6,34 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
+import { deliver, recipientSelect } from "@/lib/notifications";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
+
+/** Notify every linked homeowner once, when an announcement goes live. */
+async function notifyPublished(
+  orgId: string,
+  a: { title: string; body: string }
+) {
+  const users = await prisma.user.findMany({
+    where: {
+      orgId,
+      role: "HOMEOWNER",
+      deactivatedAt: null,
+      homeowner: { isNot: null },
+    },
+    select: recipientSelect,
+  });
+  if (!users.length) return;
+  const snippet = a.body.length > 140 ? `${a.body.slice(0, 140)}…` : a.body;
+  await deliver({
+    users,
+    type: "ANNOUNCEMENT",
+    title: a.title,
+    body: snippet,
+    href: "/portal/announcements",
+  }).catch(() => {});
+}
 
 const contentSchema = z.object({
   title: z.string().trim().min(3, "Give it a title"),
@@ -46,6 +72,7 @@ export async function createAnnouncement(
   });
 
   revalidate();
+  if (publish) await notifyPublished(org.id, a);
   return { ok: true, id: a.id };
 }
 
@@ -93,6 +120,9 @@ export async function setAnnouncementPublished(
   });
 
   revalidate();
+  // Only the first time it goes live — re-publishing a pulled post doesn't re-blast.
+  if (published && existing.publishedAt === null)
+    await notifyPublished(org.id, existing);
   return { ok: true };
 }
 
