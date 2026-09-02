@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
+import { paymentQrUrl } from "@/lib/payment-qr";
 import { PayNowClient } from "./PayNowClient";
 
 export const metadata = { title: "Pay now · HOA SaaS" };
@@ -48,8 +49,10 @@ export default async function PayNowPage() {
           payment={{
             gcashNumber: org.gcashNumber,
             gcashName: org.gcashName,
+            gcashQrUrl: org.gcashQrPath ? paymentQrUrl(org.gcashQrPath) : null,
             mayaNumber: org.mayaNumber,
             mayaName: org.mayaName,
+            mayaQrUrl: org.mayaQrPath ? paymentQrUrl(org.mayaQrPath) : null,
             paymentInstructions: org.paymentInstructions,
           }}
         />

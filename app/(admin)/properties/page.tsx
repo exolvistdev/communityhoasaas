@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { peso } from "@/lib/format";
 import { can } from "@/lib/permissions";
+import { toTypeRateDefaults } from "@/lib/rate";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
 import { AddPropertyForm } from "./AddPropertyForm";
 
@@ -63,6 +64,7 @@ export default async function PropertiesPage({
                 name: r.name,
                 monthlyRate: Number(r.monthlyRate),
               }))}
+              typeDefaults={toTypeRateDefaults(org)}
             />
           </div>
         )}

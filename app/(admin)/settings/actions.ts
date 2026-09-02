@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
+import { uploadPaymentQr, deletePaymentQr } from "@/lib/payment-qr";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -105,6 +106,64 @@ export async function updatePaymentSettings(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
+/* ─────────────────────── payment QR images ───────────────────────── */
+
+export async function setPaymentQr(formData: FormData): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const wallet = formData.get("wallet");
+  const file = formData.get("file");
+  if (wallet !== "gcash" && wallet !== "maya")
+    return { ok: false, error: "Unknown wallet" };
+  if (!(file instanceof File) || file.size === 0)
+    return { ok: false, error: "Choose an image file" };
+
+  const { org } = await getCurrentOrgContext();
+  const path = await uploadPaymentQr(file, { orgId: org.id, wallet });
+  if (!path)
+    return {
+      ok: false,
+      error: "That file isn't a supported image (PNG, JPG or WebP, up to 2 MB)",
+    };
+
+  const field = wallet === "gcash" ? "gcashQrPath" : "mayaQrPath";
+  const prev = wallet === "gcash" ? org.gcashQrPath : org.mayaQrPath;
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { [field]: path },
+  });
+  if (prev) await deletePaymentQr(prev);
+
+  revalidatePath("/settings");
+  revalidatePath("/portal");
+  revalidatePath("/portal/pay");
+  await logAudit({ action: "settings.payments_update", detail: `${wallet} QR` });
+  return { ok: true };
+}
+
+export async function removePaymentQr(
+  wallet: "gcash" | "maya"
+): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const { org } = await getCurrentOrgContext();
+  const field = wallet === "gcash" ? "gcashQrPath" : "mayaQrPath";
+  const prev = wallet === "gcash" ? org.gcashQrPath : org.mayaQrPath;
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { [field]: null },
+  });
+  if (prev) await deletePaymentQr(prev);
+
+  revalidatePath("/settings");
+  revalidatePath("/portal");
+  revalidatePath("/portal/pay");
+  await logAudit({ action: "settings.payments_update", detail: `${wallet} QR removed` });
+  return { ok: true };
+}
+
 /* ───────────────────────────── late fees ─────────────────────────── */
 
 const lateFeeSchema = z.object({
@@ -147,6 +206,77 @@ export async function updateLateFeeSettings(input: unknown): Promise<Result> {
     detail: d.lateFeeEnabled ? "enabled" : "disabled",
   });
   return { ok: true };
+}
+
+/* ─────────────────── default rates by property type ──────────────── */
+
+const optionalRate = z.preprocess(
+  (v) => (v === "" || v == null ? undefined : v),
+  z.coerce.number().nonnegative("Rate must be 0 or more").max(10_000_000).optional()
+);
+
+const typeRatesSchema = z.object({
+  typeRateResidential: optionalRate,
+  typeRateCommercial: optionalRate,
+  typeRateTownhouse: optionalRate,
+});
+
+export async function updateTypeRates(input: unknown): Promise<Result> {
+  const denied = await guardRatePlan();
+  if (denied) return denied;
+
+  const parsed = typeRatesSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org } = await getCurrentOrgContext();
+  const d = parsed.data;
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: {
+      typeRateResidential: d.typeRateResidential ?? null,
+      typeRateCommercial: d.typeRateCommercial ?? null,
+      typeRateTownhouse: d.typeRateTownhouse ?? null,
+    },
+  });
+
+  revalidateAll();
+  await logAudit({ action: "settings.type_rates_update" });
+  return { ok: true };
+}
+
+const TYPE_FIELD = {
+  RESIDENTIAL: "typeRateResidential",
+  COMMERCIAL: "typeRateCommercial",
+  TOWNHOUSE: "typeRateTownhouse",
+} as const;
+
+/** Set monthlyRate to the type default for every non-plan, non-archived
+ *  property of that type. */
+export async function reapplyTypeRate(
+  type: "RESIDENTIAL" | "COMMERCIAL" | "TOWNHOUSE"
+): Promise<Result<{ updated: number }>> {
+  const denied = await guardRatePlan();
+  if (denied) return denied;
+
+  const { org } = await getCurrentOrgContext();
+  const rate = org[TYPE_FIELD[type]];
+  if (rate == null)
+    return { ok: false, error: "Set a default for this type first" };
+
+  const res = await prisma.property.updateMany({
+    where: { orgId: org.id, type, ratePlanId: null, archivedAt: null },
+    data: { monthlyRate: rate },
+  });
+
+  revalidateAll();
+  if (res.count > 0)
+    await logAudit({
+      action: "settings.type_rates_reapply",
+      target: type.toLowerCase(),
+      detail: `${res.count} propert${res.count === 1 ? "y" : "ies"}`,
+    });
+  return { ok: true, updated: res.count };
 }
 
 /* ───────────────────────────── rate plans ────────────────────────── */

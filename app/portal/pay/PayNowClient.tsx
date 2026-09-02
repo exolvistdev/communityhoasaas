@@ -8,8 +8,10 @@ import { submitPayment } from "../actions";
 type Payment = {
   gcashNumber: string | null;
   gcashName: string | null;
+  gcashQrUrl: string | null;
   mayaNumber: string | null;
   mayaName: string | null;
+  mayaQrUrl: string | null;
   paymentInstructions: string | null;
 };
 
@@ -51,6 +53,7 @@ export function PayNowClient({
   const online = method === "GCASH" || method === "MAYA";
   const acctNumber = method === "GCASH" ? payment.gcashNumber : payment.mayaNumber;
   const acctName = method === "GCASH" ? payment.gcashName : payment.mayaName;
+  const acctQr = method === "GCASH" ? payment.gcashQrUrl : payment.mayaQrUrl;
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -110,9 +113,18 @@ export function PayNowClient({
         ) : (
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="rounded-lg border border-border bg-surface p-4 text-center">
-              <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-lg border-2 border-dashed border-border text-xs text-fg-subtle">
-                {method === "GCASH" ? "GCash" : "Maya"} QR
-              </div>
+              {acctQr ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={acctQr}
+                  alt={`${method === "GCASH" ? "GCash" : "Maya"} payment QR`}
+                  className="mx-auto h-44 w-44 rounded-lg border border-border bg-white object-contain"
+                />
+              ) : (
+                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-lg border-2 border-dashed border-border px-2 text-center text-xs text-fg-subtle">
+                  Send to the number below
+                </div>
+              )}
               <div className="mt-3 text-sm font-medium text-fg">
                 {acctName}
               </div>

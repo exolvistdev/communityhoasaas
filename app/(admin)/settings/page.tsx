@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
+import { PROPERTY_TYPES, TYPE_RATE_FIELD } from "@/lib/rate";
+import { paymentQrUrl } from "@/lib/payment-qr";
 import { OrgSettingsForm } from "./OrgSettingsForm";
 import { PaymentSettingsForm } from "./PaymentSettingsForm";
 import { LateFeeSettingsForm } from "./LateFeeSettingsForm";
+import { TypeRatesForm } from "./TypeRatesForm";
 import { RatePlansManager } from "./RatePlansManager";
 
 export const metadata = { title: "Settings · HOA SaaS" };
@@ -31,6 +34,24 @@ export default async function SettingsPage() {
     propertyCount: p._count.properties,
     staleCount: staleCounts[i],
   }));
+
+  // Default rate per property type + how many non-plan units are off that rate.
+  const typeRows = await Promise.all(
+    PROPERTY_TYPES.map(async (type) => {
+      const raw = org[TYPE_RATE_FIELD[type]];
+      if (raw == null) return { type, rate: null, offPlan: 0 };
+      const offPlan = await prisma.property.count({
+        where: {
+          orgId: org.id,
+          type,
+          ratePlanId: null,
+          archivedAt: null,
+          monthlyRate: { not: raw },
+        },
+      });
+      return { type, rate: Number(raw), offPlan };
+    })
+  );
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -71,7 +92,22 @@ export default async function SettingsPage() {
             mayaName: org.mayaName,
             paymentInstructions: org.paymentInstructions,
           }}
+          gcashQrUrl={org.gcashQrPath ? paymentQrUrl(org.gcashQrPath) : null}
+          mayaQrUrl={org.mayaQrPath ? paymentQrUrl(org.mayaQrPath) : null}
         />
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">
+            Default rates by property type
+          </h2>
+          <p className="text-xs text-fg-muted">
+            A fallback monthly due for units without a rate plan or a custom
+            rate — handy for bulk CSV imports.
+          </p>
+        </div>
+        <TypeRatesForm rows={typeRows} />
       </section>
 
       <section className="space-y-3">

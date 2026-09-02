@@ -7,6 +7,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { generateInviteLink } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
+import { typeDefaultRate, toTypeRateDefaults } from "@/lib/rate";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -56,10 +57,12 @@ const updateSchema = z
     type: z.enum(["RESIDENTIAL", "COMMERCIAL", "TOWNHOUSE"]),
     ratePlanId: z.string().uuid().optional(),
     customRate: z.coerce.number().nonnegative("Rate must be 0 or more").optional(),
+    useTypeDefault: z.boolean().optional(),
   })
-  .refine((d) => d.ratePlanId || d.customRate !== undefined, {
-    message: "Choose a rate plan or enter a rate",
-  });
+  .refine(
+    (d) => d.ratePlanId || d.customRate !== undefined || d.useTypeDefault,
+    { message: "Choose a rate plan, enter a rate, or use the type default" }
+  );
 
 export async function updateProperty(
   id: string,
@@ -96,8 +99,17 @@ export async function updateProperty(
     if (!plan) return { ok: false, error: "Rate plan not found" };
     monthlyRate = Number(plan.monthlyRate);
     ratePlanId = plan.id;
+  } else if (d.customRate !== undefined) {
+    monthlyRate = d.customRate;
+    ratePlanId = null;
   } else {
-    monthlyRate = d.customRate!;
+    const fallback = typeDefaultRate(toTypeRateDefaults(org), d.type);
+    if (fallback === null)
+      return {
+        ok: false,
+        error: `No ${d.type.toLowerCase()} default is set. Add one in Settings, or enter a rate.`,
+      };
+    monthlyRate = fallback;
     ratePlanId = null;
   }
 

@@ -5,6 +5,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { peso, periodLabel } from "@/lib/format";
 import { effectiveStatus, amountPaid } from "@/lib/invoice";
 import { can } from "@/lib/permissions";
+import { toTypeRateDefaults } from "@/lib/rate";
 import { effectiveGatePassStatus } from "@/lib/gatepass";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
 import { InvoiceStatusBadge, GatePassStatusBadge } from "@/components/StatusBadge";
@@ -151,6 +152,7 @@ export default async function PropertyDetailPage({
             name: r.name,
             monthlyRate: Number(r.monthlyRate),
           }))}
+          typeDefaults={toTypeRateDefaults(org)}
         />
       )}
 

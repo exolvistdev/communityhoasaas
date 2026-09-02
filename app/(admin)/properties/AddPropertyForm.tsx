@@ -3,20 +3,31 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { peso } from "@/lib/format";
+import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
 import { addProperty } from "./actions";
 
 type Plan = { id: string; name: string; monthlyRate: number };
+type PropertyType = "RESIDENTIAL" | "COMMERCIAL" | "TOWNHOUSE";
 
-export function AddPropertyForm({ ratePlans }: { ratePlans: Plan[] }) {
+export function AddPropertyForm({
+  ratePlans,
+  typeDefaults,
+}: {
+  ratePlans: Plan[];
+  typeDefaults: TypeRateDefaults;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  const [planChoice, setPlanChoice] = useState("custom");
+  const [type, setType] = useState<PropertyType>("RESIDENTIAL");
+  const [rateChoice, setRateChoice] = useState("custom");
   const [customRate, setCustomRate] = useState("");
 
-  const selectedPlan = ratePlans.find((p) => p.id === planChoice) ?? null;
+  const selectedPlan = ratePlans.find((p) => p.id === rateChoice) ?? null;
+  const typeDefault = typeDefaultRate(typeDefaults, type);
+  const usingTypeDefault = rateChoice === "type-default";
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,15 +37,20 @@ export function AddPropertyForm({ ratePlans }: { ratePlans: Plan[] }) {
     start(async () => {
       const res = await addProperty({
         unitNumber: fd.get("unitNumber"),
-        type: fd.get("type"),
-        monthlyRate: selectedPlan ? selectedPlan.monthlyRate : customRate,
+        type,
+        monthlyRate: selectedPlan
+          ? selectedPlan.monthlyRate
+          : usingTypeDefault
+          ? undefined
+          : customRate,
         ratePlanId: selectedPlan ? selectedPlan.id : "",
         homeownerName: fd.get("homeownerName"),
         homeownerEmail: fd.get("homeownerEmail"),
       });
       if (res.ok) {
         form.reset();
-        setPlanChoice("custom");
+        setType("RESIDENTIAL");
+        setRateChoice("custom");
         setCustomRate("");
         setOpen(false);
         router.refresh();
@@ -70,8 +86,13 @@ export function AddPropertyForm({ ratePlans }: { ratePlans: Plan[] }) {
         <label className="text-sm">
           <span className="text-fg">Type</span>
           <select
-            name="type"
-            defaultValue="RESIDENTIAL"
+            value={type}
+            onChange={(e) => {
+              const next = e.target.value as PropertyType;
+              setType(next);
+              if (rateChoice === "type-default" && typeDefaultRate(typeDefaults, next) == null)
+                setRateChoice("custom");
+            }}
             className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           >
             <option value="RESIDENTIAL">Residential</option>
@@ -82,8 +103,8 @@ export function AddPropertyForm({ ratePlans }: { ratePlans: Plan[] }) {
         <label className="text-sm">
           <span className="text-fg">Rate</span>
           <select
-            value={planChoice}
-            onChange={(e) => setPlanChoice(e.target.value)}
+            value={rateChoice}
+            onChange={(e) => setRateChoice(e.target.value)}
             className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           >
             {ratePlans.map((p) => (
@@ -91,10 +112,15 @@ export function AddPropertyForm({ ratePlans }: { ratePlans: Plan[] }) {
                 {p.name} — {peso(p.monthlyRate)}
               </option>
             ))}
+            {typeDefault != null && (
+              <option value="type-default">
+                Use type default — {peso(typeDefault)}
+              </option>
+            )}
             <option value="custom">Custom rate…</option>
           </select>
         </label>
-        {!selectedPlan && (
+        {!selectedPlan && !usingTypeDefault && (
           <label className="text-sm">
             <span className="text-fg">Monthly rate (₱)</span>
             <input

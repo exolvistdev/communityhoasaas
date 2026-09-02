@@ -50,9 +50,16 @@ model Organization {
   billingDueDay Int      @default(15) // day of month monthly-dues invoices fall due
   gcashNumber         String?
   gcashName           String?
+  gcashQrPath         String? // uploaded GCash "receive money" QR image (payment-qr bucket)
   mayaNumber          String?
   mayaName            String?
+  mayaQrPath          String? // uploaded Maya QR image
   paymentInstructions String? // bank transfer + cash / office-hours notes
+  // Default monthly dues by property type — used when a unit has neither a rate
+  // plan nor a custom rate. Null = no default for that type.
+  typeRateResidential Decimal? @db.Decimal(12, 2)
+  typeRateCommercial  Decimal? @db.Decimal(12, 2)
+  typeRateTownhouse   Decimal? @db.Decimal(12, 2)
   // Late fees (opt-in, per HOA). amount is pesos when FIXED, a percent when PERCENT.
   lateFeeEnabled        Boolean     @default(false)
   lateFeeType           LateFeeType @default(FIXED)

@@ -29,7 +29,7 @@ walkthrough of the admin app.
 | Gate passes — create / list / revoke, scannable code | ✅ |
 | Announcements — draft / publish | ✅ |
 | Team — invite staff/guard by email, role management | ✅ |
-| Settings — HOA name, billing due-day, rate plans, GCash/Maya payment details, late-fee policy | ✅ |
+| Settings — HOA name, billing due-day, rate plans, default rates by property type, GCash/Maya payment details + uploadable QR, late-fee policy | ✅ |
 | Late fees — opt-in per HOA (flat ₱ or %, grace period, monthly recurrence cap); a daily sweep posts a late-fee invoice + ledger entry and notifies the homeowner | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Password recovery (self-service + admin reset-link fallback), `/account` self-service profile/password/contact | ✅ |
@@ -44,9 +44,11 @@ walkthrough of the admin app.
 | Document library — staff upload bylaws / minutes / financials / forms (`/documents`, private Storage bucket, optional staff-only); homeowners browse & download in the portal | ✅ |
 | Data privacy (RA 10173) — self-service data export (`/account/export`), account-deletion request queue for admins (`/data-requests`), public `/privacy` policy | ✅ |
 
-Payments: no PayMongo. Homeowners pay via GCash/Maya (QR + details shown in the
-portal) and submit the reference; an admin confirms it in **Reconciliation**,
-which posts it to the ledger.
+Payments: no PayMongo. Homeowners pay via GCash/Maya — the HOA uploads its
+"Receive Money" QR in Settings (a scannable QR can't be derived from a phone
+number alone), shown alongside the account details on Pay Now — then submit the
+reference; an admin confirms it in **Reconciliation**, which posts it to the
+ledger.
 
 ## Setup
 
@@ -79,7 +81,7 @@ invites use the service role to pre-confirm accounts).
 ```bash
 npx prisma migrate deploy   # apply migrations (use `prisma migrate dev` when authoring new ones)
 npx prisma generate
-node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace (public) + documents (private) Storage buckets
+node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace + payment-qr (public) and documents (private) Storage buckets
 npm run db:seed             # demo HOA "sample-hoa" (also ensures the bucket)
 npm run dev
 ```

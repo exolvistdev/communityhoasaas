@@ -21,6 +21,12 @@ import {
   uploadDocument,
   clearOrgDocuments,
 } from "../lib/documents";
+import {
+  ensurePaymentQrBucket,
+  uploadPaymentQr,
+  clearOrgPaymentQr,
+} from "../lib/payment-qr";
+import { qrPngBase64 } from "../lib/qr";
 import { createAdminClient } from "../lib/supabase/admin";
 
 const prisma = new PrismaClient();
@@ -184,6 +190,7 @@ async function resetDemoOrg() {
   const orgId = org.id;
   await clearOrgListingPhotos(orgId);
   await clearOrgDocuments(orgId);
+  await clearOrgPaymentQr(orgId);
   await prisma.document.deleteMany({ where: { orgId } });
   await prisma.conversationReport.deleteMany({
     where: { conversation: { orgId } },
@@ -230,6 +237,9 @@ async function main() {
   await ensureDocumentsBucket().catch((e) =>
     console.log("  (documents bucket setup skipped:", e.message, ")")
   );
+  await ensurePaymentQrBucket().catch((e) =>
+    console.log("  (payment-qr bucket setup skipped:", e.message, ")")
+  );
 
   // Platform operator — decoupled from any org.
   await prisma.platformAdmin.deleteMany({ where: { email: PLATFORM_ADMIN.email } });
@@ -260,8 +270,36 @@ async function main() {
       lateFeeGraceDays: 3,
       lateFeeMaxOccurrences: 2,
       privacyContactEmail: "privacy@sample-hoa.ph",
+      // Default dues by property type (match the rate plans below).
+      typeRateResidential: 1500,
+      typeRateCommercial: 5000,
+      typeRateTownhouse: 2200,
     },
   });
+
+  // Fake wallet QR images so the Pay Now screen shows a real code (these encode
+  // a note, not an actual payment target — a demo stand-in for an uploaded QR).
+  for (const wallet of ["gcash", "maya"] as const) {
+    try {
+      const png = Buffer.from(
+        await qrPngBase64(
+          `Sample Subdivision HOA — ${wallet.toUpperCase()} 0917 555 0100`
+        ),
+        "base64"
+      );
+      const path = await uploadPaymentQr(
+        new File([png], `${wallet}.png`, { type: "image/png" }),
+        { orgId: org.id, wallet }
+      );
+      if (path)
+        await prisma.organization.update({
+          where: { id: org.id },
+          data: { [wallet === "gcash" ? "gcashQrPath" : "mayaQrPath"]: path },
+        });
+    } catch (e) {
+      console.log(`  (seed ${wallet} QR skipped:`, (e as Error).message, ")");
+    }
+  }
 
   await prisma.account.createMany({
     data: SEED_ACCOUNTS.map((a) => ({ ...a, orgId: org.id })),

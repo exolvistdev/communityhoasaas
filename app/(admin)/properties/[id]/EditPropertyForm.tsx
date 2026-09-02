@@ -3,33 +3,39 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { peso } from "@/lib/format";
+import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
 import { createRatePlan } from "../../settings/actions";
 import { updateProperty } from "./actions";
 
 type Plan = { id: string; name: string; monthlyRate: number };
+type PropertyType = "RESIDENTIAL" | "COMMERCIAL" | "TOWNHOUSE";
 
 type Props = {
   property: {
     id: string;
     unitNumber: string;
-    type: "RESIDENTIAL" | "COMMERCIAL" | "TOWNHOUSE";
+    type: PropertyType;
     monthlyRate: number;
     ratePlanId: string | null;
   };
   ratePlans: Plan[];
+  typeDefaults: TypeRateDefaults;
 };
 
-export function EditPropertyForm({ property, ratePlans }: Props) {
+export function EditPropertyForm({ property, ratePlans, typeDefaults }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const [plans, setPlans] = useState<Plan[]>(ratePlans);
+  const [type, setType] = useState<PropertyType>(property.type);
   const [rateChoice, setRateChoice] = useState<string>(
     property.ratePlanId ?? "custom"
   );
   const [customRate, setCustomRate] = useState(String(property.monthlyRate));
+
+  const typeDefault = typeDefaultRate(typeDefaults, type);
 
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [newPlanName, setNewPlanName] = useState("");
@@ -71,9 +77,11 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
     start(async () => {
       const res = await updateProperty(property.id, {
         unitNumber: fd.get("unitNumber"),
-        type: fd.get("type"),
+        type,
         ...(rateChoice === "custom"
           ? { customRate }
+          : rateChoice === "type-default"
+          ? { useTypeDefault: true }
           : { ratePlanId: rateChoice }),
       });
       if (res.ok) {
@@ -101,8 +109,16 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
         <label className="text-sm">
           <span className="text-fg">Type</span>
           <select
-            name="type"
-            defaultValue={property.type}
+            value={type}
+            onChange={(e) => {
+              const next = e.target.value as PropertyType;
+              setType(next);
+              if (
+                rateChoice === "type-default" &&
+                typeDefaultRate(typeDefaults, next) == null
+              )
+                setRateChoice("custom");
+            }}
             className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
           >
             <option value="RESIDENTIAL">Residential</option>
@@ -124,6 +140,11 @@ export function EditPropertyForm({ property, ratePlans }: Props) {
               {p.name} — {peso(p.monthlyRate)}
             </option>
           ))}
+          {typeDefault != null && (
+            <option value="type-default">
+              Use type default — {peso(typeDefault)}
+            </option>
+          )}
           <option value="custom">Custom rate…</option>
         </select>
 

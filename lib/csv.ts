@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
 
 /* ── CSV writing ──────────────────────────────────────────────────────
  * Shared by every downloadable-CSV route handler. */
@@ -75,7 +76,9 @@ const HEADER_ALIASES: Record<string, Field> = {
   mobile: "homeownerPhone",
 };
 
-const REQUIRED: Field[] = ["unitNumber", "type", "monthlyRate"];
+// monthlyRate is not required — a row with no rate falls back to the org's
+// default for its property type (see validateRows opts).
+const REQUIRED: Field[] = ["unitNumber", "type"];
 
 const TYPE_MAP: Record<string, ValidRow["type"]> = {
   residential: "RESIDENTIAL",
@@ -99,17 +102,22 @@ const rowSchema = z.object({
     }
     return mapped;
   }),
-  monthlyRate: z.string().trim().transform((v, ctx) => {
-    const n = Number(v.replace(/[₱,\s]/g, ""));
-    if (!Number.isFinite(n) || n < 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Invalid monthly rate "${v}"`,
-      });
-      return z.NEVER;
-    }
-    return n;
-  }),
+  monthlyRate: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v, ctx) => {
+      if (!v) return undefined; // blank / missing → resolved from the type default
+      const n = Number(v.replace(/[₱,\s]/g, ""));
+      if (!Number.isFinite(n) || n < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Invalid monthly rate "${v}"`,
+        });
+        return z.NEVER;
+      }
+      return n;
+    }),
   homeownerName: z.string().trim().optional(),
   homeownerEmail: z
     .string()
@@ -146,7 +154,10 @@ function resolveHeaders(headers: string[]) {
  * Line numbers are 1-based and refer to the data row (row 1 = first row
  * after the header), matching what a user sees in a spreadsheet minus one.
  */
-export function validateRows(rawRows: RawRow[]): ParseResult {
+export function validateRows(
+  rawRows: RawRow[],
+  opts: { typeDefaults?: TypeRateDefaults } = {}
+): ParseResult {
   const headers = rawRows.length ? Object.keys(rawRows[0]) : [];
   const { map, missing } = resolveHeaders(headers);
 
@@ -195,10 +206,27 @@ export function validateRows(rawRows: RawRow[]): ParseResult {
     }
     seen.set(parsed.data.unitNumber.toLowerCase(), line);
 
+    let monthlyRate = parsed.data.monthlyRate;
+    if (monthlyRate === undefined) {
+      const fallback = opts.typeDefaults
+        ? typeDefaultRate(opts.typeDefaults, parsed.data.type)
+        : null;
+      if (fallback === null) {
+        errors.push({
+          line,
+          field: "monthlyRate",
+          message:
+            "No monthly rate, and no default set for this property type — add a rate column or set type defaults in Settings",
+        });
+        return;
+      }
+      monthlyRate = fallback;
+    }
+
     const row: ValidRow = {
       unitNumber: parsed.data.unitNumber,
       type: parsed.data.type,
-      monthlyRate: parsed.data.monthlyRate,
+      monthlyRate,
     };
     if (parsed.data.homeownerName) row.homeownerName = parsed.data.homeownerName;
     if (parsed.data.homeownerEmail) row.homeownerEmail = parsed.data.homeownerEmail;

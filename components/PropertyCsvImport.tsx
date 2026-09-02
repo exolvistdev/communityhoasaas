@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import Papa from "papaparse";
 import { peso } from "@/lib/format";
 import { validateRows, type ParseResult, type ValidRow } from "@/lib/csv";
+import type { TypeRateDefaults } from "@/lib/rate";
 import { importProperties } from "@/app/(admin)/properties/actions";
 
 const TYPE_LABEL: Record<ValidRow["type"], string> = {
@@ -18,10 +19,13 @@ export function PropertyCsvImport({
   onComplete,
   completeLabel = "Done",
   onBack,
+  typeDefaults,
 }: {
   onComplete: () => void;
   completeLabel?: string;
   onBack?: () => void;
+  /** Org defaults used to fill in a missing rate column, per property type. */
+  typeDefaults?: TypeRateDefaults;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -45,11 +49,11 @@ export function PropertyCsvImport({
           setParseError("Could not read this file as CSV.");
           return;
         }
-        setResult(validateRows(out.data));
+        setResult(validateRows(out.data, { typeDefaults }));
       },
       error: () => setParseError("Could not read this file."),
     });
-  }, []);
+  }, [typeDefaults]);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -105,9 +109,9 @@ export function PropertyCsvImport({
     <div className="space-y-5">
       <p className="text-sm text-fg-muted">
         CSV columns: <code className="text-fg">unit number</code>,{" "}
-        <code className="text-fg">type</code>,{" "}
-        <code className="text-fg">monthly rate</code>. Optional:{" "}
-        <code className="text-fg">homeowner name</code>,{" "}
+        <code className="text-fg">type</code>. Optional:{" "}
+        <code className="text-fg">monthly rate</code> (falls back to the type
+        default when blank), <code className="text-fg">homeowner name</code>,{" "}
         <code className="text-fg">email</code>,{" "}
         <code className="text-fg">phone</code>.
       </p>

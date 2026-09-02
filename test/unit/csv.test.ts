@@ -73,6 +73,48 @@ describe("validateRows", () => {
     expect(res.errors[0].field).toBe("monthlyRate");
   });
 
+  it("fills a missing rate from the type default when one is passed", () => {
+    const res = validateRows(
+      [
+        { unit: "A", type: "residential" },
+        { unit: "B", type: "commercial", rate: "" },
+        { unit: "C", type: "townhouse" },
+      ],
+      {
+        typeDefaults: {
+          typeRateResidential: 1500,
+          typeRateCommercial: 5000,
+          typeRateTownhouse: null,
+        },
+      }
+    );
+    expect(res.valid).toEqual([
+      { unitNumber: "A", type: "RESIDENTIAL", monthlyRate: 1500 },
+      { unitNumber: "B", type: "COMMERCIAL", monthlyRate: 5000 },
+    ]);
+    // townhouse has no default → row C is an error, not silently dropped
+    expect(res.errors).toEqual([
+      expect.objectContaining({ line: 3, field: "monthlyRate" }),
+    ]);
+  });
+
+  it("errors a rate-less row when no type defaults are supplied", () => {
+    const res = validateRows([{ unit: "A", type: "residential" }]);
+    expect(res.valid).toEqual([]);
+    expect(res.errors[0]).toMatchObject({ field: "monthlyRate", line: 1 });
+  });
+
+  it("an explicit rate still wins over the type default", () => {
+    const res = validateRows([{ unit: "A", type: "residential", rate: "₱1,200" }], {
+      typeDefaults: {
+        typeRateResidential: 1500,
+        typeRateCommercial: null,
+        typeRateTownhouse: null,
+      },
+    });
+    expect(res.valid[0].monthlyRate).toBe(1200);
+  });
+
   it("skips fully blank lines", () => {
     const res = validateRows([
       { unit: "A", type: "res", rate: "1500" },

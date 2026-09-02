@@ -7,11 +7,13 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import type { ValidRow } from "@/lib/csv";
+import { typeDefaultRate, toTypeRateDefaults } from "@/lib/rate";
 
 const schema = z.object({
   unitNumber: z.string().trim().min(1, "Unit number is required"),
   type: z.enum(["RESIDENTIAL", "COMMERCIAL", "TOWNHOUSE"]),
-  monthlyRate: z.coerce.number().nonnegative("Rate must be 0 or more"),
+  // omitted → resolve from the rate plan or the org's type default
+  monthlyRate: z.coerce.number().nonnegative("Rate must be 0 or more").optional(),
   ratePlanId: z.string().uuid().optional().or(z.literal("")),
   homeownerName: z.string().trim().optional(),
   homeownerEmail: z
@@ -42,7 +44,7 @@ export async function addProperty(input: unknown): Promise<AddPropertyResult> {
   });
   if (dupe) return { ok: false, error: "That unit number already exists" };
 
-  let monthlyRate = d.monthlyRate;
+  let monthlyRate: number;
   let ratePlanId: string | null = null;
   if (d.ratePlanId) {
     const plan = await prisma.ratePlan.findFirst({
@@ -51,6 +53,16 @@ export async function addProperty(input: unknown): Promise<AddPropertyResult> {
     if (!plan) return { ok: false, error: "Rate plan not found" };
     monthlyRate = Number(plan.monthlyRate);
     ratePlanId = plan.id;
+  } else if (d.monthlyRate !== undefined) {
+    monthlyRate = d.monthlyRate;
+  } else {
+    const fallback = typeDefaultRate(toTypeRateDefaults(org), d.type);
+    if (fallback === null)
+      return {
+        ok: false,
+        error: `Enter a rate, pick a plan, or set a ${d.type.toLowerCase()} default in Settings`,
+      };
+    monthlyRate = fallback;
   }
 
   await prisma.property.create({
