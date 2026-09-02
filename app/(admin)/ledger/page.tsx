@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
+import { can } from "@/lib/permissions";
 import { trialBalance } from "@/lib/ledger";
 import { parseStatementRange } from "@/lib/soa";
 import { peso } from "@/lib/format";
+import { ReverseEntryButton } from "./ReverseEntryButton";
 
 export const metadata = { title: "Ledger · HOA SaaS" };
 
@@ -25,7 +27,8 @@ export default async function LedgerPage({
 }: {
   searchParams: { view?: string; from?: string; to?: string; account?: string };
 }) {
-  const { org } = await getCurrentOrgContext();
+  const { org, user } = await getCurrentOrgContext();
+  const canWrite = can(user.role, "billing:write");
   const view: View =
     searchParams.view === "journal"
       ? "journal"
@@ -47,11 +50,23 @@ export default async function LedgerPage({
         <Tab href="/ledger?view=accounts" active={view === "accounts"}>
           Chart of accounts
         </Tab>
+        {canWrite && (
+          <Link
+            href="/ledger/entry"
+            className="ml-auto rounded-full border border-border bg-surface px-3 py-1 text-sm text-fg-muted hover:bg-surface-2"
+          >
+            + Record entry
+          </Link>
+        )}
       </div>
 
       {view === "trial-balance" && <TrialBalance orgId={org.id} />}
       {view === "journal" && (
-        <Journal orgId={org.id} searchParams={searchParams} />
+        <Journal
+          orgId={org.id}
+          canWrite={canWrite}
+          searchParams={searchParams}
+        />
       )}
       {view === "accounts" && <ChartOfAccounts orgId={org.id} />}
     </div>
@@ -124,9 +139,11 @@ async function TrialBalance({ orgId }: { orgId: string }) {
 
 async function Journal({
   orgId,
+  canWrite,
   searchParams,
 }: {
   orgId: string;
+  canWrite: boolean;
   searchParams: { from?: string; to?: string; account?: string };
 }) {
   const accounts = await prisma.account.findMany({
@@ -163,6 +180,8 @@ async function Journal({
           },
         },
       },
+      createdBy: { select: { fullName: true } },
+      reversedBy: { select: { id: true } },
     },
     orderBy: { entryDate: "desc" },
     take: 200,
@@ -255,9 +274,9 @@ async function Journal({
                 className="overflow-hidden rounded-lg border border-border bg-surface"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 bg-surface-2 px-4 py-2 text-sm">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg">
-                      {e.sourceType}
+                      {e.reversalOfId ? "reversal" : e.sourceType}
                     </span>
                     <span className="text-fg">{e.memo}</span>
                     {prop && (
@@ -268,10 +287,24 @@ async function Journal({
                         {prop.unitNumber}
                       </Link>
                     )}
+                    {e.createdBy && (
+                      <span className="text-xs text-fg-subtle">
+                        · {e.createdBy.fullName}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-xs text-fg-subtle">
-                    {fmtDate(e.entryDate)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {e.sourceType === "manual" &&
+                      !e.reversalOfId &&
+                      (e.reversedBy ? (
+                        <span className="text-xs text-fg-subtle">reversed</span>
+                      ) : (
+                        canWrite && <ReverseEntryButton id={e.id} />
+                      ))}
+                    <span className="text-xs text-fg-subtle">
+                      {fmtDate(e.entryDate)}
+                    </span>
+                  </div>
                 </div>
                 <table className="w-full text-sm">
                   <tbody>

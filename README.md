@@ -24,7 +24,7 @@ walkthrough of the admin app.
 | Properties — list, detail, people (owner/co-owner/renter), rate plans, archive | ✅ |
 | Billing — bulk invoice generation, record payment, void, Statement of Account (single + bulk + CSV) | ✅ |
 | Reconciliation — confirm/reject homeowner-submitted payments | ✅ |
-| Ledger — trial balance, journal, chart of accounts, CSV export | ✅ |
+| Ledger — trial balance (any date range), journal, chart of accounts (~15 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
 | Gate passes — create / list / revoke, scannable code | ✅ |
 | Announcements — draft / publish | ✅ |
 | Team — invite staff/guard by email, role management | ✅ |

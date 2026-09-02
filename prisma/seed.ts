@@ -3,6 +3,7 @@ import {
   SEED_ACCOUNTS,
   postInvoiceIssued,
   postPaymentReceived,
+  postManualEntry,
 } from "../lib/ledger";
 import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
@@ -864,6 +865,59 @@ async function main() {
     },
   });
   await postPaymentReceived(hallPay.id);
+
+  // ── Manual ledger entries: opening balance + a few operating costs ──
+  const ago = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  await postManualEntry({
+    orgId: org.id,
+    entryDate: ago(300),
+    memo: "Opening cash balance",
+    createdById: admin.id,
+    lines: [
+      { code: "1000", debit: 80000, credit: 0 },
+      { code: "3900", debit: 0, credit: 80000 },
+    ],
+  });
+  await postManualEntry({
+    orgId: org.id,
+    entryDate: ago(40),
+    memo: "August security services",
+    createdById: admin.id,
+    lines: [
+      { code: "5300", debit: 12000, credit: 0 },
+      { code: "1000", debit: 0, credit: 12000 },
+    ],
+  });
+  await postManualEntry({
+    orgId: org.id,
+    entryDate: ago(35),
+    memo: "Common-area electricity & water",
+    createdById: admin.id,
+    lines: [
+      { code: "5100", debit: 4200, credit: 0 },
+      { code: "1000", debit: 0, credit: 4200 },
+    ],
+  });
+  await postManualEntry({
+    orgId: org.id,
+    entryDate: ago(18),
+    memo: "Main gate motor repair",
+    createdById: admin.id,
+    lines: [
+      { code: "5200", debit: 3500, credit: 0 },
+      { code: "1000", debit: 0, credit: 3500 },
+    ],
+  });
+  await postManualEntry({
+    orgId: org.id,
+    entryDate: ago(12),
+    memo: "Bank interest",
+    createdById: admin.id,
+    lines: [
+      { code: "1000", debit: 850, credit: 0 },
+      { code: "4200", debit: 0, credit: 850 },
+    ],
+  });
 
   // ── Notifications ─────────────────────────────────────────────────
   const nDay = 24 * 60 * 60 * 1000;

@@ -146,6 +146,7 @@ model User {
   amenityBookingsDecided AmenityBooking[]     @relation("BookingDecidedBy")
   notifications         Notification[]
   documentsUploaded     Document[]            @relation("DocumentUploader")
+  journalEntriesCreated JournalEntry[]        @relation("JournalEntryCreator")
 
   @@index([orgId])
   @@map("users")
@@ -363,17 +364,24 @@ model JournalEntry {
   id         String   @id @default(uuid())
   orgId      String
   org        Organization @relation(fields: [orgId], references: [id])
-  entryDate  DateTime @default(now())
-  sourceType String   // "invoice" | "payment" | "manual"
+  entryDate  DateTime @default(now()) // when the transaction is dated (not row creation)
+  sourceType String   // "invoice" | "invoice_void" | "payment" | "manual" | "late_fee" | "write_off"
   invoiceId  String?  @unique
   invoice    Invoice? @relation(fields: [invoiceId], references: [id])
   paymentId  String?  @unique
   payment    Payment? @relation(fields: [paymentId], references: [id])
   memo       String?
+  createdById String? // staff member who posted a manual entry
+  createdBy   User?   @relation("JournalEntryCreator", fields: [createdById], references: [id])
+  // A manual entry that reverses another (one reversal per entry).
+  reversalOfId String?      @unique
+  reversalOf   JournalEntry? @relation("JournalEntryReversal", fields: [reversalOfId], references: [id])
+  reversedBy   JournalEntry? @relation("JournalEntryReversal")
 
   lines JournalLine[]
 
   @@index([orgId])
+  @@index([orgId, entryDate])
   @@map("journal_entries")
 }
 

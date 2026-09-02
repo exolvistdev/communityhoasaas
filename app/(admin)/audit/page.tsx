@@ -35,6 +35,11 @@ const ACTION_LABEL: Record<string, string> = {
   "amenity.booking_approve": "Approved a booking",
   "amenity.booking_reject": "Rejected a booking",
   "amenity.booking_cancel": "Cancelled a booking",
+  "document.upload": "Uploaded a document",
+  "document.update": "Updated a document",
+  "document.delete": "Deleted a document",
+  "ledger.manual_entry": "Posted a journal entry",
+  "ledger.reverse_entry": "Reversed a journal entry",
 };
 
 const fmt = (d: Date) =>
