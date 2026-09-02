@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireStaff } from "@/lib/rbac";
 import { buildStatementsForOrg, parseStatementRange } from "@/lib/soa";
 import { StatementDocument } from "@/components/StatementDocument";
-import { PrintToolbar } from "./PrintToolbar";
+import { PrintToolbar } from "@/components/PrintToolbar";
 
 export default async function BulkStatementsPage({
   searchParams,

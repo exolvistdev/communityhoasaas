@@ -10,6 +10,7 @@ import {
   Receipt,
   CheckCheck,
   BookOpen,
+  FileBarChart,
   ShieldCheck,
   Megaphone,
   CalendarDays,
@@ -48,6 +49,7 @@ const GROUPS: Group[] = [
       { href: "/billing", label: "Billing", icon: Receipt },
       { href: "/reconciliation", label: "Reconciliation", icon: CheckCheck },
       { href: "/ledger", label: "Ledger", icon: BookOpen },
+      { href: "/reports", label: "Reports", icon: FileBarChart },
     ],
   },
   {

@@ -1,5 +1,29 @@
 import { z } from "zod";
 
+/* ── CSV writing ──────────────────────────────────────────────────────
+ * Shared by every downloadable-CSV route handler. */
+
+/** Quote a cell if it contains a comma, quote or newline; double embedded quotes. */
+export function csvCell(v: string | number | null | undefined) {
+  const s = v == null ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** Rows (including the header row) → a CRLF-joined CSV string. */
+export function toCsvString(rows: (string | number | null | undefined)[][]) {
+  return rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
+}
+
+/** Build a downloadable-file Response for a CSV string. */
+export function csvResponse(csv: string, filename: string) {
+  return new Response(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
+}
+
 export type RawRow = Record<string, string>;
 
 export type ValidRow = {

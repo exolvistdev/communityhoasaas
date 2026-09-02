@@ -6,11 +6,7 @@ import {
   parseStatementRange,
   type Statement,
 } from "@/lib/soa";
-
-function csvCell(v: string | number) {
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+import { toCsvString, csvResponse } from "@/lib/csv";
 
 function toCsv(statements: Statement[]) {
   const header = [
@@ -38,7 +34,7 @@ function toCsv(statements: Statement[]) {
     }
     rows.push([s.unitNumber, "", "closing", "Amount due", "", "", s.closingBalance.toFixed(2)]);
   }
-  return [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  return toCsvString([header, ...rows]);
 }
 
 export async function GET(request: Request) {
@@ -68,13 +64,6 @@ export async function GET(request: Request) {
     filenameStem = `soa-${org.subdomain}-all`;
   }
 
-  const csv = toCsv(statements);
   const date = new Date().toISOString().slice(0, 10);
-
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filenameStem}-${date}.csv"`,
-    },
-  });
+  return csvResponse(toCsv(statements), `${filenameStem}-${date}.csv`);
 }

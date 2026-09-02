@@ -7,6 +7,7 @@ const PROTECTED = [
   "/billing",
   "/reconciliation",
   "/ledger",
+  "/reports",
   "/statements",
   "/gate-passes",
   "/announcements",

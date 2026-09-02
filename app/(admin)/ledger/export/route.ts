@@ -1,11 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { parseStatementRange } from "@/lib/soa";
-
-function csvCell(v: string | number) {
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+import { toCsvString, csvResponse } from "@/lib/csv";
 
 export async function GET(request: Request) {
   const { org } = await getCurrentOrgContext();
@@ -59,15 +55,9 @@ export async function GET(request: Request) {
     }
   }
 
-  const csv = [header, ...rows]
-    .map((r) => r.map(csvCell).join(","))
-    .join("\r\n");
   const date = new Date().toISOString().slice(0, 10);
-
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="ledger-${org.subdomain}-${date}.csv"`,
-    },
-  });
+  return csvResponse(
+    toCsvString([header, ...rows]),
+    `ledger-${org.subdomain}-${date}.csv`
+  );
 }

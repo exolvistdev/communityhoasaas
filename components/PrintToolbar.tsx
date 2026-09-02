@@ -7,7 +7,7 @@ export function PrintToolbar({
   backHref = "/billing",
   backLabel = "Back to billing",
 }: {
-  csvHref: string;
+  csvHref?: string;
   backHref?: string;
   backLabel?: string;
 }) {
@@ -20,12 +20,14 @@ export function PrintToolbar({
         ← {backLabel}
       </Link>
       <div className="flex gap-2">
-        <a
-          href={csvHref}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
-        >
-          Download CSV
-        </a>
+        {csvHref && (
+          <a
+            href={csvHref}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Download CSV
+          </a>
+        )}
         <button
           onClick={() => window.print()}
           className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"

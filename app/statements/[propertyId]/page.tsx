@@ -3,7 +3,7 @@ import { buildStatement, parseStatementRange } from "@/lib/soa";
 import { statementViewerOrg } from "@/lib/statement-access";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { StatementDocument } from "@/components/StatementDocument";
-import { PrintToolbar } from "../PrintToolbar";
+import { PrintToolbar } from "@/components/PrintToolbar";
 
 export default async function SingleStatementPage({
   params,

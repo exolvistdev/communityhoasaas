@@ -25,6 +25,7 @@ walkthrough of the admin app.
 | Billing — bulk invoice generation, record payment, void, Statement of Account (single + bulk + CSV) | ✅ |
 | Reconciliation — confirm/reject homeowner-submitted payments | ✅ |
 | Ledger — trial balance (any date range), journal, chart of accounts (~15 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
+| Financial reports (`/reports`) — income & expenses, financial position, receivables aging, collections summary, and a bundled board pack; period picker, print-to-PDF, CSV per report | ✅ |
 | Gate passes — create / list / revoke, scannable code | ✅ |
 | Announcements — draft / publish | ✅ |
 | Team — invite staff/guard by email, role management | ✅ |
@@ -104,6 +105,7 @@ app/
                       ledger, gate-passes, announcements, team, settings
   onboarding/         org + admin sign-up wizard
   statements/         printable Statement of Account (kept outside the sidebar chrome)
+  reports/            printable financial reports + board pack (staff-only, print-to-PDF)
   accept-invite/      set-password page for invited users
   portal/             homeowner portal — balance, Pay Now, gate-pass request,
                       announcements, marketplace, messages
