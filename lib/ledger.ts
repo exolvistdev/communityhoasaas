@@ -156,6 +156,43 @@ export async function postPaymentReceived(paymentId: string) {
   return entry;
 }
 
+/**
+ * Clear an uncollectible balance on move-out. The paired Payment row (method
+ * WRITE_OFF) is what moves the Invoice/Payment-derived balance to zero; this
+ * entry keeps the ledger honest — Bad Debt Expense up (6000), AR down (1100).
+ */
+export async function postWriteOff(paymentId: string) {
+  const payment = await prisma.payment.findUniqueOrThrow({
+    where: { id: paymentId },
+    include: { invoice: { include: { property: true } } },
+  });
+
+  const [badDebt, ar] = await Promise.all([
+    getAccount(payment.invoice.property.orgId, "6000"),
+    getAccount(payment.invoice.property.orgId, "1100"),
+  ]);
+
+  const entry = await prisma.journalEntry.create({
+    data: {
+      orgId: payment.invoice.property.orgId,
+      sourceType: "write_off",
+      paymentId: payment.id,
+      entryDate: payment.paidAt,
+      memo: `Write-off — unit ${payment.invoice.property.unitNumber}`,
+      lines: {
+        create: [
+          { accountId: badDebt.id, debit: payment.amount, credit: 0 },
+          { accountId: ar.id, debit: 0, credit: payment.amount },
+        ],
+      },
+    },
+    include: { lines: true },
+  });
+
+  await recalculateInvoiceStatus(payment.invoiceId);
+  return entry;
+}
+
 export type ManualLine = { code: string; debit: number; credit: number };
 
 /**

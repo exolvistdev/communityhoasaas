@@ -21,7 +21,7 @@ walkthrough of the admin app.
 | --- | --- |
 | Onboarding — org + admin sign-up, CSV property import | ✅ |
 | Admin dashboard | ✅ |
-| Properties — list, detail, people (owner/co-owner/renter), rate plans, archive | ✅ |
+| Properties — list, detail, people (owner/co-owner/renter), rate plans, archive, close-out / ownership transfer (settle or write off the balance, swap residents, revoke logins) | ✅ |
 | Billing — bulk invoice generation, record payment, void, Statement of Account (single + bulk + CSV) | ✅ |
 | Reconciliation — confirm/reject homeowner-submitted payments | ✅ |
 | Ledger — trial balance (any date range), journal, chart of accounts (~15 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |

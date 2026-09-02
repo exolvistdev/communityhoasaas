@@ -4,6 +4,7 @@ import {
   postInvoiceIssued,
   postPaymentReceived,
   postManualEntry,
+  postWriteOff,
 } from "../lib/ledger";
 import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
@@ -204,6 +205,7 @@ async function resetDemoOrg() {
   await prisma.invoice.deleteMany({ where: { property: { orgId } } });
   await prisma.gatePassScan.deleteMany({ where: { orgId } });
   await prisma.gatePass.deleteMany({ where: { property: { orgId } } });
+  await prisma.ownershipTransfer.deleteMany({ where: { orgId } });
   await prisma.auditEvent.deleteMany({ where: { orgId } });
   await prisma.announcement.deleteMany({ where: { orgId } });
   await prisma.homeowner.deleteMany({ where: { property: { orgId } } });
@@ -403,6 +405,51 @@ async function main() {
       },
     },
   });
+
+  // Blk 3 Lot 9 was vacated ~a month ago owing ₱1,500, which was written off.
+  {
+    const movedOut = await prisma.property.findFirstOrThrow({
+      where: { orgId: org.id, unitNumber: "Blk 3 Lot 9" },
+    });
+    const oldPeriod = `${y}-${String(m - 2).padStart(2, "0")}`;
+    const staleInvoice = await prisma.invoice.create({
+      data: {
+        propertyId: movedOut.id,
+        amount: 1500,
+        period: oldPeriod,
+        dueDate: new Date(y, m - 3, 15),
+        status: "SENT",
+        memo: `Monthly dues — ${oldPeriod}`,
+      },
+    });
+    await postInvoiceIssued(staleInvoice.id);
+    const writtenOff = await prisma.payment.create({
+      data: {
+        invoiceId: staleInvoice.id,
+        amount: 1500,
+        method: "WRITE_OFF",
+        status: "CONFIRMED",
+        paidAt: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000),
+        confirmedById: admin.id,
+        confirmedAt: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000),
+        note: "Written off on close-out — unit vacated",
+      },
+    });
+    await postWriteOff(writtenOff.id);
+    await prisma.ownershipTransfer.create({
+      data: {
+        orgId: org.id,
+        propertyId: movedOut.id,
+        previousOwnerName: "Former Owner",
+        vacated: true,
+        finalBalance: 1500,
+        settlement: "WRITTEN_OFF",
+        effectiveDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        handledById: admin.id,
+        note: "Unit vacated; balance uncollectible.",
+      },
+    });
+  }
 
   // Link each demo homeowner login to the named person on their unit.
   for (const h of DEMO_HOMEOWNERS) {

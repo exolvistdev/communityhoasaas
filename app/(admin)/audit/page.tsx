@@ -11,6 +11,7 @@ const ACTION_LABEL: Record<string, string> = {
   "payment.reject": "Rejected payment",
   "property.archive": "Archived property",
   "property.restore": "Restored property",
+  "property.ownership_transfer": "Closed out / transferred a unit",
   "rateplan.create": "Created rate plan",
   "rateplan.update": "Updated rate plan",
   "rateplan.reapply": "Re-applied rate plan",

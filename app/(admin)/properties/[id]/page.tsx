@@ -102,12 +102,20 @@ export default async function PropertyDetailPage({
             )}
           </div>
           {canWrite && (
-            <div className="pt-2">
+            <div className="flex flex-wrap gap-2 pt-2">
               <ArchivePropertyButton
                 id={property.id}
                 archived={Boolean(property.archivedAt)}
                 balance={balance}
               />
+              {!property.archivedAt && (
+                <Link
+                  href={`/properties/${property.id}/closeout`}
+                  className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+                >
+                  Close out / transfer
+                </Link>
+              )}
             </div>
           )}
         </div>

@@ -75,6 +75,7 @@ model Organization {
   amenities           Amenity[]
   amenityBookings     AmenityBooking[]
   documents           Document[]
+  ownershipTransfers  OwnershipTransfer[]
 
   @@map("organizations")
 }
@@ -153,6 +154,7 @@ model User {
   notifications         Notification[]
   documentsUploaded     Document[]            @relation("DocumentUploader")
   journalEntriesCreated JournalEntry[]        @relation("JournalEntryCreator")
+  ownershipTransfersHandled OwnershipTransfer[] @relation("TransferHandledBy")
 
   @@index([orgId])
   @@map("users")
@@ -232,12 +234,42 @@ model Property {
   homeowners Homeowner[]
   invoices   Invoice[]
   gatePasses GatePass[]
+  ownershipTransfers OwnershipTransfer[]
 
   @@unique([orgId, unitNumber])
   @@index([orgId])
   @@index([ratePlanId])
   @@index([orgId, archivedAt])
   @@map("properties")
+}
+
+enum TransferSettlement {
+  SETTLED               // balance was already zero
+  WRITTEN_OFF           // remaining balance written off to bad debt
+  CARRIED_TO_NEW_OWNER  // balance stays on the unit for the incoming owner
+}
+
+// A record of a unit changing hands or being vacated.
+model OwnershipTransfer {
+  id                String   @id @default(uuid())
+  orgId             String
+  org               Organization @relation(fields: [orgId], references: [id])
+  propertyId        String
+  property          Property @relation(fields: [propertyId], references: [id])
+  previousOwnerName String
+  newOwnerName      String?
+  vacated           Boolean  @default(false) // unit left empty, no incoming owner
+  finalBalance      Decimal  @db.Decimal(12, 2)
+  settlement        TransferSettlement
+  effectiveDate     DateTime
+  handledById       String?
+  handledBy         User?    @relation("TransferHandledBy", fields: [handledById], references: [id])
+  note              String?
+  createdAt         DateTime @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([propertyId])
+  @@map("ownership_transfers")
 }
 
 enum HomeownerRole {
@@ -316,6 +348,7 @@ enum PaymentMethod {
   BANK_TRANSFER
   GCASH
   MAYA
+  WRITE_OFF // not a real payment — an uncollectible balance cleared on close-out
 }
 
 enum PaymentStatus {
