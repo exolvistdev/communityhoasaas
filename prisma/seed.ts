@@ -9,7 +9,9 @@ import {
   postBillIssued,
   postBillPayment,
 } from "../lib/ledger";
-import { currentPeriod } from "../lib/format";
+import { currentPeriod, shiftPeriod } from "../lib/format";
+import { DEFAULT_WATER_BANDS } from "../lib/water";
+import { recordReading, billReadings } from "../lib/water-billing";
 import { generateGatePassCode } from "../lib/gatepass";
 import { zonedInstant, zonedParts } from "../lib/amenity";
 import { generateOverdueNotifications } from "../lib/notifications";
@@ -226,6 +228,8 @@ async function resetDemoOrg() {
   await prisma.payment.deleteMany({
     where: { invoice: { property: { orgId } } },
   });
+  await prisma.meterReading.deleteMany({ where: { orgId } });
+  await prisma.waterMeter.deleteMany({ where: { orgId } });
   await prisma.invoice.deleteMany({ where: { property: { orgId } } });
   await prisma.gatePassScan.deleteMany({ where: { orgId } });
   await prisma.gatePass.deleteMany({ where: { property: { orgId } } });
@@ -1511,6 +1515,39 @@ async function main() {
   } catch (e) {
     console.log("  (seed vote result skipped:", (e as Error).message, ")");
   }
+
+  // ── Water sub-metering ──────────────────────────────────────────
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: {
+      waterBillingEnabled: true,
+      waterServiceCharge: 150,
+      waterRateBands: DEFAULT_WATER_BANDS as unknown as object,
+    },
+  });
+  const meterUnits = [
+    { unit: "Blk 1 Lot 1", prior: 1420, current: 1438 }, // 18 m³
+    { unit: "Blk 1 Lot 2", prior: 980, current: 989 }, //  9 m³
+    { unit: "Blk 1 Lot 3", prior: 2210, current: 2245 }, // 35 m³
+    { unit: "Blk 2 Lot 5", prior: 640, current: 652 }, // 12 m³
+  ];
+  const priorMonth = shiftPeriod(currentPeriod(), -1);
+  for (const mu of meterUnits) {
+    const prop = await prisma.property.findFirstOrThrow({
+      where: { orgId: org.id, unitNumber: mu.unit },
+    });
+    const meter = await prisma.waterMeter.create({
+      data: { orgId: org.id, propertyId: prop.id, installedAt: ago(400) },
+    });
+    await recordReading({
+      meterId: meter.id,
+      period: priorMonth,
+      readingDate: ago(30),
+      currentReading: mu.current,
+      priorOverride: mu.prior, // meter's installed baseline
+    });
+  }
+  await billReadings(org.id, priorMonth, admin.id);
 
   // ── Notifications ─────────────────────────────────────────────────
   const nDay = 24 * 60 * 60 * 1000;

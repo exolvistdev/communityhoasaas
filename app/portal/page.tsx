@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CalendarClock,
   Vote,
+  Droplet,
   FileText,
   Gavel,
   type LucideIcon,
@@ -58,6 +59,7 @@ export default async function PortalHome() {
     violationCount,
     upcomingMeetings,
     openVotes,
+    waterMeter,
   ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
     prisma.invoice.findMany({
@@ -117,6 +119,16 @@ export default async function PortalHome() {
         status: "OPEN",
         opensAt: { lte: now },
         closesAt: { gte: now },
+      },
+    }),
+    prisma.waterMeter.findUnique({
+      where: { propertyId: property.id },
+      select: {
+        readings: {
+          orderBy: { period: "desc" },
+          take: 1,
+          select: { period: true, consumption: true, amount: true },
+        },
       },
     }),
   ]);
@@ -285,6 +297,16 @@ export default async function PortalHome() {
             icon={Vote}
             label="Votes"
             sub={`${openVotes} open`}
+          />
+        )}
+        {waterMeter?.readings[0] && (
+          <Tile
+            href="/portal/pay"
+            icon={Droplet}
+            label="Water"
+            sub={`${Number(waterMeter.readings[0].consumption).toFixed(1)} m³ · ${peso(
+              Number(waterMeter.readings[0].amount)
+            )}`}
           />
         )}
       </div>

@@ -38,3 +38,10 @@ export function relativeTime(date: Date | string) {
 export function currentPeriod(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
+
+/** Shift a "YYYY-MM" period by whole months. `shiftPeriod("2026-01", -1)` -> "2025-12". */
+export function shiftPeriod(period: string, months: number) {
+  const [y, m] = period.split("-").map(Number);
+  const idx = y * 12 + (m - 1) + months;
+  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, "0")}`;
+}

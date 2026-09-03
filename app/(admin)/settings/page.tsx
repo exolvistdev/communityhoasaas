@@ -7,6 +7,8 @@ import { PaymentSettingsForm } from "./PaymentSettingsForm";
 import { LateFeeSettingsForm } from "./LateFeeSettingsForm";
 import { TypeRatesForm } from "./TypeRatesForm";
 import { RatePlansManager } from "./RatePlansManager";
+import { WaterSettingsForm } from "./WaterSettingsForm";
+import { waterConfig } from "@/lib/water-billing";
 
 export const metadata = { title: "Settings · HOA SaaS" };
 
@@ -128,6 +130,18 @@ export default async function SettingsPage() {
             lateFeeMaxOccurrences: org.lateFeeMaxOccurrences,
           }}
         />
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">Water billing</h2>
+          <p className="text-xs text-fg-muted">
+            Meter each unit, enter monthly readings on the Water page, then bill
+            the period. Charges post to a separate Water Income account and land
+            on the homeowner&apos;s statement.
+          </p>
+        </div>
+        <WaterSettingsForm config={waterConfig(org)} />
       </section>
 
       <section className="space-y-3">

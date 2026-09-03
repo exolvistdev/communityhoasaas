@@ -30,6 +30,7 @@ export default async function DashboardPage() {
   const canMaintenance = can(user.role, "maintenance:manage");
   const canMeetings = can(user.role, "meeting:manage");
   const canVotes = can(user.role, "vote:manage");
+  const canBilling = can(user.role, "billing:write");
   const isAdmin = user.role === "ADMIN";
 
   const [
@@ -46,6 +47,7 @@ export default async function DashboardPage() {
     openMaintenance,
     meetingsNeedingMinutes,
     votesNeedingAttention,
+    unbilledWaterReadings,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
     prisma.payment.aggregate({
@@ -142,6 +144,16 @@ export default async function DashboardPage() {
           },
         })
       : Promise.resolve(0),
+    canBilling && org.waterBillingEnabled
+      ? prisma.meterReading.count({
+          where: {
+            orgId: org.id,
+            period: currentPeriod(),
+            invoiceId: null,
+            amount: { gt: 0 },
+          },
+        })
+      : Promise.resolve(0),
   ]);
 
   const collected = Number(collectedAgg._sum.amount ?? 0);
@@ -224,6 +236,14 @@ export default async function DashboardPage() {
           text: `${votesNeedingAttention} vote${
             votesNeedingAttention === 1 ? "" : "s"
           } closing soon or awaiting a result`,
+        }
+      : null,
+    canBilling && unbilledWaterReadings > 0
+      ? {
+          href: "/water",
+          text: `${unbilledWaterReadings} water reading${
+            unbilledWaterReadings === 1 ? "" : "s"
+          } to bill this month`,
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];

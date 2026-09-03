@@ -9,6 +9,7 @@ import {
   Home,
   Receipt,
   CheckCheck,
+  Droplet,
   BookOpen,
   FileBarChart,
   Truck,
@@ -54,6 +55,12 @@ const GROUPS: Group[] = [
     items: [
       { href: "/billing", label: "Billing", icon: Receipt },
       { href: "/reconciliation", label: "Reconciliation", icon: CheckCheck },
+      {
+        href: "/water",
+        label: "Water billing",
+        icon: Droplet,
+        show: (r) => can(r, "billing:write"),
+      },
       {
         href: "/bills",
         label: "Vendors & bills",

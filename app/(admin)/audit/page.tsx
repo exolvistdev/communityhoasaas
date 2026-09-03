@@ -74,6 +74,11 @@ const ACTION_LABEL: Record<string, string> = {
   "vote.cancel": "Cancelled a vote",
   "vote.result": "Published a vote result",
   "proxy.revoke": "Revoked a voting proxy",
+  "meter.create": "Added a water meter",
+  "meter.remove": "Removed a water meter",
+  "water.reading": "Recorded water readings",
+  "water.bill": "Billed water for the period",
+  "settings.water_update": "Updated water billing settings",
 };
 
 const fmt = (d: Date) =>

@@ -18,6 +18,7 @@ export const SEED_ACCOUNTS = [
   { code: "4100", name: "Late Fee Income", type: "INCOME" as const },
   { code: "4200", name: "Other Income", type: "INCOME" as const },
   { code: "4300", name: "Fine Income", type: "INCOME" as const },
+  { code: "4400", name: "Water Income", type: "INCOME" as const },
   { code: "5000", name: "Operating Expenses", type: "EXPENSE" as const },
   { code: "5100", name: "Utilities", type: "EXPENSE" as const },
   { code: "5200", name: "Repairs & Maintenance", type: "EXPENSE" as const },
@@ -112,6 +113,36 @@ export async function postFineIssued(invoiceId: string) {
       invoiceId: invoice.id,
       entryDate: new Date(),
       memo: invoice.memo ?? `Fine — unit ${invoice.property.unitNumber}`,
+      lines: {
+        create: [
+          { accountId: ar.id, debit: invoice.amount, credit: 0 },
+          { accountId: income.id, debit: 0, credit: invoice.amount },
+        ],
+      },
+    },
+    include: { lines: true },
+  });
+}
+
+/** Water-consumption invoice issued — AR up (1100), Water Income up (4400). */
+export async function postWaterChargeIssued(invoiceId: string) {
+  const invoice = await prisma.invoice.findUniqueOrThrow({
+    where: { id: invoiceId },
+    include: { property: true },
+  });
+
+  const [ar, income] = await Promise.all([
+    getAccount(invoice.property.orgId, "1100"),
+    getAccount(invoice.property.orgId, "4400"),
+  ]);
+
+  return prisma.journalEntry.create({
+    data: {
+      orgId: invoice.property.orgId,
+      sourceType: "water",
+      invoiceId: invoice.id,
+      entryDate: invoice.createdAt,
+      memo: invoice.memo ?? `Water — unit ${invoice.property.unitNumber}`,
       lines: {
         create: [
           { accountId: ar.id, debit: invoice.amount, credit: 0 },

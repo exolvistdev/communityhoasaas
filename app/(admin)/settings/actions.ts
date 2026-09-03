@@ -7,6 +7,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 import { uploadPaymentQr, deletePaymentQr } from "@/lib/payment-qr";
+import { validateBands, type RateBand } from "@/lib/water";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -277,6 +278,55 @@ export async function reapplyTypeRate(
       detail: `${res.count} propert${res.count === 1 ? "y" : "ies"}`,
     });
   return { ok: true, updated: res.count };
+}
+
+/* ───────────────────────────── water billing ─────────────────────── */
+
+const bandSchema = z.object({
+  upToM3: z.union([z.coerce.number().positive(), z.null()]),
+  pricePerM3: z.coerce.number().positive(),
+});
+
+const waterSchema = z.object({
+  waterBillingEnabled: z.preprocess(
+    (v) => v === true || v === "true" || v === "on",
+    z.boolean()
+  ),
+  waterServiceCharge: z.coerce.number().min(0).max(1_000_000),
+  waterRateBands: z.array(bandSchema),
+});
+
+export async function updateWaterConfig(input: unknown): Promise<Result> {
+  const denied = await guardRatePlan();
+  if (denied) return denied;
+
+  const parsed = waterSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const d = parsed.data;
+  if (d.waterBillingEnabled) {
+    const problems = validateBands(d.waterRateBands as RateBand[]);
+    if (problems.length) return { ok: false, error: problems[0] };
+  }
+
+  const { org } = await getCurrentOrgContext();
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: {
+      waterBillingEnabled: d.waterBillingEnabled,
+      waterServiceCharge: d.waterServiceCharge,
+      waterRateBands: d.waterRateBands as unknown as object,
+    },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/water");
+  await logAudit({
+    action: "settings.water_update",
+    detail: d.waterBillingEnabled ? "enabled" : "disabled",
+  });
+  return { ok: true };
 }
 
 /* ───────────────────────────── rate plans ────────────────────────── */

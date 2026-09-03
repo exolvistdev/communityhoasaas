@@ -24,7 +24,7 @@ walkthrough of the admin app.
 | Properties — list, detail, people (owner/co-owner/renter), rate plans, archive, close-out / ownership transfer (settle or write off the balance, swap residents, revoke logins) | ✅ |
 | Billing — bulk invoice generation, record payment (auto-split oldest-first across open invoices), overpayment → resident credit auto-applied to the next dues, refund a credit balance, void (a paid invoice's money moves to credit), Statement of Account (single + bulk + CSV) | ✅ |
 | Reconciliation — confirm/reject homeowner-submitted payments (allocated on confirm) | ✅ |
-| Ledger — trial balance (any date range), journal, chart of accounts (~17 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
+| Ledger — trial balance (any date range), journal, chart of accounts (~18 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
 | Vendors & bills (accounts payable) — vendor directory, record a bill (books the expense + a 2000 A/P liability), pay it in full or part, void, an AP-aging report by vendor; the balance sheet shows real payables | ✅ |
 | Maintenance / work orders — residents file repair requests (category, photos, common-area flag) from the portal; staff triage a queue, assign a person / vendor, link a bill, post public or internal comments; both sides get notified | ✅ |
 | Board meetings — schedule a meeting with an agenda, residents RSVP (going / maybe / no) from the portal, staff see the tally and publish the minutes (filed to the document library); residents notified on schedule / reschedule / minutes | ✅ |
@@ -35,6 +35,8 @@ walkthrough of the admin app.
 | Team — invite staff/guard by email, role management | ✅ |
 | Settings — HOA name, billing due-day, rate plans, default rates by property type, GCash/Maya payment details + uploadable QR, late-fee policy | ✅ |
 | Late fees — opt-in per HOA (flat ₱ or %, grace period, monthly recurrence cap); a daily sweep posts a late-fee invoice + ledger entry and notifies the homeowner | ✅ |
+| Board votes (RA 9904) — put a motion to the members, one ballot per unit (in favour / against / abstain), proxy assignment, quorum + threshold tracking, publish the result to the document library | ✅ |
+| Water sub-metering — a meter per unit, monthly staff readings, org-wide tiered rate bands + a fixed service charge; a batch action bills the period (consumption → its own invoice against 4400 Water Income → the homeowner's statement) | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Password recovery (self-service + admin reset-link fallback), `/account` self-service profile/password/contact | ✅ |
 | Gate activity log + admin audit trail (`/gate-passes?view=activity`, `/audit`) | ✅ |
