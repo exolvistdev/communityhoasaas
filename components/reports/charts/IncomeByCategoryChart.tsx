@@ -14,7 +14,29 @@ import type { LedgerMonth } from "@/lib/reports";
 import { CHART, compactPeso } from "./palette";
 import { ChartFrame } from "./ChartFrame";
 
-export function IncomeByCategoryChart({ data }: { data: LedgerMonth[] }) {
+export function IncomeByCategoryChart({
+  data,
+  selectedMonth = null,
+  onSelectMonth,
+}: {
+  data: LedgerMonth[];
+  selectedMonth?: string | null;
+  onSelectMonth?: (key: string | null) => void;
+}) {
+  const clickable = Boolean(onSelectMonth);
+  const pick = (d: any) => {
+    const key = d?.key ?? d?.payload?.key;
+    if (key) onSelectMonth?.(selectedMonth === key ? null : key);
+  };
+  const dim = selectedMonth ? 0.35 : 1;
+  const bar = {
+    stackId: "i",
+    fillOpacity: dim,
+    isAnimationActive: false,
+    onClick: clickable ? pick : undefined,
+    className: clickable ? "cursor-pointer" : undefined,
+  };
+
   return (
     <ChartFrame title="Income by category">
       <BarChart
@@ -33,10 +55,16 @@ export function IncomeByCategoryChart({ data }: { data: LedgerMonth[] }) {
         />
         <Tooltip formatter={(v: number) => peso(v)} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar name="Dues" dataKey="dues" stackId="i" fill={CHART.brand} />
-        <Bar name="Late fees" dataKey="lateFees" stackId="i" fill={CHART.info} />
-        <Bar name="Fines" dataKey="fines" stackId="i" fill={CHART.warning} />
-        <Bar name="Other" dataKey="otherIncome" stackId="i" fill={CHART.muted} radius={[2, 2, 0, 0]} />
+        <Bar name="Dues" dataKey="dues" fill={CHART.brand} {...bar} />
+        <Bar name="Late fees" dataKey="lateFees" fill={CHART.info} {...bar} />
+        <Bar name="Fines" dataKey="fines" fill={CHART.warning} {...bar} />
+        <Bar
+          name="Other"
+          dataKey="otherIncome"
+          fill={CHART.muted}
+          radius={[2, 2, 0, 0]}
+          {...bar}
+        />
       </BarChart>
     </ChartFrame>
   );

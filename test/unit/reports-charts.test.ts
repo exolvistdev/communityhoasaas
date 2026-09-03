@@ -60,7 +60,12 @@ describe("bucketLedgerByMonth", () => {
     entryDate: string,
     debit: number,
     credit: number
-  ) => ({ debit, credit, entry: { entryDate: new Date(entryDate) }, account: { type, code } });
+  ) => ({
+    debit,
+    credit,
+    entry: { entryDate: new Date(entryDate) },
+    account: { type, code, name: `Account ${code}` },
+  });
 
   it("splits income by account and sums expenses per month", () => {
     const rows = bucketLedgerByMonth(
@@ -82,6 +87,16 @@ describe("bucketLedgerByMonth", () => {
     expect(sep.fines).toBe(500);
     expect(sep.otherIncome).toBe(200);
     expect(sep.expense).toBe(800);
+
+    // per-account rows for the month drill-down
+    expect(aug.incomeRows.map((r) => [r.code, r.amount])).toEqual([
+      ["4000", 1500],
+      ["4100", 100],
+    ]);
+    expect(sep.expenseRows).toEqual([
+      { code: "5100", name: "Account 5100", amount: 800 },
+    ]);
+    expect(aug.expenseRows).toEqual([]);
   });
 
   it("ignores lines dated outside the month list", () => {

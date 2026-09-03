@@ -81,6 +81,8 @@ const monthKeyOf = (d: Date) => {
   return `${p.year}-${pad(p.month)}`;
 };
 
+export type ChartRow = { code: string; name: string; amount: number };
+
 export type LedgerMonth = {
   key: string;
   label: string;
@@ -91,14 +93,20 @@ export type LedgerMonth = {
   lateFees: number;
   fines: number;
   otherIncome: number;
+  /** per-account rows for this month — the "drill into a month" table */
+  incomeRows: ChartRow[];
+  expenseRows: ChartRow[];
 };
 
 type LedgerLineRow = {
   debit: unknown;
   credit: unknown;
   entry: { entryDate: Date };
-  account: { type: string; code: string };
+  account: { type: string; code: string; name: string };
 };
+
+const sortByCode = (rows: ChartRow[]) =>
+  [...rows].sort((a, b) => a.code.localeCompare(b.code));
 
 /** Pure: fold income/expense journal lines into one row per month. */
 export function bucketLedgerByMonth(
@@ -106,47 +114,74 @@ export function bucketLedgerByMonth(
   months: MonthBucket[]
 ): LedgerMonth[] {
   const at = new Map(months.map((m, i) => [m.key, i]));
-  const rows: LedgerMonth[] = months.map((m) => ({
-    key: m.key,
-    label: m.label,
+  type Acc = {
+    income: number;
+    expense: number;
+    dues: number;
+    lateFees: number;
+    fines: number;
+    otherIncome: number;
+    incomeByCode: Map<string, ChartRow>;
+    expenseByCode: Map<string, ChartRow>;
+  };
+  const acc: Acc[] = months.map(() => ({
     income: 0,
     expense: 0,
     dues: 0,
     lateFees: 0,
     fines: 0,
     otherIncome: 0,
+    incomeByCode: new Map(),
+    expenseByCode: new Map(),
   }));
+
+  const bump = (map: Map<string, ChartRow>, a: LedgerLineRow["account"], amt: number) => {
+    const row = map.get(a.code) ?? { code: a.code, name: a.name, amount: 0 };
+    row.amount += amt;
+    map.set(a.code, row);
+  };
 
   for (const l of lines) {
     const i = at.get(monthKeyOf(l.entry.entryDate));
     if (i === undefined) continue;
     const debit = Number(l.debit);
     const credit = Number(l.credit);
-    const row = rows[i];
+    const row = acc[i];
     if (l.account.type === "INCOME") {
       const amt = credit - debit;
       row.income += amt;
+      bump(row.incomeByCode, l.account, amt);
       if (l.account.code === "4000") row.dues += amt;
       else if (l.account.code === "4100") row.lateFees += amt;
       else if (l.account.code === "4300") row.fines += amt;
       else row.otherIncome += amt;
     } else if (l.account.type === "EXPENSE") {
-      row.expense += debit - credit;
+      const amt = debit - credit;
+      row.expense += amt;
+      bump(row.expenseByCode, l.account, amt);
     }
   }
 
-  for (const r of rows) {
-    r.income = round2(r.income);
-    r.expense = round2(r.expense);
-    r.dues = round2(r.dues);
-    r.lateFees = round2(r.lateFees);
-    r.fines = round2(r.fines);
-    r.otherIncome = round2(r.otherIncome);
-  }
-  return rows;
+  return months.map((m, i) => {
+    const a = acc[i];
+    const rows = (map: Map<string, ChartRow>) =>
+      sortByCode([...map.values()].map((r) => ({ ...r, amount: round2(r.amount) })));
+    return {
+      key: m.key,
+      label: m.label,
+      income: round2(a.income),
+      expense: round2(a.expense),
+      dues: round2(a.dues),
+      lateFees: round2(a.lateFees),
+      fines: round2(a.fines),
+      otherIncome: round2(a.otherIncome),
+      incomeRows: rows(a.incomeByCode),
+      expenseRows: rows(a.expenseByCode),
+    };
+  });
 }
 
-/** Monthly income & expense totals (+ income-by-account split) over a span. */
+/** Monthly income & expense totals (+ per-account split) over a span. */
 export async function monthlyLedgerSeries(orgId: string, months: MonthBucket[]) {
   if (months.length === 0) return [] as LedgerMonth[];
   const lines = await prisma.journalLine.findMany({
@@ -161,7 +196,7 @@ export async function monthlyLedgerSeries(orgId: string, months: MonthBucket[]) 
       debit: true,
       credit: true,
       entry: { select: { entryDate: true } },
-      account: { select: { type: true, code: true } },
+      account: { select: { type: true, code: true, name: true } },
     },
   });
   return bucketLedgerByMonth(lines, months);
