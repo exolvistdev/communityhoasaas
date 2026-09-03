@@ -25,14 +25,26 @@ export default async function PortalLayout({
       ? { href: "/guard", label: "Back to gate" }
       : { href: "/dashboard", label: "Back to admin" };
 
-  const unread = await prisma.marketMessage.count({
-    where: {
-      senderId: { not: user.id },
-      readAt: null,
-      conversation: { OR: [{ buyerId: user.id }, { sellerId: user.id }] },
-    },
-  });
-  const notifications = await getNotificationSummary(user.id);
+  const propertyIds = homeowners.map((h) => h.propertyId);
+  const [unread, openRequests, notifications] = await Promise.all([
+    prisma.marketMessage.count({
+      where: {
+        senderId: { not: user.id },
+        readAt: null,
+        conversation: { OR: [{ buyerId: user.id }, { sellerId: user.id }] },
+      },
+    }),
+    prisma.maintenanceRequest.count({
+      where: {
+        status: { in: ["OPEN", "ACKNOWLEDGED", "IN_PROGRESS"] },
+        OR: [
+          { requesterId: user.id },
+          propertyIds.length ? { propertyId: { in: propertyIds } } : { id: "" },
+        ],
+      },
+    }),
+    getNotificationSummary(user.id),
+  ]);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -89,7 +101,7 @@ export default async function PortalLayout({
 
       <main className="mx-auto max-w-md px-4 pb-24 pt-5">{children}</main>
 
-      <PortalTabBar unread={unread} />
+      <PortalTabBar unread={unread} openRequests={openRequests} />
     </div>
   );
 }

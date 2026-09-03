@@ -17,6 +17,7 @@ import {
   CalendarDays,
   Store,
   FileText,
+  Wrench,
   Users,
   ScrollText,
   ShieldQuestion,
@@ -66,6 +67,12 @@ const GROUPS: Group[] = [
     items: [
       { href: "/gate-passes", label: "Gate passes", icon: ShieldCheck },
       { href: "/announcements", label: "Announcements", icon: Megaphone },
+      {
+        href: "/maintenance",
+        label: "Maintenance",
+        icon: Wrench,
+        show: (r) => can(r, "maintenance:manage"),
+      },
       {
         href: "/violations",
         label: "Violations",

@@ -91,6 +91,7 @@ model Organization {
   fineNotices         FineNotice[]
   vendors             Vendor[]
   bills               Bill[]
+  maintenanceRequests MaintenanceRequest[]
 
   @@map("organizations")
 }
@@ -178,6 +179,9 @@ model User {
   finesIssued           FineNotice[]          @relation("FineIssuer")
   billsCreated          Bill[]                @relation("BillCreatedBy")
   billPaymentsRecorded  BillPayment[]         @relation("BillPaymentRecordedBy")
+  maintenanceRequested  MaintenanceRequest[]  @relation("MaintenanceRequester")
+  maintenanceAssigned   MaintenanceRequest[]  @relation("MaintenanceAssignee")
+  maintenanceComments   MaintenanceComment[]  @relation("MaintenanceCommentAuthor")
 
   @@index([orgId])
   @@map("users")
@@ -200,6 +204,7 @@ enum NotificationType {
   LATE_FEE_APPLIED
   PAYMENT_REFUNDED
   VIOLATION_NOTICE
+  MAINTENANCE_UPDATE
 }
 
 model Notification {
@@ -266,6 +271,7 @@ model Property {
   creditApplications CreditApplication[]
   refunds    Refund[]
   violations Violation[]
+  maintenanceRequests MaintenanceRequest[]
 
   @@unique([orgId, unitNumber])
   @@index([orgId])
@@ -568,6 +574,7 @@ model Vendor {
   createdAt   DateTime @default(now())
 
   bills       Bill[]
+  maintenanceRequests MaintenanceRequest[]
 
   @@index([orgId])
   @@map("vendors")
@@ -596,6 +603,7 @@ model Bill {
 
   payments     BillPayment[]
   journalEntry JournalEntry?
+  maintenanceRequests MaintenanceRequest[]
 
   @@index([orgId, status])
   @@index([vendorId])
@@ -617,6 +625,79 @@ model BillPayment {
 
   @@index([billId])
   @@map("bill_payments")
+}
+
+// ─────────────────────────────────────────────
+// Maintenance / work orders
+// ─────────────────────────────────────────────
+
+enum MaintenanceStatus {
+  OPEN
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+enum MaintenanceCategory {
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  APPLIANCE
+  STRUCTURAL
+  PEST
+  LANDSCAPING
+  COMMON_AREA
+  SECURITY
+  OTHER
+}
+
+model MaintenanceRequest {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  propertyId   String?
+  property     Property? @relation(fields: [propertyId], references: [id])
+  requesterId  String?
+  requester    User?    @relation("MaintenanceRequester", fields: [requesterId], references: [id])
+  category     MaintenanceCategory
+  title        String
+  description  String
+  location     String?
+  isCommonArea Boolean  @default(false)
+  status       MaintenanceStatus @default(OPEN)
+  photos       String[] // storage paths in the private "maintenance" bucket
+  assignedToId String?
+  assignedTo   User?    @relation("MaintenanceAssignee", fields: [assignedToId], references: [id])
+  vendorId     String?
+  vendor       Vendor?  @relation(fields: [vendorId], references: [id])
+  billId       String?
+  bill         Bill?    @relation(fields: [billId], references: [id])
+  resolvedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  comments     MaintenanceComment[]
+
+  @@index([orgId, status])
+  @@index([propertyId])
+  @@index([requesterId])
+  @@map("maintenance_requests")
+}
+
+model MaintenanceComment {
+  id        String   @id @default(uuid())
+  requestId String
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation("MaintenanceCommentAuthor", fields: [authorId], references: [id])
+  body      String
+  staffOnly Boolean  @default(false) // internal note vs. visible to the requester
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@map("maintenance_comments")
 }
 
 // ─────────────────────────────────────────────

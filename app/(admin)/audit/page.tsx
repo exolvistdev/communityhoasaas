@@ -61,6 +61,8 @@ const ACTION_LABEL: Record<string, string> = {
   "bill.record": "Recorded a bill",
   "bill.pay": "Paid a bill",
   "bill.void": "Voided a bill",
+  "maintenance.status": "Updated a maintenance request",
+  "maintenance.assign": "Assigned a maintenance request",
 };
 
 const fmt = (d: Date) =>

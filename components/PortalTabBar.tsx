@@ -2,17 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CalendarDays, Store, MessageSquare } from "lucide-react";
+import { Home, Wrench, Store, MessageSquare, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const TABS = [
   { href: "/portal", label: "Home", icon: Home, exact: true },
   { href: "/portal/amenities", label: "Amenities", icon: CalendarDays },
+  { href: "/portal/maintenance", label: "Requests", icon: Wrench },
   { href: "/portal/market", label: "Market", icon: Store },
   { href: "/portal/messages", label: "Messages", icon: MessageSquare },
 ];
 
-export function PortalTabBar({ unread }: { unread: number }) {
+export function PortalTabBar({
+  unread,
+  openRequests = 0,
+}: {
+  unread: number;
+  openRequests?: number;
+}) {
   const pathname = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
@@ -21,6 +28,12 @@ export function PortalTabBar({ unread }: { unread: number }) {
           const active = t.exact
             ? pathname === t.href
             : pathname === t.href || pathname.startsWith(t.href + "/");
+          const badge =
+            t.href === "/portal/messages"
+              ? unread
+              : t.href === "/portal/maintenance"
+              ? openRequests
+              : 0;
           return (
             <Link
               key={t.href}
@@ -32,9 +45,9 @@ export function PortalTabBar({ unread }: { unread: number }) {
             >
               <t.icon className="h-5 w-5" />
               {t.label}
-              {t.href === "/portal/messages" && unread > 0 && (
-                <span className="absolute right-[calc(50%-1.25rem)] top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold text-brand-fg">
-                  {unread}
+              {badge > 0 && (
+                <span className="absolute right-[calc(50%-1.15rem)] top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold text-brand-fg">
+                  {badge}
                 </span>
               )}
             </Link>

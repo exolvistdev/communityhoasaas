@@ -10,6 +10,10 @@ import {
   ensureViolationPhotosBucket,
   VIOLATION_PHOTOS_BUCKET,
 } from "../lib/violation-photos";
+import {
+  ensureMaintenanceBucket,
+  MAINTENANCE_BUCKET,
+} from "../lib/maintenance-photos";
 
 (async () => {
   await ensureMarketplaceBucket();
@@ -20,6 +24,8 @@ import {
   console.log(`✔ bucket "${PAYMENT_QR_BUCKET}" ready (public)`);
   await ensureViolationPhotosBucket();
   console.log(`✔ bucket "${VIOLATION_PHOTOS_BUCKET}" ready (private)`);
+  await ensureMaintenanceBucket();
+  console.log(`✔ bucket "${MAINTENANCE_BUCKET}" ready (private)`);
 })().catch((e) => {
   console.error(e);
   process.exit(1);

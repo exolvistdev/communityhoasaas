@@ -26,6 +26,7 @@ walkthrough of the admin app.
 | Reconciliation — confirm/reject homeowner-submitted payments (allocated on confirm) | ✅ |
 | Ledger — trial balance (any date range), journal, chart of accounts (~17 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
 | Vendors & bills (accounts payable) — vendor directory, record a bill (books the expense + a 2000 A/P liability), pay it in full or part, void, an AP-aging report by vendor; the balance sheet shows real payables | ✅ |
+| Maintenance / work orders — residents file repair requests (category, photos, common-area flag) from the portal; staff triage a queue, assign a person / vendor, link a bill, post public or internal comments; both sides get notified | ✅ |
 | Violations & fines — log a rule violation (category, photos, cure-by date), track it to resolution, serve numbered fine notices that bill the resident (4300 Fine Income), print a demand letter; residents see their violations and can appeal | ✅ |
 | Financial reports (`/reports`) — income & expenses, financial position, receivables aging, payables aging, collections summary, and a bundled board pack; period picker, print-to-PDF, CSV per report | ✅ |
 | Gate passes — create / list / revoke, scannable code | ✅ |
@@ -83,7 +84,7 @@ invites use the service role to pre-confirm accounts).
 ```bash
 npx prisma migrate deploy   # apply migrations (use `prisma migrate dev` when authoring new ones)
 npx prisma generate
-node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace + payment-qr (public) and documents + violations (private) Storage buckets
+node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace + payment-qr (public) and documents + violations + maintenance (private) Storage buckets
 npm run db:seed             # demo HOA "sample-hoa" (also ensures the bucket)
 npm run dev
 ```

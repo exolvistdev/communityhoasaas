@@ -27,6 +27,7 @@ export default async function DashboardPage() {
   const canAmenities = can(user.role, "amenity:manage");
   const canViolations = can(user.role, "violation:manage");
   const canVendors = can(user.role, "vendor:manage");
+  const canMaintenance = can(user.role, "maintenance:manage");
   const isAdmin = user.role === "ADMIN";
 
   const [
@@ -40,6 +41,7 @@ export default async function DashboardPage() {
     pendingPrivacy,
     openViolations,
     billsDueSoon,
+    openMaintenance,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
     prisma.payment.aggregate({
@@ -107,6 +109,11 @@ export default async function DashboardPage() {
           },
         })
       : Promise.resolve(0),
+    canMaintenance
+      ? prisma.maintenanceRequest.count({
+          where: { orgId: org.id, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
+        })
+      : Promise.resolve(0),
   ]);
 
   const collected = Number(collectedAgg._sum.amount ?? 0);
@@ -165,6 +172,14 @@ export default async function DashboardPage() {
           text: `${billsDueSoon} vendor bill${
             billsDueSoon === 1 ? "" : "s"
           } due soon or overdue`,
+        }
+      : null,
+    canMaintenance && openMaintenance > 0
+      ? {
+          href: "/maintenance",
+          text: `${openMaintenance} maintenance request${
+            openMaintenance === 1 ? "" : "s"
+          } to triage`,
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];

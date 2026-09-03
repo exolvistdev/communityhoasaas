@@ -8,6 +8,7 @@ export type NotificationCategory =
   | "billing"
   | "announcements"
   | "amenities"
+  | "maintenance"
   | "marketplace";
 
 export const CATEGORIES: {
@@ -18,6 +19,7 @@ export const CATEGORIES: {
   { key: "billing", label: "Billing", hint: "Dues, payments, overdue notices" },
   { key: "announcements", label: "Announcements", hint: "New HOA announcements" },
   { key: "amenities", label: "Amenities", hint: "Booking requests and decisions" },
+  { key: "maintenance", label: "Maintenance", hint: "Updates on your repair requests" },
   { key: "marketplace", label: "Marketplace", hint: "Messages and moderation" },
 ];
 
@@ -44,6 +46,7 @@ export const NOTIFICATION_CATALOG: Record<NotificationType, CatalogEntry> = {
   MARKETPLACE_LISTING_REPORTED: { category: "marketplace", defaultEmail: true, defaultInApp: true },
   MARKETPLACE_LISTING_MODERATED: { category: "marketplace", defaultEmail: true, defaultInApp: true },
   MARKETPLACE_CONVERSATION_REPORTED: { category: "marketplace", defaultEmail: true, defaultInApp: true },
+  MAINTENANCE_UPDATE: { category: "maintenance", defaultEmail: true, defaultInApp: true },
 };
 
 export type ChannelPrefs = { email: boolean; inApp: boolean };
@@ -54,6 +57,7 @@ export function defaultPrefs(): NotificationPrefs {
     billing: { email: true, inApp: true },
     announcements: { email: true, inApp: true },
     amenities: { email: true, inApp: true },
+    maintenance: { email: true, inApp: true },
     marketplace: { email: true, inApp: true },
   };
 }

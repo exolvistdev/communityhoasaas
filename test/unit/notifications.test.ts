@@ -61,10 +61,10 @@ describe("esc", () => {
 });
 
 describe("NOTIFICATION_CATALOG", () => {
-  it("every entry names a known category", () => {
-    const cats = new Set(["billing", "announcements", "amenities", "marketplace"]);
+  it("every entry names a category that has a prefs default", () => {
+    const known = new Set(Object.keys(defaultPrefs()));
     for (const entry of Object.values(NOTIFICATION_CATALOG)) {
-      expect(cats.has(entry.category)).toBe(true);
+      expect(known.has(entry.category)).toBe(true);
     }
   });
 });

@@ -33,6 +33,10 @@ import {
   ensureViolationPhotosBucket,
   clearOrgViolationPhotos,
 } from "../lib/violation-photos";
+import {
+  ensureMaintenanceBucket,
+  clearOrgMaintenancePhotos,
+} from "../lib/maintenance-photos";
 import { qrPngBase64 } from "../lib/qr";
 import { createAdminClient } from "../lib/supabase/admin";
 
@@ -199,6 +203,7 @@ async function resetDemoOrg() {
   await clearOrgDocuments(orgId);
   await clearOrgPaymentQr(orgId);
   await clearOrgViolationPhotos(orgId);
+  await clearOrgMaintenancePhotos(orgId);
   await prisma.document.deleteMany({ where: { orgId } });
   await prisma.conversationReport.deleteMany({
     where: { conversation: { orgId } },
@@ -227,6 +232,10 @@ async function resetDemoOrg() {
   await prisma.refund.deleteMany({ where: { orgId } });
   await prisma.fineNotice.deleteMany({ where: { orgId } });
   await prisma.violation.deleteMany({ where: { orgId } });
+  await prisma.maintenanceComment.deleteMany({
+    where: { request: { orgId } },
+  });
+  await prisma.maintenanceRequest.deleteMany({ where: { orgId } });
   await prisma.billPayment.deleteMany({ where: { bill: { orgId } } });
   await prisma.bill.deleteMany({ where: { orgId } });
   await prisma.vendor.deleteMany({ where: { orgId } });
@@ -260,6 +269,9 @@ async function main() {
   );
   await ensureViolationPhotosBucket().catch((e) =>
     console.log("  (violations bucket setup skipped:", e.message, ")")
+  );
+  await ensureMaintenanceBucket().catch((e) =>
+    console.log("  (maintenance bucket setup skipped:", e.message, ")")
   );
 
   // Platform operator — decoupled from any org.
@@ -1240,6 +1252,85 @@ async function main() {
     code: "5000",
     billDaysAgo: 3,
     dueInDays: 15,
+  });
+
+  // ── Maintenance / work orders ────────────────────────────────────
+  const plumbing = await prisma.maintenanceRequest.create({
+    data: {
+      orgId: org.id,
+      propertyId: firstProperty.id,
+      requesterId: homeownerUser.id,
+      category: "PLUMBING",
+      title: "Kitchen sink draining slowly",
+      description:
+        "The kitchen sink has been draining very slowly for about a week and now barely drains at all. Tried a plunger, no luck.",
+      location: "Kitchen, under the sink",
+      status: "IN_PROGRESS",
+      assignedToId: admin.id,
+    },
+  });
+  await prisma.maintenanceComment.createMany({
+    data: [
+      {
+        requestId: plumbing.id,
+        authorId: admin.id,
+        body: "Thanks for reporting. We've scheduled a plumber for Thursday morning — please make sure someone can let them in.",
+        staffOnly: false,
+        createdAt: ago(2),
+      },
+      {
+        requestId: plumbing.id,
+        authorId: homeownerUser.id,
+        body: "Thursday works, someone will be home from 8am.",
+        staffOnly: false,
+        createdAt: ago(1),
+      },
+      {
+        requestId: plumbing.id,
+        authorId: admin.id,
+        body: "Vendor quote is ₱1,800 for rodding — within the ceiling, proceeding.",
+        staffOnly: true,
+        createdAt: ago(1),
+      },
+    ],
+  });
+
+  await prisma.maintenanceRequest.create({
+    data: {
+      orgId: org.id,
+      propertyId: lot2.id,
+      requesterId: anaUser.id,
+      category: "ELECTRICAL",
+      title: "Hallway light flickering",
+      description:
+        "The light in the entry hallway flickers whenever the aircon turns on. Might be a wiring issue.",
+      status: "OPEN",
+    },
+  });
+
+  const gate = await prisma.maintenanceRequest.create({
+    data: {
+      orgId: org.id,
+      requesterId: elenaUser.id,
+      isCommonArea: true,
+      category: "SECURITY",
+      title: "Pedestrian gate latch broken",
+      description:
+        "The side pedestrian gate latch doesn't catch — the gate swings open on its own.",
+      location: "Side entrance near the guardhouse",
+      status: "RESOLVED",
+      assignedToId: admin.id,
+      resolvedAt: ago(4),
+    },
+  });
+  await prisma.maintenanceComment.create({
+    data: {
+      requestId: gate.id,
+      authorId: admin.id,
+      body: "Latch replaced and the gate re-hung. Please report again if it drifts.",
+      staffOnly: false,
+      createdAt: ago(4),
+    },
   });
 
   // ── Notifications ─────────────────────────────────────────────────
