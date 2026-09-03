@@ -17,6 +17,17 @@ export const CHART = {
   muted: "#8D94A3",
 } as const;
 
+/** Categorical colour cycle for donuts / multi-series charts. */
+export const CHART_SERIES = [
+  CHART.brand,
+  CHART.info,
+  CHART.warning,
+  CHART.success,
+  CHART.danger,
+  CHART.brandHi,
+  CHART.muted,
+] as const;
+
 /** Compact peso for axis ticks: 12500 -> "₱13k", 2_400_000 -> "₱2.4M". */
 export function compactPeso(n: number) {
   const abs = Math.abs(n);

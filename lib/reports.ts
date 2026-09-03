@@ -1,6 +1,7 @@
 import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { zonedInstant, zonedParts } from "@/lib/amenity";
+import { periodLabel } from "@/lib/format";
 import { incomeStatement, balanceSheet, trialBalance } from "@/lib/ledger";
 import { buildStatementsForOrg, type Aging } from "@/lib/soa";
 
@@ -486,6 +487,239 @@ export async function collectionsSummary(
     collected,
     collectionRate: expected > 0.005 ? collected / expected : null,
     byMethod: [...byMethod.entries()].map(([method, v]) => ({ method, ...v })),
+  };
+}
+
+/* ── late fees report ─────────────────────────────────────────────── */
+
+export type LateFeeRow = {
+  propertyId: string;
+  unitNumber: string;
+  homeownerName: string | null;
+  date: Date;
+  amount: number;
+  relatedInvoice: string;
+  occurrenceThisYear: number;
+};
+
+/**
+ * Late-fee activity for the period. A late-fee invoice is one with
+ * `lateFeeParentId` set (the sweep in `lib/late-fees.ts` books it against
+ * account 4100). Also returns the top repeat offenders and a trailing-month
+ * revenue series for the charts.
+ */
+export async function lateFeesReport(orgId: string, range: ReportRange) {
+  const months = eachMonth(range);
+  const yearStart = zonedInstant(zonedParts(range.to).year, 1, 1, 0, 0);
+  const since = [range.from, yearStart, months[0]?.start ?? range.from].reduce(
+    (a, b) => (a < b ? a : b)
+  );
+
+  const fees = await prisma.invoice.findMany({
+    where: {
+      property: { orgId },
+      lateFeeParentId: { not: null },
+      status: { not: "VOID" },
+      createdAt: { gte: since, lte: range.to },
+    },
+    select: {
+      amount: true,
+      createdAt: true,
+      property: {
+        select: {
+          id: true,
+          unitNumber: true,
+          homeowners: {
+            orderBy: { isPrimary: "desc" },
+            take: 1,
+            select: { fullName: true },
+          },
+        },
+      },
+      lateFeeParent: { select: { period: true, memo: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const yearCount = new Map<string, number>();
+  for (const f of fees)
+    if (f.createdAt >= yearStart)
+      yearCount.set(f.property.id, (yearCount.get(f.property.id) ?? 0) + 1);
+
+  const inRange = fees.filter(
+    (f) => f.createdAt >= range.from && f.createdAt <= range.to
+  );
+
+  const rows: LateFeeRow[] = inRange.map((f) => ({
+    propertyId: f.property.id,
+    unitNumber: f.property.unitNumber,
+    homeownerName: f.property.homeowners[0]?.fullName ?? null,
+    date: f.createdAt,
+    amount: Number(f.amount),
+    relatedInvoice: f.lateFeeParent?.period
+      ? periodLabel(f.lateFeeParent.period)
+      : f.lateFeeParent?.memo ?? "—",
+    occurrenceThisYear: yearCount.get(f.property.id) ?? 0,
+  }));
+
+  const periodCount = new Map<string, { unitNumber: string; count: number }>();
+  for (const f of inRange) {
+    const cur = periodCount.get(f.property.id) ?? {
+      unitNumber: f.property.unitNumber,
+      count: 0,
+    };
+    cur.count += 1;
+    periodCount.set(f.property.id, cur);
+  }
+  const repeatOffenders = [...periodCount.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+    .map((v) => ({ name: v.unitNumber, value: v.count }));
+
+  const monthly = months.map((m) => ({
+    label: m.label,
+    value: round2(
+      fees
+        .filter((f) => f.createdAt >= m.start && f.createdAt <= m.end)
+        .reduce((s, f) => s + Number(f.amount), 0)
+    ),
+  }));
+
+  return {
+    from: range.from,
+    to: range.to,
+    rows,
+    repeatOffenders,
+    monthly,
+    total: round2(rows.reduce((s, r) => s + r.amount, 0)),
+    count: rows.length,
+  };
+}
+
+/* ── vendor spend report ──────────────────────────────────────────── */
+
+export type VendorSpendRow = {
+  vendorId: string;
+  vendorName: string;
+  category: string;
+  totalBilled: number;
+  totalPaid: number;
+  openBalance: number;
+};
+
+type BillSpendRow = {
+  amount: unknown;
+  expenseAccountCode: string;
+  vendor: { id: string; name: string };
+  payments: { amount: unknown; paidAt: Date }[];
+};
+
+/** Pure: roll bills up by vendor (billed / paid-in-period / open balance) and
+ *  by expense-account "category". */
+export function rollUpVendorSpend(
+  bills: BillSpendRow[],
+  range: { from: Date; to: Date },
+  accountName: Map<string, string>
+) {
+  const label = (code: string) => accountName.get(code) ?? code;
+
+  const byVendor = new Map<
+    string,
+    {
+      vendorId: string;
+      vendorName: string;
+      codes: Set<string>;
+      totalBilled: number;
+      totalPaid: number;
+      openBalance: number;
+    }
+  >();
+  const byCategory = new Map<string, number>();
+
+  for (const b of bills) {
+    const amt = Number(b.amount);
+    const paidInPeriod = b.payments
+      .filter((p) => p.paidAt >= range.from && p.paidAt <= range.to)
+      .reduce((s, p) => s + Number(p.amount), 0);
+    const paidAll = b.payments.reduce((s, p) => s + Number(p.amount), 0);
+
+    const v =
+      byVendor.get(b.vendor.id) ??
+      {
+        vendorId: b.vendor.id,
+        vendorName: b.vendor.name,
+        codes: new Set<string>(),
+        totalBilled: 0,
+        totalPaid: 0,
+        openBalance: 0,
+      };
+    v.codes.add(b.expenseAccountCode);
+    v.totalBilled += amt;
+    v.totalPaid += paidInPeriod;
+    v.openBalance += Math.max(0, amt - paidAll);
+    byVendor.set(b.vendor.id, v);
+
+    byCategory.set(
+      label(b.expenseAccountCode),
+      (byCategory.get(label(b.expenseAccountCode)) ?? 0) + amt
+    );
+  }
+
+  const vendors: VendorSpendRow[] = [...byVendor.values()]
+    .map((v) => ({
+      vendorId: v.vendorId,
+      vendorName: v.vendorName,
+      category: v.codes.size === 1 ? label([...v.codes][0]) : "Mixed",
+      totalBilled: round2(v.totalBilled),
+      totalPaid: round2(v.totalPaid),
+      openBalance: round2(v.openBalance),
+    }))
+    .sort((a, b) => b.totalBilled - a.totalBilled);
+
+  const byCategoryArr = [...byCategory.entries()]
+    .map(([name, value]) => ({ name, value: round2(value) }))
+    .sort((a, b) => b.value - a.value);
+
+  return {
+    vendors,
+    byCategory: byCategoryArr,
+    topVendors: vendors.slice(0, 10).map((v) => ({
+      name: v.vendorName,
+      value: v.totalBilled,
+    })),
+    totalBilled: round2(vendors.reduce((s, v) => s + v.totalBilled, 0)),
+    totalPaid: round2(vendors.reduce((s, v) => s + v.totalPaid, 0)),
+    openBalance: round2(vendors.reduce((s, v) => s + v.openBalance, 0)),
+  };
+}
+
+/** Where operating money went, by vendor and by expense category, for a period. */
+export async function vendorSpendReport(orgId: string, range: ReportRange) {
+  const [bills, accounts] = await Promise.all([
+    prisma.bill.findMany({
+      where: {
+        orgId,
+        status: { not: "VOID" },
+        billDate: { gte: range.from, lte: range.to },
+      },
+      select: {
+        amount: true,
+        expenseAccountCode: true,
+        vendor: { select: { id: true, name: true } },
+        payments: { select: { amount: true, paidAt: true } },
+      },
+    }),
+    prisma.account.findMany({
+      where: { orgId, type: "EXPENSE" },
+      select: { code: true, name: true },
+    }),
+  ]);
+
+  const accountName = new Map(accounts.map((a) => [a.code, a.name]));
+  return {
+    from: range.from,
+    to: range.to,
+    ...rollUpVendorSpend(bills, range, accountName),
   };
 }
 

@@ -6,6 +6,8 @@ import {
   Wallet,
   Layers,
   Truck,
+  Clock,
+  Receipt,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { requireStaff } from "@/lib/rbac";
@@ -133,6 +135,18 @@ export default async function ReportsIndex({
           icon={Wallet}
           title="Collections summary"
           sub="Billed vs collected and the collection rate"
+        />
+        <ReportCard
+          href={`/reports/late-fees?${qs}`}
+          icon={Clock}
+          title="Late fees"
+          sub="Late-fee revenue and repeat offenders"
+        />
+        <ReportCard
+          href={`/reports/vendor-spend?${qs}`}
+          icon={Receipt}
+          title="Vendor spend"
+          sub="Where operating money went, by vendor and category"
         />
       </div>
     </div>
