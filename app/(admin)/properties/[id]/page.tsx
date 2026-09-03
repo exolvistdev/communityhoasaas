@@ -16,6 +16,7 @@ import { RevokeGatePassButton } from "../../gate-passes/RevokeGatePassButton";
 import { ArchivePropertyButton } from "./ArchivePropertyButton";
 import { EditPropertyForm } from "./EditPropertyForm";
 import { PeopleSection } from "./PeopleSection";
+import { RefundCreditButton } from "./RefundCreditButton";
 
 const TYPE_LABEL: Record<string, string> = {
   RESIDENTIAL: "Residential",
@@ -45,6 +46,7 @@ export default async function PropertyDetailPage({
 }) {
   const { org, user } = await getCurrentOrgContext();
   const canWrite = can(user.role, "property:write");
+  const canRefund = can(user.role, "billing:write");
 
   const property = await prisma.property.findFirst({
     where: { id: params.id, orgId: org.id },
@@ -138,6 +140,15 @@ export default async function PropertyDetailPage({
           {statement && statement.creditBalance > 0.005 && (
             <div className="text-xs font-medium text-success-fg">
               {peso(statement.creditBalance)} credit on file
+              {canRefund && (
+                <>
+                  {" · "}
+                  <RefundCreditButton
+                    propertyId={property.id}
+                    creditBalance={Number(statement.creditBalance.toFixed(2))}
+                  />
+                </>
+              )}
             </div>
           )}
           <Link

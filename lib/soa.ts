@@ -35,6 +35,9 @@ export type Statement = {
   closingBalance: number;
   /** Unapplied resident credit (overpayments carried forward). */
   creditBalance: number;
+  /** Refunds paid out in the statement window (informational — they draw down
+   *  the credit balance, not the amount due). */
+  refunds: { date: Date; amount: number; method: string }[];
   aging: Aging;
 };
 
@@ -78,6 +81,7 @@ const propertyInclude = {
       creditApplications: true,
     },
   },
+  refunds: { orderBy: { refundedAt: "asc" } },
 } satisfies Prisma.PropertyInclude;
 
 export type PropertyWithLedger = Prisma.PropertyGetPayload<{
@@ -197,6 +201,13 @@ export function assembleStatement(
     lines,
     closingBalance,
     creditBalance: Number(property.creditBalance),
+    refunds: property.refunds
+      .filter((r) => r.refundedAt <= to && (!from || r.refundedAt >= from))
+      .map((r) => ({
+        date: r.refundedAt,
+        amount: Number(r.amount),
+        method: r.method,
+      })),
     aging,
   };
 }

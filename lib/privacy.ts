@@ -29,6 +29,7 @@ export async function buildDataExport(userId: string, orgId: string) {
   const [
     homeowners,
     payments,
+    refunds,
     gatePasses,
     gateScans,
     announcements,
@@ -69,6 +70,18 @@ export async function buildDataExport(userId: string, orgId: string) {
           select: { period: true, property: { select: { unitNumber: true } } },
         },
         allocations: { select: { amount: true, invoice: { select: { period: true } } } },
+      },
+    }),
+    prisma.refund.findMany({
+      where: { property: { homeowners: { some: { userId } } } },
+      orderBy: { refundedAt: "desc" },
+      select: {
+        amount: true,
+        method: true,
+        reference: true,
+        reason: true,
+        refundedAt: true,
+        property: { select: { unitNumber: true } },
       },
     }),
     prisma.gatePass.findMany({
@@ -234,6 +247,14 @@ export async function buildDataExport(userId: string, orgId: string) {
         amount: money(a.amount),
         period: a.invoice.period,
       })),
+    })),
+    refunds: refunds.map((r) => ({
+      amount: money(r.amount),
+      method: r.method,
+      reference: r.reference,
+      reason: r.reason,
+      refundedAt: r.refundedAt,
+      unit: r.property.unitNumber,
     })),
     gatePasses: gatePasses.map(({ property, ...g }) => ({
       ...g,

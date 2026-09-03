@@ -9,6 +9,7 @@ const ACTION_LABEL: Record<string, string> = {
   "payment.record": "Recorded payment",
   "payment.confirm": "Confirmed payment",
   "payment.reject": "Rejected payment",
+  "refund.issue": "Issued a refund",
   "property.archive": "Archived property",
   "property.restore": "Restored property",
   "property.ownership_transfer": "Closed out / transferred a unit",

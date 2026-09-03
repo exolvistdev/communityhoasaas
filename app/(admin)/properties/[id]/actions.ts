@@ -8,6 +8,8 @@ import { denyUnless } from "@/lib/rbac";
 import { generateInviteLink } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
 import { typeDefaultRate, toTypeRateDefaults } from "@/lib/rate";
+import { postRefund } from "@/lib/ledger";
+import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -15,6 +17,7 @@ function revalidateProperty(id: string) {
   revalidatePath(`/properties/${id}`);
   revalidatePath("/properties");
   revalidatePath("/dashboard");
+  revalidatePath("/portal");
 }
 
 async function guard(): Promise<{ ok: false; error: string } | null> {
@@ -119,6 +122,94 @@ export async function updateProperty(
   });
 
   revalidateProperty(id);
+  return { ok: true };
+}
+
+/* ───────────────────────────── refunds ───────────────────────────── */
+
+const refundSchema = z.object({
+  amount: z.coerce.number().positive("Enter an amount greater than 0"),
+  method: z.enum(["CASH", "CHECK", "BANK_TRANSFER", "GCASH", "MAYA"]),
+  reference: z.string().trim().max(120).optional().or(z.literal("")),
+  reason: z.string().trim().min(3, "Give a reason").max(500),
+});
+
+/** Pay a resident's carried credit back in cash (DR 2100 / CR 1000). */
+export async function issueRefund(
+  propertyId: string,
+  input: unknown
+): Promise<Result> {
+  const denied = await denyUnless("billing:write"); // it moves money — treasurer/admin
+  if (denied) return denied;
+
+  const parsed = refundSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org, user } = await getCurrentOrgContext();
+  const property = await prisma.property.findFirst({
+    where: { id: propertyId, orgId: org.id },
+    include: {
+      homeowners: {
+        where: { userId: { not: null } },
+        select: { user: { select: recipientSelect } },
+      },
+    },
+  });
+  if (!property) return { ok: false, error: "Property not found" };
+
+  const d = parsed.data;
+  const amount = Math.round(d.amount * 100) / 100;
+  const available = Number(property.creditBalance);
+  if (amount > available + 0.005)
+    return {
+      ok: false,
+      error: `Only ₱${available.toLocaleString(
+        "en-PH"
+      )} of resident credit is available to refund.`,
+    };
+
+  const refund = await prisma.$transaction(async (tx) => {
+    const r = await tx.refund.create({
+      data: {
+        orgId: org.id,
+        propertyId,
+        amount,
+        method: d.method,
+        reference: d.reference || null,
+        reason: d.reason,
+        refundedById: user.id,
+      },
+    });
+    await tx.property.update({
+      where: { id: propertyId },
+      data: { creditBalance: { decrement: amount } },
+    });
+    return r;
+  });
+  await postRefund(refund.id);
+
+  await logAudit({
+    action: "refund.issue",
+    target: property.unitNumber,
+    detail: `${d.method} ₱${amount.toLocaleString("en-PH")}`,
+  });
+
+  const users = property.homeowners
+    .map((h) => h.user)
+    .filter((u): u is Recipient => Boolean(u));
+  if (users.length)
+    await deliver({
+      users,
+      type: "PAYMENT_REFUNDED",
+      title: `Refund issued — ${property.unitNumber}`,
+      body: `₱${amount.toLocaleString("en-PH")} was refunded to you via ${d.method}${
+        d.reference ? ` (ref ${d.reference})` : ""
+      }.`,
+      href: "/portal",
+    }).catch(() => {});
+
+  revalidateProperty(propertyId);
   return { ok: true };
 }
 

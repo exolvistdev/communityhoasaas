@@ -216,6 +216,7 @@ async function resetDemoOrg() {
   await prisma.invoice.deleteMany({ where: { property: { orgId } } });
   await prisma.gatePassScan.deleteMany({ where: { orgId } });
   await prisma.gatePass.deleteMany({ where: { property: { orgId } } });
+  await prisma.refund.deleteMany({ where: { orgId } });
   await prisma.ownershipTransfer.deleteMany({ where: { orgId } });
   await prisma.auditEvent.deleteMany({ where: { orgId } });
   await prisma.announcement.deleteMany({ where: { orgId } });

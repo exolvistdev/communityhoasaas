@@ -8,6 +8,7 @@ import { denyUnless } from "@/lib/rbac";
 import {
   postInvoiceIssued,
   postInvoiceVoided,
+  postInvoiceVoidedToCredit,
   postPaymentReceived,
   postCreditApplied,
 } from "@/lib/ledger";
@@ -251,30 +252,35 @@ export async function voidInvoice(
     where: { id, property: { orgId: org.id } },
     include: {
       payments: true,
-      allocations: { include: { payment: { select: { status: true } } } },
-      creditApplications: true,
+      allocations: {
+        where: { payment: { status: "CONFIRMED" } },
+        select: { amount: true },
+      },
+      creditApplications: { select: { amount: true } },
       property: { select: { unitNumber: true } },
     },
   });
   if (!invoice) return { ok: false, error: "Invoice not found" };
   if (invoice.status === "VOID")
     return { ok: false, error: "Already voided" };
-  if (
-    invoice.allocations.some((a) => a.payment.status === "CONFIRMED") ||
-    invoice.creditApplications.length > 0
-  )
-    return {
-      ok: false,
-      error:
-        "Payments or resident credit are applied to this invoice. Unwinding those (refunds) is coming in the next update.",
-    };
   if (invoice.payments.some((p) => p.status === "PENDING"))
     return {
       ok: false,
       error: "Reject the pending payment on this invoice first",
     };
 
+  // Any money already settled against this invoice (confirmed payments +
+  // applied credit) becomes resident credit rather than a negative receivable.
+  const toCredit = invoicePaid(invoice);
+
   await postInvoiceVoided(id); // reversing entry — reads invoice.period, still set
+  if (toCredit > 0.005) {
+    await postInvoiceVoidedToCredit(id, toCredit);
+    await prisma.property.update({
+      where: { id: invoice.propertyId },
+      data: { creditBalance: { increment: toCredit } },
+    });
+  }
   await prisma.invoice.update({
     where: { id },
     data: {
@@ -290,10 +296,15 @@ export async function voidInvoice(
   revalidatePath("/dashboard");
   revalidatePath("/ledger");
   revalidatePath(`/properties/${invoice.propertyId}`);
+  revalidatePath("/portal");
   await logAudit({
     action: "invoice.void",
     target: `${invoice.property.unitNumber}${invoice.period ? ` · ${periodLabel(invoice.period)}` : ""}`,
-    detail: parsed.data.reason,
+    detail:
+      parsed.data.reason +
+      (toCredit > 0.005
+        ? ` · ₱${toCredit.toLocaleString("en-PH")} moved to resident credit`
+        : ""),
   });
   return { ok: true };
 }

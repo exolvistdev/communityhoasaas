@@ -34,6 +34,7 @@ export const NOTIFICATION_CATALOG: Record<NotificationType, CatalogEntry> = {
   PAYMENT_SUBMITTED: { category: "billing", defaultEmail: false, defaultInApp: true },
   INVOICE_OVERDUE: { category: "billing", defaultEmail: true, defaultInApp: true },
   LATE_FEE_APPLIED: { category: "billing", defaultEmail: true, defaultInApp: true },
+  PAYMENT_REFUNDED: { category: "billing", defaultEmail: true, defaultInApp: true },
   ANNOUNCEMENT: { category: "announcements", defaultEmail: true, defaultInApp: true },
   AMENITY_BOOKING_REQUESTED: { category: "amenities", defaultEmail: true, defaultInApp: true },
   AMENITY_BOOKING_DECIDED: { category: "amenities", defaultEmail: true, defaultInApp: true },

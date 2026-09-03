@@ -131,6 +131,70 @@ export async function postInvoiceVoided(invoiceId: string) {
  * what was allocated to invoices, and Resident Credit up (2100) by any
  * unallocated remainder — which also bumps Property.creditBalance.
  */
+/**
+ * When an invoice with settled money (payments and/or applied credit) is voided,
+ * that money becomes resident credit rather than a negative receivable:
+ * AR down (1100), Resident Credit up (2100). The caller bumps
+ * Property.creditBalance by the same amount.
+ */
+export async function postInvoiceVoidedToCredit(invoiceId: string, amount: number) {
+  const invoice = await prisma.invoice.findUniqueOrThrow({
+    where: { id: invoiceId },
+    include: { property: true },
+  });
+
+  const [ar, credit] = await Promise.all([
+    getAccount(invoice.property.orgId, "1100"),
+    getAccount(invoice.property.orgId, "2100"),
+  ]);
+
+  return prisma.journalEntry.create({
+    data: {
+      orgId: invoice.property.orgId,
+      sourceType: "void_to_credit",
+      entryDate: new Date(),
+      memo: `Void → resident credit — unit ${invoice.property.unitNumber}`,
+      lines: {
+        create: [
+          { accountId: ar.id, debit: amount, credit: 0 },
+          { accountId: credit.id, debit: 0, credit: amount },
+        ],
+      },
+    },
+    include: { lines: true },
+  });
+}
+
+/** Cash refunded to a resident against their credit: Resident Credit down
+ *  (2100), Cash down (1000). The caller decrements Property.creditBalance. */
+export async function postRefund(refundId: string) {
+  const refund = await prisma.refund.findUniqueOrThrow({
+    where: { id: refundId },
+    include: { property: { select: { unitNumber: true } } },
+  });
+
+  const [credit, cash] = await Promise.all([
+    getAccount(refund.orgId, "2100"),
+    getAccount(refund.orgId, "1000"),
+  ]);
+
+  return prisma.journalEntry.create({
+    data: {
+      orgId: refund.orgId,
+      sourceType: "refund",
+      entryDate: refund.refundedAt,
+      memo: `Refund via ${refund.method} — unit ${refund.property.unitNumber}`,
+      lines: {
+        create: [
+          { accountId: credit.id, debit: refund.amount, credit: 0 },
+          { accountId: cash.id, debit: 0, credit: refund.amount },
+        ],
+      },
+    },
+    include: { lines: true },
+  });
+}
+
 export async function postPaymentReceived(paymentId: string) {
   const payment = await prisma.payment.findUniqueOrThrow({
     where: { id: paymentId },

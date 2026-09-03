@@ -26,6 +26,7 @@ function property(invoices: InvSpec[], creditBalance = 0): PropertyWithLedger {
     orgId: "org-1",
     unitNumber: "Blk 1 Lot 1",
     creditBalance,
+    refunds: [],
     org: { name: "Test HOA" },
     homeowners: [{ fullName: "Juan Dela Cruz", isPrimary: true }],
     invoices: invoices.map((i, n) => ({

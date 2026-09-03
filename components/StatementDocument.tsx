@@ -95,6 +95,17 @@ export function StatementDocument({ statement: s }: { statement: Statement }) {
         </tfoot>
       </table>
 
+      {s.refunds.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500">
+          <span className="font-medium text-gray-600">Refunds</span>
+          {s.refunds.map((r, i) => (
+            <span key={i}>
+              {fmtDate(r.date)} · {peso(r.amount)} ({r.method.replace("_", " ").toLowerCase()})
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500">
         <span className="font-medium text-gray-600">Aging</span>
         <span>Current {peso(s.aging.current)}</span>

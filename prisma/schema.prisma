@@ -86,6 +86,7 @@ model Organization {
   ownershipTransfers  OwnershipTransfer[]
   dataRequests        DataRequest[]
   creditApplications  CreditApplication[]
+  refunds             Refund[]
 
   @@map("organizations")
 }
@@ -168,6 +169,7 @@ model User {
   dataRequests          DataRequest[]
   dataRequestsHandled   DataRequest[]         @relation("DataRequestHandledBy")
   creditApplicationsApplied CreditApplication[] @relation("CreditAppliedBy")
+  refundsIssued         Refund[]              @relation("RefundIssuedBy")
 
   @@index([orgId])
   @@map("users")
@@ -188,6 +190,7 @@ enum NotificationType {
   MARKETPLACE_LISTING_MODERATED
   MARKETPLACE_CONVERSATION_REPORTED
   LATE_FEE_APPLIED
+  PAYMENT_REFUNDED
 }
 
 model Notification {
@@ -252,6 +255,7 @@ model Property {
   gatePasses GatePass[]
   ownershipTransfers OwnershipTransfer[]
   creditApplications CreditApplication[]
+  refunds    Refund[]
 
   @@unique([orgId, unitNumber])
   @@index([orgId])
@@ -416,6 +420,27 @@ model PaymentAllocation {
   @@index([paymentId])
   @@index([invoiceId])
   @@map("payment_allocations")
+}
+
+// Cash paid back to a resident against their credit balance (DR 2100 / CR 1000).
+model Refund {
+  id           String   @id @default(uuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  propertyId   String
+  property     Property @relation(fields: [propertyId], references: [id])
+  amount       Decimal  @db.Decimal(12, 2)
+  method       PaymentMethod
+  reference    String?
+  reason       String
+  note         String?
+  refundedById String?
+  refundedBy   User?    @relation("RefundIssuedBy", fields: [refundedById], references: [id])
+  refundedAt   DateTime @default(now())
+
+  @@index([orgId])
+  @@index([propertyId])
+  @@map("refunds")
 }
 
 // A stored resident credit consumed by a later invoice (DR 2100 / CR 1100).
