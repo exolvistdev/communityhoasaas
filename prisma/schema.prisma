@@ -85,6 +85,7 @@ model Organization {
   documents           Document[]
   ownershipTransfers  OwnershipTransfer[]
   dataRequests        DataRequest[]
+  creditApplications  CreditApplication[]
 
   @@map("organizations")
 }
@@ -166,6 +167,7 @@ model User {
   ownershipTransfersHandled OwnershipTransfer[] @relation("TransferHandledBy")
   dataRequests          DataRequest[]
   dataRequestsHandled   DataRequest[]         @relation("DataRequestHandledBy")
+  creditApplicationsApplied CreditApplication[] @relation("CreditAppliedBy")
 
   @@index([orgId])
   @@map("users")
@@ -240,12 +242,16 @@ model Property {
   ratePlanId   String?
   ratePlan     RatePlan? @relation(fields: [ratePlanId], references: [id])
   archivedAt   DateTime? // set when a unit is sold / moved out — stops billing
+  // Unapplied resident credit (overpayments carried forward). Mirrors the
+  // ledger's 2100 balance for this unit; auto-applied to the next invoice.
+  creditBalance Decimal @default(0) @db.Decimal(12, 2)
   createdAt    DateTime @default(now())
 
   homeowners Homeowner[]
   invoices   Invoice[]
   gatePasses GatePass[]
   ownershipTransfers OwnershipTransfer[]
+  creditApplications CreditApplication[]
 
   @@unique([orgId, unitNumber])
   @@index([orgId])
@@ -343,6 +349,8 @@ model Invoice {
   lateFeeChildren Invoice[] @relation("InvoiceLateFees")
 
   payments      Payment[]
+  allocations   PaymentAllocation[]
+  creditApplications CreditApplication[]
   journalEntry  JournalEntry?
   amenityBooking AmenityBooking?
 
@@ -386,10 +394,47 @@ model Payment {
   confirmedAt   DateTime?
 
   journalEntry JournalEntry?
+  allocations  PaymentAllocation[]
 
   @@index([invoiceId])
   @@index([status])
   @@map("payments")
+}
+
+// How much of one payment landed on one invoice. The source of truth for
+// "amount paid on this invoice" — a payment may split across several invoices,
+// and any remainder becomes resident credit (see Property.creditBalance).
+model PaymentAllocation {
+  id        String  @id @default(uuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+  amount    Decimal @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+
+  @@index([paymentId])
+  @@index([invoiceId])
+  @@map("payment_allocations")
+}
+
+// A stored resident credit consumed by a later invoice (DR 2100 / CR 1100).
+model CreditApplication {
+  id          String   @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  amount      Decimal  @db.Decimal(12, 2)
+  appliedById String?
+  appliedBy   User?    @relation("CreditAppliedBy", fields: [appliedById], references: [id])
+  appliedAt   DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([invoiceId])
+  @@map("credit_applications")
 }
 
 // ─────────────────────────────────────────────

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
+import { peso } from "@/lib/format";
 import { paymentQrUrl } from "@/lib/payment-qr";
 import { PayNowClient } from "./PayNowClient";
 
@@ -27,6 +28,7 @@ export default async function PayNowPage() {
   ]);
 
   const balance = Math.max(statement?.closingBalance ?? 0, 0);
+  const credit = statement?.creditBalance ?? 0;
 
   return (
     <div className="space-y-4">
@@ -38,6 +40,8 @@ export default async function PayNowPage() {
       {balance <= 0.005 ? (
         <p className="rounded-lg border border-success/30 bg-success-subtle p-4 text-sm text-success-fg">
           You have no balance due right now.
+          {credit > 0.005 &&
+            ` You have ${peso(credit)} in credit, applied to your next dues automatically.`}
         </p>
       ) : !openInvoice ? (
         <p className="rounded-lg border border-border bg-surface p-4 text-sm text-fg-muted">

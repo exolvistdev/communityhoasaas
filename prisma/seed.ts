@@ -206,6 +206,10 @@ async function resetDemoOrg() {
   await prisma.amenity.deleteMany({ where: { orgId } });
   await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
   await prisma.journalEntry.deleteMany({ where: { orgId } });
+  await prisma.creditApplication.deleteMany({ where: { orgId } });
+  await prisma.paymentAllocation.deleteMany({
+    where: { payment: { invoice: { property: { orgId } } } },
+  });
   await prisma.payment.deleteMany({
     where: { invoice: { property: { orgId } } },
   });
@@ -384,17 +388,19 @@ async function main() {
     await postInvoiceIssued(invoice.id);
     invoiceByUnit.set(p.unitNumber, invoice.id);
 
-    // Blk 1 Lot 2 paid in full; Blk 1 Lot 3 partial; the rest outstanding
-    // (Blk 1 Lot 1 is the demo homeowner login — left owing on purpose).
+    // Blk 1 Lot 2 overpaid (₱500 carried as resident credit); Blk 1 Lot 3
+    // partial; the rest outstanding (Blk 1 Lot 1 is the demo homeowner login —
+    // left owing on purpose).
     if (i === 1) {
       const pay = await prisma.payment.create({
         data: {
           invoiceId: invoice.id,
-          amount: p.rate,
+          amount: p.rate + 500, // overpayment → resident credit
           method: "GCASH",
           status: "CONFIRMED",
           confirmedById: admin.id,
           confirmedAt: new Date(),
+          allocations: { create: [{ invoiceId: invoice.id, amount: p.rate }] },
         },
       });
       await postPaymentReceived(pay.id);
@@ -407,6 +413,7 @@ async function main() {
           status: "CONFIRMED",
           confirmedById: admin.id,
           confirmedAt: new Date(),
+          allocations: { create: [{ invoiceId: invoice.id, amount: 1000 }] },
         },
       });
       await postPaymentReceived(pay.id);
@@ -988,6 +995,7 @@ async function main() {
       status: "CONFIRMED",
       confirmedById: admin.id,
       confirmedAt: at(-13, 10),
+      allocations: { create: [{ invoiceId: hallInvoice.id, amount: 2000 }] },
     },
   });
   await postPaymentReceived(hallPay.id);

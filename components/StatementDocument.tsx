@@ -84,6 +84,14 @@ export function StatementDocument({ statement: s }: { statement: Statement }) {
             </td>
             <td className="py-2 text-right">{peso(s.closingBalance)}</td>
           </tr>
+          {s.creditBalance > 0.005 && (
+            <tr className="text-gray-500">
+              <td className="py-2 pr-4" colSpan={4}>
+                Credit on file (applied to future dues)
+              </td>
+              <td className="py-2 text-right">{peso(s.creditBalance)}</td>
+            </tr>
+          )}
         </tfoot>
       </table>
 

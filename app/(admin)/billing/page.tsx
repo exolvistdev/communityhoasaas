@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { peso, periodLabel, currentPeriod } from "@/lib/format";
-import { effectiveStatus, amountPaid } from "@/lib/invoice";
+import { effectiveStatus, invoicePaid } from "@/lib/invoice";
 import { can } from "@/lib/permissions";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
 import { GenerateInvoicesButton } from "./GenerateInvoicesButton";
@@ -27,7 +27,11 @@ export default async function BillingPage({
       where: { property: { orgId: org.id } },
       include: {
         property: true,
-        payments: { where: { status: "CONFIRMED" } },
+        allocations: {
+          where: { payment: { status: "CONFIRMED" } },
+          select: { amount: true },
+        },
+        creditApplications: { select: { amount: true } },
       },
       orderBy: [{ dueDate: "desc" }, { property: { unitNumber: "asc" } }],
     }),
@@ -37,7 +41,7 @@ export default async function BillingPage({
   ]);
 
   const rows = invoices.map((inv) => {
-    const paid = amountPaid(inv.payments);
+    const paid = invoicePaid(inv);
     return {
       inv,
       paid,

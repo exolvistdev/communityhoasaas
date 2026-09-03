@@ -9,10 +9,13 @@ import {
   postInvoiceIssued,
   postInvoiceVoided,
   postPaymentReceived,
+  postCreditApplied,
 } from "@/lib/ledger";
 import { logAudit } from "@/lib/audit";
 import { periodLabel } from "@/lib/format";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
+import { allocateOldestFirst } from "@/lib/allocation";
+import { invoicePaid } from "@/lib/invoice";
 
 const periodSchema = z
   .string()
@@ -25,11 +28,15 @@ export async function previewGeneration(period: string) {
 
   const properties = await prisma.property.findMany({
     where: { orgId: org.id, archivedAt: null, invoices: { none: { period } } },
-    select: { monthlyRate: true },
+    select: { monthlyRate: true, creditBalance: true },
   });
 
   const total = properties.reduce((s, p) => s + Number(p.monthlyRate), 0);
-  return { count: properties.length, total };
+  const creditToApply = properties.reduce(
+    (s, p) => s + Math.min(Number(p.creditBalance), Number(p.monthlyRate)),
+    0
+  );
+  return { count: properties.length, total, creditToApply };
 }
 
 export type GenerateResult =
@@ -41,7 +48,7 @@ export async function generateMonthlyInvoices(
 ): Promise<GenerateResult> {
   const denied = await denyUnless("billing:write");
   if (denied) return denied;
-  const { org } = await getCurrentOrgContext();
+  const { org, user } = await getCurrentOrgContext();
   const parsed = periodSchema.safeParse(period);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
@@ -59,6 +66,7 @@ export async function generateMonthlyInvoices(
   });
 
   let created = 0;
+  let creditApplied = 0;
   const notify: Recipient[] = [];
   for (const property of properties) {
     try {
@@ -74,6 +82,29 @@ export async function generateMonthlyInvoices(
       });
       await postInvoiceIssued(invoice.id);
       created++;
+
+      // Auto-apply any resident credit this unit is carrying.
+      const avail = Number(property.creditBalance);
+      if (avail > 0.005) {
+        const applied =
+          Math.round(Math.min(avail, Number(invoice.amount)) * 100) / 100;
+        const ca = await prisma.creditApplication.create({
+          data: {
+            orgId: org.id,
+            propertyId: property.id,
+            invoiceId: invoice.id,
+            amount: applied,
+            appliedById: user.id,
+          },
+        });
+        await prisma.property.update({
+          where: { id: property.id },
+          data: { creditBalance: { decrement: applied } },
+        });
+        await postCreditApplied(ca.id);
+        creditApplied += applied;
+      }
+
       for (const h of property.homeowners) if (h.user) notify.push(h.user);
     } catch (e: any) {
       // P2002 = unique violation: another run already billed this property/period
@@ -87,7 +118,11 @@ export async function generateMonthlyInvoices(
     await logAudit({
       action: "invoice.generate",
       target: periodLabel(period),
-      detail: `${created} invoice${created === 1 ? "" : "s"}`,
+      detail:
+        `${created} invoice${created === 1 ? "" : "s"}` +
+        (creditApplied > 0
+          ? ` · ₱${creditApplied.toLocaleString("en-PH")} resident credit applied`
+          : ""),
     });
 
   const uniqueNotify = [...new Map(notify.map((u) => [u.id, u])).values()];
@@ -135,11 +170,40 @@ export async function recordPayment(
 
   const invoice = await prisma.invoice.findFirst({
     where: { id: invoiceId, property: { orgId: org.id } },
-    include: { property: { select: { unitNumber: true } } },
+    include: { property: { select: { id: true, unitNumber: true } } },
   });
   if (!invoice) return { ok: false, error: "Invoice not found" };
   if (invoice.status === "VOID")
     return { ok: false, error: "This invoice is void" };
+
+  // Allocate oldest-first, starting with the invoice the staffer clicked;
+  // anything left over becomes resident credit (handled by postPaymentReceived).
+  const open = await prisma.invoice.findMany({
+    where: {
+      propertyId: invoice.property.id,
+      status: { notIn: ["PAID", "VOID"] },
+    },
+    include: {
+      allocations: {
+        where: { payment: { status: "CONFIRMED" } },
+        select: { amount: true },
+      },
+      creditApplications: { select: { amount: true } },
+    },
+    orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+  });
+  const ordered = [
+    ...open.filter((i) => i.id === invoiceId),
+    ...open.filter((i) => i.id !== invoiceId),
+  ];
+  const { allocations } = allocateOldestFirst(
+    amount,
+    ordered.map((i) => ({
+      id: i.id,
+      amount: Number(i.amount),
+      alreadyPaid: invoicePaid(i),
+    }))
+  );
 
   const payment = await prisma.payment.create({
     data: {
@@ -150,6 +214,7 @@ export async function recordPayment(
       status: "CONFIRMED",
       confirmedById: user.id,
       confirmedAt: new Date(),
+      allocations: { create: allocations },
     },
   });
   await postPaymentReceived(payment.id);
@@ -184,15 +249,24 @@ export async function voidInvoice(
   const { org } = await getCurrentOrgContext();
   const invoice = await prisma.invoice.findFirst({
     where: { id, property: { orgId: org.id } },
-    include: { payments: true, property: { select: { unitNumber: true } } },
+    include: {
+      payments: true,
+      allocations: { include: { payment: { select: { status: true } } } },
+      creditApplications: true,
+      property: { select: { unitNumber: true } },
+    },
   });
   if (!invoice) return { ok: false, error: "Invoice not found" };
   if (invoice.status === "VOID")
     return { ok: false, error: "Already voided" };
-  if (invoice.payments.some((p) => p.status === "CONFIRMED"))
+  if (
+    invoice.allocations.some((a) => a.payment.status === "CONFIRMED") ||
+    invoice.creditApplications.length > 0
+  )
     return {
       ok: false,
-      error: "This invoice has a confirmed payment — handle the refund first",
+      error:
+        "Payments or resident credit are applied to this invoice. Unwinding those (refunds) is coming in the next update.",
     };
   if (invoice.payments.some((p) => p.status === "PENDING"))
     return {

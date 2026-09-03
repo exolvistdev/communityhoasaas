@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { peso, periodLabel } from "@/lib/format";
-import { effectiveStatus, amountPaid } from "@/lib/invoice";
+import { effectiveStatus, invoicePaid } from "@/lib/invoice";
 import { can } from "@/lib/permissions";
 import { toTypeRateDefaults } from "@/lib/rate";
 import { effectiveGatePassStatus } from "@/lib/gatepass";
@@ -55,7 +55,13 @@ export default async function PropertyDetailPage({
         orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
       },
       invoices: {
-        include: { payments: { where: { status: "CONFIRMED" } } },
+        include: {
+          allocations: {
+            where: { payment: { status: "CONFIRMED" } },
+            select: { amount: true },
+          },
+          creditApplications: { select: { amount: true } },
+        },
         orderBy: { createdAt: "desc" },
       },
       gatePasses: { orderBy: { createdAt: "desc" } },
@@ -129,6 +135,11 @@ export default async function PropertyDetailPage({
           >
             {peso(balance)}
           </div>
+          {statement && statement.creditBalance > 0.005 && (
+            <div className="text-xs font-medium text-success-fg">
+              {peso(statement.creditBalance)} credit on file
+            </div>
+          )}
           <Link
             href={`/statements/${property.id}`}
             className="text-xs text-fg-muted underline underline-offset-2 hover:text-fg"
@@ -193,8 +204,7 @@ export default async function PropertyDetailPage({
               <tbody>
                 {property.invoices.map((inv) => {
                   const display = effectiveStatus(inv);
-                  const outstanding =
-                    Number(inv.amount) - amountPaid(inv.payments);
+                  const outstanding = Number(inv.amount) - invoicePaid(inv);
                   return (
                     <tr key={inv.id} className="border-t border-border">
                       <td className="px-4 py-2.5">

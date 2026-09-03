@@ -144,11 +144,17 @@ export async function executeCloseout(
         status: { notIn: ["PAID", "VOID"] },
       },
       include: {
-        payments: { where: { status: "CONFIRMED" }, select: { amount: true } },
+        allocations: {
+          where: { payment: { status: "CONFIRMED" } },
+          select: { amount: true },
+        },
+        creditApplications: { select: { amount: true } },
       },
     });
     for (const inv of openInvoices) {
-      const paid = inv.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const paid =
+        inv.allocations.reduce((s, a) => s + Number(a.amount), 0) +
+        inv.creditApplications.reduce((s, c) => s + Number(c.amount), 0);
       const remaining = Math.round((Number(inv.amount) - paid) * 100) / 100;
       if (remaining <= 0.005) continue;
       const wo = await prisma.payment.create({

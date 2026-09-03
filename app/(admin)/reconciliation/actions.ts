@@ -8,6 +8,8 @@ import { denyUnless } from "@/lib/rbac";
 import { postPaymentReceived } from "@/lib/ledger";
 import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect } from "@/lib/notifications";
+import { allocateOldestFirst } from "@/lib/allocation";
+import { invoicePaid } from "@/lib/invoice";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -25,7 +27,7 @@ async function findPending(id: string) {
     where: { id, status: "PENDING", invoice: { property: { orgId: org.id } } },
     include: {
       submittedBy: { select: recipientSelect },
-      invoice: { include: { property: { select: { unitNumber: true } } } },
+      invoice: { include: { property: { select: { id: true, unitNumber: true } } } },
     },
   });
 }
@@ -40,10 +42,44 @@ export async function confirmPayment(id: string): Promise<Result> {
   const payment = await findPending(id);
   if (!payment) return { ok: false, error: "Payment not found" };
 
-  await prisma.payment.update({
-    where: { id },
-    data: { status: "CONFIRMED", confirmedById: user.id, confirmedAt: new Date() },
+  // Allocate the payment oldest-first across the unit's open invoices;
+  // any excess becomes resident credit (handled by postPaymentReceived).
+  const open = await prisma.invoice.findMany({
+    where: {
+      propertyId: payment.invoice.property.id,
+      status: { notIn: ["PAID", "VOID"] },
+    },
+    include: {
+      allocations: {
+        where: { payment: { status: "CONFIRMED" } },
+        select: { amount: true },
+      },
+      creditApplications: { select: { amount: true } },
+    },
+    orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
   });
+  const { allocations } = allocateOldestFirst(
+    Number(payment.amount),
+    open.map((i) => ({
+      id: i.id,
+      amount: Number(i.amount),
+      alreadyPaid: invoicePaid(i),
+    }))
+  );
+
+  await prisma.$transaction([
+    prisma.payment.update({
+      where: { id },
+      data: { status: "CONFIRMED", confirmedById: user.id, confirmedAt: new Date() },
+    }),
+    prisma.paymentAllocation.createMany({
+      data: allocations.map((a) => ({
+        paymentId: id,
+        invoiceId: a.invoiceId,
+        amount: a.amount,
+      })),
+    }),
+  ]);
   await postPaymentReceived(id); // posts the ledger entry + recalculates status
 
   revalidate();

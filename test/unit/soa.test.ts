@@ -14,14 +14,18 @@ type InvSpec = {
   period?: string | null;
   memo?: string | null;
   status?: "SENT" | "PAID" | "PARTIALLY_PAID" | "VOID" | "OVERDUE";
+  /** payment allocations landing on this invoice */
   payments?: { paidAt: string; amount: number; method?: string; reference?: string | null }[];
+  /** resident-credit applications against this invoice */
+  credits?: { appliedAt: string; amount: number }[];
 };
 
-function property(invoices: InvSpec[]): PropertyWithLedger {
+function property(invoices: InvSpec[], creditBalance = 0): PropertyWithLedger {
   return {
     id: "prop-1",
     orgId: "org-1",
     unitNumber: "Blk 1 Lot 1",
+    creditBalance,
     org: { name: "Test HOA" },
     homeowners: [{ fullName: "Juan Dela Cruz", isPrimary: true }],
     invoices: invoices.map((i, n) => ({
@@ -32,12 +36,19 @@ function property(invoices: InvSpec[]): PropertyWithLedger {
       amount: i.amount,
       period: i.period ?? null,
       memo: i.memo ?? null,
-      payments: (i.payments ?? []).map((p, m) => ({
-        id: `pay-${n}-${m}`,
-        paidAt: new Date(p.paidAt),
+      allocations: (i.payments ?? []).map((p, m) => ({
+        id: `alloc-${n}-${m}`,
         amount: p.amount,
-        method: p.method ?? "CASH",
-        reference: p.reference ?? null,
+        payment: {
+          paidAt: new Date(p.paidAt),
+          method: p.method ?? "CASH",
+          reference: p.reference ?? null,
+        },
+      })),
+      creditApplications: (i.credits ?? []).map((c, m) => ({
+        id: `ca-${n}-${m}`,
+        amount: c.amount,
+        appliedAt: new Date(c.appliedAt),
       })),
     })),
   } as unknown as PropertyWithLedger;
@@ -148,6 +159,49 @@ describe("assembleStatement", () => {
     expect(s.aging.d1_30).toBe(200);
     expect(s.aging.d61_90).toBe(300);
     expect(s.aging.d31_60).toBe(0);
+  });
+
+  it("renders a resident-credit-applied line and surfaces the credit balance", () => {
+    const s = assembleStatement(
+      property(
+        [
+          {
+            createdAt: "2026-09-01",
+            dueDate: "2026-09-15",
+            amount: 1500,
+            period: "2026-09",
+            payments: [{ paidAt: "2026-09-05", amount: 1000, method: "GCASH" }],
+            credits: [{ appliedAt: "2026-09-02", amount: 500 }],
+          },
+        ],
+        750 // unapplied credit carried on the property
+      ),
+      allTime
+    );
+    const descs = s.lines.map((l) => l.description);
+    expect(descs).toContain("Resident credit applied");
+    expect(s.closingBalance).toBe(0); // 1500 − 1000 payment − 500 credit
+    expect(s.creditBalance).toBe(750);
+    // credit line sorts by appliedAt (Sep 2), before the Sep 5 payment
+    expect(s.lines.map((l) => l.kind)).toEqual(["charge", "payment", "payment"]);
+    expect(s.lines[1].description).toBe("Resident credit applied");
+  });
+
+  it("counts credit applications toward aging", () => {
+    const s = assembleStatement(
+      property([
+        {
+          createdAt: "2026-08-01",
+          dueDate: "2026-08-15",
+          amount: 1000,
+          credits: [{ appliedAt: "2026-08-20", amount: 1000 }],
+        },
+      ]),
+      { from: null, to: new Date("2026-09-15T00:00:00Z") }
+    );
+    const total =
+      s.aging.current + s.aging.d1_30 + s.aging.d31_60 + s.aging.d61_90 + s.aging.d90plus;
+    expect(total).toBe(0);
   });
 
   it("counts only payments on or before the as-of date for aging", () => {

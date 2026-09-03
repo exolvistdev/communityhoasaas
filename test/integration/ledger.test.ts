@@ -66,13 +66,21 @@ describe.skipIf(!hasTestDb)("ledger invariants", () => {
     expect((await assertLedgerBalances(orgId)).balanced).toBe(true);
   });
 
-  it("AR from the ledger equals the sum of (invoiced − confirmed paid)", async () => {
+  it("AR from the ledger equals Σ(invoiced − allocated − credit applied)", async () => {
     const rows = await prisma.invoice.findMany({
       where: { property: { orgId }, status: { not: "VOID" } },
-      include: { payments: { where: { status: "CONFIRMED" } } },
+      include: {
+        allocations: {
+          where: { payment: { status: "CONFIRMED" } },
+          select: { amount: true },
+        },
+        creditApplications: { select: { amount: true } },
+      },
     });
     const derived = rows.reduce((s, inv) => {
-      const paid = inv.payments.reduce((a, p) => a + Number(p.amount), 0);
+      const paid =
+        inv.allocations.reduce((a, x) => a + Number(x.amount), 0) +
+        inv.creditApplications.reduce((a, x) => a + Number(x.amount), 0);
       return s + Number(inv.amount) - paid;
     }, 0);
     expect(await arLedgerBalance(orgId)).toBeCloseTo(derived, 2);

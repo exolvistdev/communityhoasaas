@@ -7,9 +7,11 @@ import { generateMonthlyInvoices, previewGeneration } from "./actions";
 
 export function GenerateInvoicesButton({ period }: { period: string }) {
   const router = useRouter();
-  const [preview, setPreview] = useState<{ count: number; total: number } | null>(
-    null
-  );
+  const [preview, setPreview] = useState<{
+    count: number;
+    total: number;
+    creditToApply: number;
+  } | null>(null);
   const [done, setDone] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingPreview, startPreview] = useTransition();
@@ -77,6 +79,15 @@ export function GenerateInvoicesButton({ period }: { period: string }) {
                 </span>
                 , one per property at its configured rate, and post them to the
                 ledger.
+                {preview.creditToApply > 0.005 && (
+                  <>
+                    {" "}
+                    <span className="font-medium text-fg">
+                      {peso(preview.creditToApply)}
+                    </span>{" "}
+                    in resident credit will be applied automatically.
+                  </>
+                )}
               </p>
             )}
             <div className="mt-4 flex justify-end gap-2">

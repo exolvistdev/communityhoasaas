@@ -16,6 +16,19 @@ export function effectiveStatus(inv: {
   return inv.status;
 }
 
-export function amountPaid(payments: { amount: unknown }[]) {
-  return payments.reduce((s, p) => s + Number(p.amount), 0);
+/**
+ * How much has settled an invoice: payment allocations (the caller should scope
+ * the `allocations` query to CONFIRMED payments) plus any resident credit
+ * applied to it.
+ */
+export function invoicePaid(inv: {
+  allocations: { amount: unknown }[];
+  creditApplications?: { amount: unknown }[];
+}) {
+  const fromPayments = inv.allocations.reduce((s, a) => s + Number(a.amount), 0);
+  const fromCredit = (inv.creditApplications ?? []).reduce(
+    (s, c) => s + Number(c.amount),
+    0
+  );
+  return fromPayments + fromCredit;
 }

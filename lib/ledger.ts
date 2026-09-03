@@ -10,6 +10,7 @@ export const SEED_ACCOUNTS = [
   { code: "1000", name: "Cash", type: "ASSET" as const },
   { code: "1100", name: "Accounts Receivable — Dues", type: "ASSET" as const },
   { code: "2000", name: "Accounts Payable", type: "LIABILITY" as const },
+  { code: "2100", name: "Resident Credit", type: "LIABILITY" as const },
   { code: "3000", name: "Fund Balance", type: "EQUITY" as const },
   { code: "3900", name: "Opening Balance Equity", type: "EQUITY" as const },
   { code: "4000", name: "HOA Dues Income", type: "INCOME" as const },
@@ -124,35 +125,101 @@ export async function postInvoiceVoided(invoiceId: string) {
   });
 }
 
+/**
+ * Post a confirmed payment. Reads the payment's PaymentAllocation rows (created
+ * by the calling action): Cash up (1000) by the full amount, AR down (1100) by
+ * what was allocated to invoices, and Resident Credit up (2100) by any
+ * unallocated remainder — which also bumps Property.creditBalance.
+ */
 export async function postPaymentReceived(paymentId: string) {
   const payment = await prisma.payment.findUniqueOrThrow({
     where: { id: paymentId },
+    include: {
+      invoice: { include: { property: true } },
+      allocations: true,
+    },
+  });
+  const { orgId, unitNumber, id: propertyId } = payment.invoice.property;
+
+  const total = Number(payment.amount);
+  const allocated =
+    Math.round(
+      payment.allocations.reduce((s, a) => s + Number(a.amount), 0) * 100
+    ) / 100;
+  const creditPortion = Math.round((total - allocated) * 100) / 100;
+  const hasCredit = creditPortion > 0.005;
+  const arAmount = hasCredit ? allocated : total; // absorb any sub-cent drift into AR
+
+  const [cash, ar, credit] = await Promise.all([
+    getAccount(orgId, "1000"),
+    getAccount(orgId, "1100"),
+    getAccount(orgId, "2100"),
+  ]);
+
+  const lines: { accountId: string; debit: number; credit: number }[] = [
+    { accountId: cash.id, debit: total, credit: 0 },
+  ];
+  if (arAmount > 0.005) lines.push({ accountId: ar.id, debit: 0, credit: arAmount });
+  if (hasCredit) lines.push({ accountId: credit.id, debit: 0, credit: creditPortion });
+
+  const entry = await prisma.journalEntry.create({
+    data: {
+      orgId,
+      sourceType: "payment",
+      paymentId: payment.id,
+      entryDate: payment.paidAt,
+      memo: `Payment via ${payment.method} — unit ${unitNumber}`,
+      lines: { create: lines },
+    },
+    include: { lines: true },
+  });
+
+  const touched = payment.allocations.map((a) => a.invoiceId);
+  for (const invoiceId of touched.length ? touched : [payment.invoiceId])
+    await recalculateInvoiceStatus(invoiceId);
+
+  if (hasCredit)
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: { creditBalance: { increment: creditPortion } },
+    });
+
+  return entry;
+}
+
+/**
+ * Consume a stored resident credit against an invoice: Resident Credit down
+ * (2100), AR down (1100). The caller creates the CreditApplication row and
+ * decrements Property.creditBalance in the same transaction.
+ */
+export async function postCreditApplied(creditApplicationId: string) {
+  const ca = await prisma.creditApplication.findUniqueOrThrow({
+    where: { id: creditApplicationId },
     include: { invoice: { include: { property: true } } },
   });
 
-  const [cash, ar] = await Promise.all([
-    getAccount(payment.invoice.property.orgId, "1000"),
-    getAccount(payment.invoice.property.orgId, "1100"),
+  const [credit, ar] = await Promise.all([
+    getAccount(ca.orgId, "2100"),
+    getAccount(ca.orgId, "1100"),
   ]);
 
   const entry = await prisma.journalEntry.create({
     data: {
-      orgId: payment.invoice.property.orgId,
-      sourceType: "payment",
-      paymentId: payment.id,
-      entryDate: payment.paidAt,
-      memo: `Payment via ${payment.method} — unit ${payment.invoice.property.unitNumber}`,
+      orgId: ca.orgId,
+      sourceType: "credit_applied",
+      entryDate: ca.appliedAt,
+      memo: `Resident credit applied — unit ${ca.invoice.property.unitNumber}`,
       lines: {
         create: [
-          { accountId: cash.id, debit: payment.amount, credit: 0 },
-          { accountId: ar.id, debit: 0, credit: payment.amount },
+          { accountId: credit.id, debit: ca.amount, credit: 0 },
+          { accountId: ar.id, debit: 0, credit: ca.amount },
         ],
       },
     },
     include: { lines: true },
   });
 
-  await recalculateInvoiceStatus(payment.invoiceId);
+  await recalculateInvoiceStatus(ca.invoiceId);
   return entry;
 }
 
@@ -164,8 +231,19 @@ export async function postPaymentReceived(paymentId: string) {
 export async function postWriteOff(paymentId: string) {
   const payment = await prisma.payment.findUniqueOrThrow({
     where: { id: paymentId },
-    include: { invoice: { include: { property: true } } },
+    include: { invoice: { include: { property: true } }, allocations: true },
   });
+
+  // Mirror the allocation the payment actions create, so the write-off still
+  // shows as a settling line on the SOA and closes the invoice.
+  if (payment.allocations.length === 0)
+    await prisma.paymentAllocation.create({
+      data: {
+        paymentId: payment.id,
+        invoiceId: payment.invoiceId,
+        amount: payment.amount,
+      },
+    });
 
   const [badDebt, ar] = await Promise.all([
     getAccount(payment.invoice.property.orgId, "6000"),
@@ -259,10 +337,20 @@ export async function postManualEntry(input: {
 async function recalculateInvoiceStatus(invoiceId: string) {
   const invoice = await prisma.invoice.findUniqueOrThrow({
     where: { id: invoiceId },
-    include: { payments: { where: { status: "CONFIRMED" } } },
+    include: {
+      allocations: { include: { payment: { select: { status: true } } } },
+      creditApplications: { select: { amount: true } },
+    },
   });
 
-  const paid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const fromPayments = invoice.allocations
+    .filter((a) => a.payment.status === "CONFIRMED")
+    .reduce((sum, a) => sum + Number(a.amount), 0);
+  const fromCredit = invoice.creditApplications.reduce(
+    (sum, c) => sum + Number(c.amount),
+    0
+  );
+  const paid = fromPayments + fromCredit;
 
   const status =
     paid >= Number(invoice.amount)
@@ -298,8 +386,9 @@ function entryDateFilter(range?: LedgerRange) {
 
 /**
  * Net balance of the Accounts Receivable — Dues account (code 1100) for an org,
- * straight from the ledger (debits − credits). Should always equal the sum of
- * every property's (invoiced − paid).
+ * straight from the ledger (debits − credits). Equals the sum of every
+ * (non-void) invoice's (amount − allocations − credit applied). Overpayments
+ * sit in Resident Credit (2100), not as a negative AR — so 1100 stays ≥ 0.
  */
 export async function arLedgerBalance(orgId: string) {
   const lines = await prisma.journalLine.findMany({

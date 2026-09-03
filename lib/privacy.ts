@@ -68,6 +68,7 @@ export async function buildDataExport(userId: string, orgId: string) {
         invoice: {
           select: { period: true, property: { select: { unitNumber: true } } },
         },
+        allocations: { select: { amount: true, invoice: { select: { period: true } } } },
       },
     }),
     prisma.gatePass.findMany({
@@ -229,6 +230,10 @@ export async function buildDataExport(userId: string, orgId: string) {
       paidAt: p.paidAt,
       period: p.invoice.period,
       unit: p.invoice.property.unitNumber,
+      appliedTo: p.allocations.map((a) => ({
+        amount: money(a.amount),
+        period: a.invoice.period,
+      })),
     })),
     gatePasses: gatePasses.map(({ property, ...g }) => ({
       ...g,

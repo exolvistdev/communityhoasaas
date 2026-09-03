@@ -98,23 +98,54 @@ export async function issueInvoice(
   return invoice;
 }
 
-/** Record a payment against an invoice; posts to the ledger when CONFIRMED. */
+/**
+ * Record a payment against an invoice. When CONFIRMED (the default) it creates
+ * an allocation and posts to the ledger. Pass `allocations` to split across
+ * several invoices; anything not allocated becomes resident credit.
+ */
 export async function recordPayment(
   invoiceId: string,
   amount: number,
-  opts: { method?: PaymentMethod; status?: PaymentStatus; paidAt?: Date } = {}
+  opts: {
+    method?: PaymentMethod;
+    status?: PaymentStatus;
+    paidAt?: Date;
+    allocations?: { invoiceId: string; amount: number }[];
+  } = {}
 ) {
+  const status = opts.status ?? "CONFIRMED";
+  let allocations = opts.allocations;
+  if (!allocations && status === "CONFIRMED") {
+    // default: fill this invoice's remaining room, cap the rest as credit
+    const invoice = await prisma.invoice.findUniqueOrThrow({
+      where: { id: invoiceId },
+      include: {
+        allocations: {
+          where: { payment: { status: "CONFIRMED" } },
+          select: { amount: true },
+        },
+        creditApplications: { select: { amount: true } },
+      },
+    });
+    const room =
+      Number(invoice.amount) -
+      invoice.allocations.reduce((s, a) => s + Number(a.amount), 0) -
+      invoice.creditApplications.reduce((s, c) => s + Number(c.amount), 0);
+    const take = Math.max(0, Math.min(amount, room));
+    allocations = take > 0.005 ? [{ invoiceId, amount: take }] : [];
+  }
+  allocations = allocations ?? [];
+
   const payment = await prisma.payment.create({
     data: {
       invoiceId,
       amount,
       method: opts.method ?? "CASH",
-      status: opts.status ?? "CONFIRMED",
+      status,
       paidAt: opts.paidAt ?? new Date(),
+      allocations: { create: allocations },
     },
   });
-  if ((opts.status ?? "CONFIRMED") === "CONFIRMED") {
-    await postPaymentReceived(payment.id);
-  }
+  if (status === "CONFIRMED") await postPaymentReceived(payment.id);
   return payment;
 }

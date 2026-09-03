@@ -11,7 +11,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
-import { amountPaid } from "@/lib/invoice";
+import { invoicePaid } from "@/lib/invoice";
 import { peso, periodLabel } from "@/lib/format";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -56,7 +56,13 @@ export default async function PortalHome() {
     buildStatement(property.id, parseStatementRange({})),
     prisma.invoice.findMany({
       where: { propertyId: property.id, status: { notIn: ["PAID", "VOID"] } },
-      include: { payments: { where: { status: "CONFIRMED" } } },
+      include: {
+        allocations: {
+          where: { payment: { status: "CONFIRMED" } },
+          select: { amount: true },
+        },
+        creditApplications: { select: { amount: true } },
+      },
       orderBy: { dueDate: "asc" },
     }),
     prisma.payment.findMany({
@@ -94,6 +100,7 @@ export default async function PortalHome() {
   ]);
 
   const balance = statement?.closingBalance ?? 0;
+  const credit = statement?.creditBalance ?? 0;
   const owes = balance > 0.005;
   const nextDue = invoices[0]?.dueDate ?? null;
   const overdue = invoices.some((i) => i.dueDate.getTime() < now.getTime());
@@ -131,10 +138,16 @@ export default async function PortalHome() {
           </div>
         )}
 
+        {credit > 0.005 && (
+          <div className="mt-1 text-sm text-fg-muted">
+            {peso(credit)} credit on file — applied to your next dues automatically.
+          </div>
+        )}
+
         {owes && invoices.length > 0 && (
           <ul className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
             {invoices.map((inv) => {
-              const remaining = Number(inv.amount) - amountPaid(inv.payments);
+              const remaining = Number(inv.amount) - invoicePaid(inv);
               const late = inv.dueDate.getTime() < now.getTime();
               return (
                 <li key={inv.id} className="flex justify-between text-fg">

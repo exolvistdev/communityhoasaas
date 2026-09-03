@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { effectiveStatus, amountPaid } from "@/lib/invoice";
+import { effectiveStatus, invoicePaid } from "@/lib/invoice";
 
 describe("effectiveStatus", () => {
   afterEach(() => vi.useRealTimers());
@@ -37,12 +37,23 @@ describe("effectiveStatus", () => {
   });
 });
 
-describe("amountPaid", () => {
-  it("sums Decimal-ish amounts", () => {
-    expect(amountPaid([{ amount: "1000" }, { amount: 500.5 }])).toBe(1500.5);
+describe("invoicePaid", () => {
+  it("sums payment allocations", () => {
+    expect(
+      invoicePaid({ allocations: [{ amount: "1000" }, { amount: 500.5 }] })
+    ).toBe(1500.5);
   });
 
-  it("is zero for no payments", () => {
-    expect(amountPaid([])).toBe(0);
+  it("adds resident credit applied to the invoice", () => {
+    expect(
+      invoicePaid({
+        allocations: [{ amount: 1000 }],
+        creditApplications: [{ amount: 500 }],
+      })
+    ).toBe(1500);
+  });
+
+  it("is zero with nothing applied", () => {
+    expect(invoicePaid({ allocations: [] })).toBe(0);
   });
 });

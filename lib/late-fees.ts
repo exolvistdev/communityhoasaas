@@ -45,13 +45,19 @@ export async function applyLateFees(orgId?: string) {
             },
           },
         },
-        payments: { where: { status: "CONFIRMED" }, select: { amount: true } },
+        allocations: {
+          where: { payment: { status: "CONFIRMED" } },
+          select: { amount: true },
+        },
+        creditApplications: { select: { amount: true } },
         lateFeeChildren: { select: { id: true, createdAt: true } },
       },
     });
 
     for (const inv of invoices) {
-      const paid = inv.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const paid =
+        inv.allocations.reduce((s, a) => s + Number(a.amount), 0) +
+        inv.creditApplications.reduce((s, c) => s + Number(c.amount), 0);
       const remaining = Number(inv.amount) - paid;
       if (remaining <= 0.005) continue;
 

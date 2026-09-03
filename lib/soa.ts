@@ -33,6 +33,8 @@ export type Statement = {
   openingBalance: number;
   lines: StatementLine[];
   closingBalance: number;
+  /** Unapplied resident credit (overpayments carried forward). */
+  creditBalance: number;
   aging: Aging;
 };
 
@@ -64,8 +66,18 @@ export function parseStatementRange(sp: {
 const propertyInclude = {
   org: true,
   homeowners: { orderBy: { isPrimary: "desc" } },
-  // Only confirmed payments move the balance; pending submissions don't.
-  invoices: { include: { payments: { where: { status: "CONFIRMED" } } } },
+  invoices: {
+    include: {
+      // Only confirmed payments move the balance; pending submissions don't.
+      allocations: {
+        where: { payment: { status: "CONFIRMED" } },
+        include: {
+          payment: { select: { method: true, reference: true, paidAt: true } },
+        },
+      },
+      creditApplications: true,
+    },
+  },
 } satisfies Prisma.PropertyInclude;
 
 export type PropertyWithLedger = Prisma.PropertyGetPayload<{
@@ -101,15 +113,24 @@ export function assembleStatement(
       charge: Number(inv.amount),
       payment: 0,
     });
-    for (const p of inv.payments) {
+    for (const a of inv.allocations) {
       txns.push({
-        date: p.paidAt,
+        date: a.payment.paidAt,
         kind: "payment",
         description:
-          `Payment — ${p.method.replace("_", " ").toLowerCase()}` +
-          (p.reference ? ` (ref ${p.reference})` : ""),
+          `Payment — ${a.payment.method.replace("_", " ").toLowerCase()}` +
+          (a.payment.reference ? ` (ref ${a.payment.reference})` : ""),
         charge: 0,
-        payment: Number(p.amount),
+        payment: Number(a.amount),
+      });
+    }
+    for (const c of inv.creditApplications) {
+      txns.push({
+        date: c.appliedAt,
+        kind: "payment",
+        description: "Resident credit applied",
+        charge: 0,
+        payment: Number(c.amount),
       });
     }
   }
@@ -146,9 +167,13 @@ export function assembleStatement(
   };
   for (const inv of property.invoices) {
     if (inv.status === "VOID") continue;
-    const paid = inv.payments
-      .filter((p) => p.paidAt <= to)
-      .reduce((s, p) => s + Number(p.amount), 0);
+    const paid =
+      inv.allocations
+        .filter((a) => a.payment.paidAt <= to)
+        .reduce((s, a) => s + Number(a.amount), 0) +
+      inv.creditApplications
+        .filter((c) => c.appliedAt <= to)
+        .reduce((s, c) => s + Number(c.amount), 0);
     const remaining = Number(inv.amount) - paid;
     if (remaining <= 0.005) continue;
     const age = daysBetween(inv.dueDate, to);
@@ -171,6 +196,7 @@ export function assembleStatement(
     openingBalance,
     lines,
     closingBalance,
+    creditBalance: Number(property.creditBalance),
     aging,
   };
 }
