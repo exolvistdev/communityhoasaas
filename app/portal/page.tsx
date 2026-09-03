@@ -6,6 +6,7 @@ import {
   MessageSquare,
   CalendarDays,
   CalendarClock,
+  Vote,
   FileText,
   Gavel,
   type LucideIcon,
@@ -56,6 +57,7 @@ export default async function PortalHome() {
     documentCount,
     violationCount,
     upcomingMeetings,
+    openVotes,
   ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
     prisma.invoice.findMany({
@@ -107,6 +109,14 @@ export default async function PortalHome() {
         orgId: property.orgId,
         status: "SCHEDULED",
         scheduledAt: { gte: now },
+      },
+    }),
+    prisma.boardVote.count({
+      where: {
+        orgId: property.orgId,
+        status: "OPEN",
+        opensAt: { lte: now },
+        closesAt: { gte: now },
       },
     }),
   ]);
@@ -267,6 +277,14 @@ export default async function PortalHome() {
             icon={CalendarClock}
             label="Board meetings"
             sub={`${upcomingMeetings} upcoming`}
+          />
+        )}
+        {openVotes > 0 && (
+          <Tile
+            href="/portal/votes"
+            icon={Vote}
+            label="Votes"
+            sub={`${openVotes} open`}
           />
         )}
       </div>

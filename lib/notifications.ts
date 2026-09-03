@@ -48,6 +48,7 @@ export const NOTIFICATION_CATALOG: Record<NotificationType, CatalogEntry> = {
   MARKETPLACE_CONVERSATION_REPORTED: { category: "marketplace", defaultEmail: true, defaultInApp: true },
   MAINTENANCE_UPDATE: { category: "maintenance", defaultEmail: true, defaultInApp: true },
   BOARD_MEETING: { category: "announcements", defaultEmail: true, defaultInApp: true },
+  BOARD_VOTE: { category: "announcements", defaultEmail: true, defaultInApp: true },
 };
 
 export type ChannelPrefs = { email: boolean; inApp: boolean };

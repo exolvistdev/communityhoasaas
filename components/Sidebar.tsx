@@ -19,6 +19,7 @@ import {
   FileText,
   Wrench,
   CalendarClock,
+  Vote,
   Users,
   ScrollText,
   ShieldQuestion,
@@ -73,6 +74,12 @@ const GROUPS: Group[] = [
         label: "Board meetings",
         icon: CalendarClock,
         show: (r) => can(r, "meeting:manage"),
+      },
+      {
+        href: "/votes",
+        label: "Votes",
+        icon: Vote,
+        show: (r) => can(r, "vote:manage"),
       },
       {
         href: "/maintenance",

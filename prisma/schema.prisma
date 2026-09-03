@@ -93,6 +93,8 @@ model Organization {
   bills               Bill[]
   maintenanceRequests MaintenanceRequest[]
   boardMeetings       BoardMeeting[]
+  boardVotes          BoardVote[]
+  voteProxies         VoteProxy[]
 
   @@map("organizations")
 }
@@ -185,6 +187,10 @@ model User {
   maintenanceComments   MaintenanceComment[]  @relation("MaintenanceCommentAuthor")
   meetingsCreated       BoardMeeting[]        @relation("MeetingCreatedBy")
   meetingRsvps          MeetingRsvp[]         @relation("MeetingRsvpUser")
+  votesCreated          BoardVote[]           @relation("VoteCreatedBy")
+  ballotsCast           Ballot[]              @relation("BallotCastBy")
+  proxiesHeld           VoteProxy[]           @relation("ProxyHolder")
+  proxiesGrantedByMe    VoteProxy[]           @relation("ProxyGrantedBy")
 
   @@index([orgId])
   @@map("users")
@@ -209,6 +215,7 @@ enum NotificationType {
   VIOLATION_NOTICE
   MAINTENANCE_UPDATE
   BOARD_MEETING
+  BOARD_VOTE
 }
 
 model Notification {
@@ -276,6 +283,8 @@ model Property {
   refunds    Refund[]
   violations Violation[]
   maintenanceRequests MaintenanceRequest[]
+  ballots    Ballot[]
+  proxiesGranted VoteProxy[]
 
   @@unique([orgId, unitNumber])
   @@index([orgId])
@@ -736,6 +745,7 @@ model BoardMeeting {
   createdAt         DateTime @default(now())
 
   rsvps             MeetingRsvp[]
+  votes             BoardVote[]
 
   @@index([orgId, scheduledAt])
   @@map("board_meetings")
@@ -755,6 +765,99 @@ model MeetingRsvp {
   @@unique([meetingId, userId])
   @@index([meetingId])
   @@map("meeting_rsvps")
+}
+
+// ─────────────────────────────────────────────
+// RA 9904 online voting (resolutions + proxy)
+// ─────────────────────────────────────────────
+
+enum VoteStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum VoteChoice {
+  YES
+  NO
+  ABSTAIN
+}
+
+enum PassThreshold {
+  MAJORITY   // more than 50% of YES + NO
+  TWO_THIRDS // at least two-thirds of YES + NO
+}
+
+// A motion put to the members. One ballot per unit; a unit may delegate its
+// ballot to another member via VoteProxy. Outcome = quorum met AND the YES
+// share of YES+NO clears the threshold.
+model BoardVote {
+  id               String   @id @default(uuid())
+  orgId            String
+  org              Organization @relation(fields: [orgId], references: [id])
+  meetingId        String?  // the meeting that raised it, optional
+  meeting          BoardMeeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  title            String
+  description      String
+  status           VoteStatus @default(DRAFT)
+  opensAt          DateTime
+  closesAt         DateTime
+  quorumPct        Int          // percent of eligible units that must cast a ballot
+  threshold        PassThreshold @default(MAJORITY)
+  resultDocumentId String?
+  resultDocument   Document? @relation(fields: [resultDocumentId], references: [id], onDelete: SetNull)
+  createdById      String?
+  createdBy        User?    @relation("VoteCreatedBy", fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+
+  ballots          Ballot[]
+
+  @@index([orgId, opensAt])
+  @@map("board_votes")
+}
+
+model Ballot {
+  id            String   @id @default(uuid())
+  voteId        String
+  vote          BoardVote @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  propertyId    String   // one ballot per unit
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  choice        VoteChoice
+  castById      String?  // the user who submitted it
+  castBy        User?    @relation("BallotCastBy", fields: [castById], references: [id], onDelete: SetNull)
+  viaProxyForId String?  // set when a proxy holder cast on behalf of the grantor unit
+  viaProxy      VoteProxy? @relation(fields: [viaProxyForId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([voteId, propertyId])
+  @@index([voteId])
+  @@map("ballots")
+}
+
+// A unit delegating its vote to another member. Active while revokedAt is null;
+// applies to any vote that opens while active.
+model VoteProxy {
+  id                String   @id @default(uuid())
+  orgId             String
+  org               Organization @relation(fields: [orgId], references: [id])
+  grantorPropertyId String
+  grantorProperty   Property @relation(fields: [grantorPropertyId], references: [id], onDelete: Cascade)
+  holderUserId      String
+  holderUser        User     @relation("ProxyHolder", fields: [holderUserId], references: [id], onDelete: Cascade)
+  grantedById       String?
+  grantedBy         User?    @relation("ProxyGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+  note              String?
+  grantedAt         DateTime @default(now())
+  revokedAt         DateTime?
+
+  ballots           Ballot[]
+
+  @@index([orgId])
+  @@index([grantorPropertyId])
+  @@index([holderUserId])
+  @@map("vote_proxies")
 }
 
 // ─────────────────────────────────────────────
@@ -1105,6 +1208,7 @@ model Document {
   updatedAt    DateTime @updatedAt
 
   meetingMinutes BoardMeeting[]
+  voteResults    BoardVote[]
 
   @@index([orgId, category])
   @@index([orgId, createdAt])

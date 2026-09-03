@@ -29,6 +29,7 @@ export default async function DashboardPage() {
   const canVendors = can(user.role, "vendor:manage");
   const canMaintenance = can(user.role, "maintenance:manage");
   const canMeetings = can(user.role, "meeting:manage");
+  const canVotes = can(user.role, "vote:manage");
   const isAdmin = user.role === "ADMIN";
 
   const [
@@ -44,6 +45,7 @@ export default async function DashboardPage() {
     billsDueSoon,
     openMaintenance,
     meetingsNeedingMinutes,
+    votesNeedingAttention,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
     prisma.payment.aggregate({
@@ -126,6 +128,20 @@ export default async function DashboardPage() {
           },
         })
       : Promise.resolve(0),
+    canVotes
+      ? prisma.boardVote.count({
+          where: {
+            orgId: org.id,
+            OR: [
+              {
+                status: "OPEN",
+                closesAt: { lt: new Date(now.getTime() + 3 * 86_400_000) },
+              },
+              { status: "CLOSED", resultDocumentId: null },
+            ],
+          },
+        })
+      : Promise.resolve(0),
   ]);
 
   const collected = Number(collectedAgg._sum.amount ?? 0);
@@ -200,6 +216,14 @@ export default async function DashboardPage() {
           text: `${meetingsNeedingMinutes} board meeting${
             meetingsNeedingMinutes === 1 ? "" : "s"
           } need minutes`,
+        }
+      : null,
+    canVotes && votesNeedingAttention > 0
+      ? {
+          href: "/votes",
+          text: `${votesNeedingAttention} vote${
+            votesNeedingAttention === 1 ? "" : "s"
+          } closing soon or awaiting a result`,
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];

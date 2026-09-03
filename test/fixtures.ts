@@ -27,6 +27,11 @@ export async function resetTestOrg(subdomain: string) {
   await prisma.marketplaceBlock.deleteMany({ where: { orgId } });
   await prisma.amenityBooking.deleteMany({ where: { orgId } });
   await prisma.amenity.deleteMany({ where: { orgId } });
+  await prisma.ballot.deleteMany({ where: { vote: { orgId } } });
+  await prisma.voteProxy.deleteMany({ where: { orgId } });
+  await prisma.boardVote.deleteMany({ where: { orgId } });
+  await prisma.meetingRsvp.deleteMany({ where: { meeting: { orgId } } });
+  await prisma.boardMeeting.deleteMany({ where: { orgId } });
   await prisma.document.deleteMany({ where: { orgId } });
   await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
   await prisma.journalEntry.deleteMany({ where: { orgId } });

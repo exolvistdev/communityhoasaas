@@ -67,6 +67,13 @@ const ACTION_LABEL: Record<string, string> = {
   "meeting.update": "Updated a board meeting",
   "meeting.cancel": "Cancelled a board meeting",
   "meeting.minutes": "Published meeting minutes",
+  "vote.create": "Created a vote",
+  "vote.update": "Updated a vote",
+  "vote.open": "Opened a vote",
+  "vote.close": "Closed a vote",
+  "vote.cancel": "Cancelled a vote",
+  "vote.result": "Published a vote result",
+  "proxy.revoke": "Revoked a voting proxy",
 };
 
 const fmt = (d: Date) =>

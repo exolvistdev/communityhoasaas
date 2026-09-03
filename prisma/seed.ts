@@ -236,6 +236,9 @@ async function resetDemoOrg() {
     where: { request: { orgId } },
   });
   await prisma.maintenanceRequest.deleteMany({ where: { orgId } });
+  await prisma.ballot.deleteMany({ where: { vote: { orgId } } });
+  await prisma.voteProxy.deleteMany({ where: { orgId } });
+  await prisma.boardVote.deleteMany({ where: { orgId } });
   await prisma.meetingRsvp.deleteMany({ where: { meeting: { orgId } } });
   await prisma.boardMeeting.deleteMany({ where: { orgId } });
   await prisma.billPayment.deleteMany({ where: { bill: { orgId } } });
@@ -1399,6 +1402,114 @@ async function main() {
     }
   } catch (e) {
     console.log("  (seed meeting minutes skipped:", (e as Error).message, ")");
+  }
+
+  // ── Votes (RA 9904) ─────────────────────────────────────────────
+  const voteLot1 = await prisma.property.findFirstOrThrow({
+    where: { orgId: org.id, unitNumber: "Blk 1 Lot 1" },
+  });
+  const voteLot2 = await prisma.property.findFirstOrThrow({
+    where: { orgId: org.id, unitNumber: "Blk 1 Lot 2" },
+  });
+  const voteLot5 = await prisma.property.findFirstOrThrow({
+    where: { orgId: org.id, unitNumber: "Blk 2 Lot 5" },
+  });
+
+  const budgetVote = await prisma.boardVote.create({
+    data: {
+      orgId: org.id,
+      createdById: elenaUser.id,
+      title: "Approve the 2027 operating budget",
+      description:
+        "The board proposes the 2027 budget, which raises monthly dues by ₱150 to fund the perimeter fence repair and expanded security coverage.\n\nA yes vote adopts the budget effective January 2027.",
+      status: "OPEN",
+      opensAt: ago(3),
+      closesAt: at(4, 17),
+      quorumPct: 40,
+      threshold: "MAJORITY",
+    },
+  });
+  const anaProxy = await prisma.voteProxy.create({
+    data: {
+      orgId: org.id,
+      grantorPropertyId: voteLot2.id,
+      holderUserId: homeownerUser.id,
+      grantedById: anaUser.id,
+      note: "Away for the voting window — Juan to cast on my behalf.",
+    },
+  });
+  await prisma.ballot.createMany({
+    data: [
+      {
+        voteId: budgetVote.id,
+        propertyId: voteLot1.id,
+        choice: "YES",
+        castById: homeownerUser.id,
+      },
+      {
+        voteId: budgetVote.id,
+        propertyId: voteLot2.id,
+        choice: "NO",
+        castById: homeownerUser.id,
+        viaProxyForId: anaProxy.id,
+      },
+      {
+        voteId: budgetVote.id,
+        propertyId: voteLot5.id,
+        choice: "YES",
+        castById: elenaUser.id,
+      },
+    ],
+  });
+
+  const parkingVote = await prisma.boardVote.create({
+    data: {
+      orgId: org.id,
+      createdById: elenaUser.id,
+      title: "Ratify the amended parking rules",
+      description:
+        "Amendment to §12 of the house rules restricting street parking to registered vehicles with a valid sticker. Requires a two-thirds vote.",
+      status: "CLOSED",
+      opensAt: ago(20),
+      closesAt: ago(10),
+      quorumPct: 30,
+      threshold: "TWO_THIRDS",
+    },
+  });
+  await prisma.ballot.createMany({
+    data: [
+      { voteId: parkingVote.id, propertyId: voteLot1.id, choice: "YES", castById: homeownerUser.id },
+      { voteId: parkingVote.id, propertyId: voteLot2.id, choice: "YES", castById: anaUser.id },
+      { voteId: parkingVote.id, propertyId: voteLot5.id, choice: "ABSTAIN", castById: elenaUser.id },
+    ],
+  });
+  try {
+    const up = await uploadDocument(
+      new File([pdfBytes], "vote-result-parking-rules.pdf", { type: "application/pdf" }),
+      { orgId: org.id }
+    );
+    if (up) {
+      const doc = await prisma.document.create({
+        data: {
+          orgId: org.id,
+          title: `Vote result — ${parkingVote.title}`,
+          description: "Voting closed ten days ago.",
+          category: "BOARD_MINUTES",
+          staffOnly: false,
+          storagePath: up.storagePath,
+          fileName: up.fileName,
+          mimeType: up.mimeType,
+          sizeBytes: up.sizeBytes,
+          uploadedById: admin.id,
+        },
+      });
+      await prisma.boardVote.update({
+        where: { id: parkingVote.id },
+        data: { resultDocumentId: doc.id },
+      });
+    }
+  } catch (e) {
+    console.log("  (seed vote result skipped:", (e as Error).message, ")");
   }
 
   // ── Notifications ─────────────────────────────────────────────────
