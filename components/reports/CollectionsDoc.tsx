@@ -1,6 +1,8 @@
 import { peso } from "@/lib/format";
-import type { collectionsSummary } from "@/lib/reports";
+import type { collectionsSummary, CollectionMonth } from "@/lib/reports";
 import { ReportDoc, fmtDate } from "./shared";
+import { CollectedVsOutstandingChart } from "./charts/CollectedVsOutstandingChart";
+import { CollectionRateTrendChart } from "./charts/CollectionRateTrendChart";
 
 type Data = Awaited<ReturnType<typeof collectionsSummary>>;
 
@@ -16,9 +18,11 @@ const METHOD_LABEL: Record<string, string> = {
 export function CollectionsDoc({
   orgName,
   data,
+  series = [],
 }: {
   orgName: string;
   data: Data;
+  series?: CollectionMonth[];
 }) {
   const Line = ({
     label,
@@ -41,6 +45,15 @@ export function CollectionsDoc({
       title="Collections Summary"
       periodLabel={`${fmtDate(data.from)} – ${fmtDate(data.to)}`}
     >
+      <div className="flex flex-wrap items-start gap-x-10 gap-y-2">
+        <CollectedVsOutstandingChart
+          collected={data.collected}
+          outstanding={data.closingAR}
+          rate={data.collectionRate}
+        />
+        {series.length > 0 && <CollectionRateTrendChart data={series} />}
+      </div>
+
       <table className="mt-6 w-full border-collapse">
         <tbody>
           <Line label="Receivables at start of period" value={data.openingAR} />

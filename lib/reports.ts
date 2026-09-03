@@ -34,6 +34,224 @@ export function parseReportRange(sp: { from?: string; to?: string }): ReportRang
   };
 }
 
+/* ── trailing-month series (chart data) ───────────────────────────── */
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+const MONTHS_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/** month + delta months, as a {year, month(1-12)} pair. */
+function shiftMonth(year: number, month1: number, delta: number) {
+  const idx = year * 12 + (month1 - 1) + delta;
+  return { year: Math.floor(idx / 12), month: (idx % 12) + 1 };
+}
+
+export type MonthBucket = { key: string; label: string; start: Date; end: Date };
+
+/**
+ * The trailing 12 months ending at `range.to`, clamped to `range.from` when the
+ * report window is shorter (spec: "trailing 12 months, or the period-picker
+ * range if shorter"). Month boundaries are Asia/Manila days.
+ */
+export function eachMonth(range: ReportRange): MonthBucket[] {
+  const end = zonedParts(range.to);
+  const start = zonedParts(range.from);
+  const span = (end.year - start.year) * 12 + (end.month - start.month) + 1;
+  const count = Math.max(1, Math.min(12, span));
+
+  const out: MonthBucket[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const { year, month } = shiftMonth(end.year, end.month, -i);
+    const next = shiftMonth(year, month, 1);
+    out.push({
+      key: `${year}-${pad(month)}`,
+      label: `${MONTHS_SHORT[month - 1]} '${String(year).slice(2)}`,
+      start: zonedInstant(year, month, 1, 0, 0),
+      end: new Date(zonedInstant(next.year, next.month, 1, 0, 0).getTime() - 1),
+    });
+  }
+  return out;
+}
+
+const monthKeyOf = (d: Date) => {
+  const p = zonedParts(d);
+  return `${p.year}-${pad(p.month)}`;
+};
+
+export type LedgerMonth = {
+  key: string;
+  label: string;
+  income: number;
+  expense: number;
+  /** income split by account, for the "income by category" stacked bar */
+  dues: number;
+  lateFees: number;
+  fines: number;
+  otherIncome: number;
+};
+
+type LedgerLineRow = {
+  debit: unknown;
+  credit: unknown;
+  entry: { entryDate: Date };
+  account: { type: string; code: string };
+};
+
+/** Pure: fold income/expense journal lines into one row per month. */
+export function bucketLedgerByMonth(
+  lines: LedgerLineRow[],
+  months: MonthBucket[]
+): LedgerMonth[] {
+  const at = new Map(months.map((m, i) => [m.key, i]));
+  const rows: LedgerMonth[] = months.map((m) => ({
+    key: m.key,
+    label: m.label,
+    income: 0,
+    expense: 0,
+    dues: 0,
+    lateFees: 0,
+    fines: 0,
+    otherIncome: 0,
+  }));
+
+  for (const l of lines) {
+    const i = at.get(monthKeyOf(l.entry.entryDate));
+    if (i === undefined) continue;
+    const debit = Number(l.debit);
+    const credit = Number(l.credit);
+    const row = rows[i];
+    if (l.account.type === "INCOME") {
+      const amt = credit - debit;
+      row.income += amt;
+      if (l.account.code === "4000") row.dues += amt;
+      else if (l.account.code === "4100") row.lateFees += amt;
+      else if (l.account.code === "4300") row.fines += amt;
+      else row.otherIncome += amt;
+    } else if (l.account.type === "EXPENSE") {
+      row.expense += debit - credit;
+    }
+  }
+
+  for (const r of rows) {
+    r.income = round2(r.income);
+    r.expense = round2(r.expense);
+    r.dues = round2(r.dues);
+    r.lateFees = round2(r.lateFees);
+    r.fines = round2(r.fines);
+    r.otherIncome = round2(r.otherIncome);
+  }
+  return rows;
+}
+
+/** Monthly income & expense totals (+ income-by-account split) over a span. */
+export async function monthlyLedgerSeries(orgId: string, months: MonthBucket[]) {
+  if (months.length === 0) return [] as LedgerMonth[];
+  const lines = await prisma.journalLine.findMany({
+    where: {
+      account: { type: { in: ["INCOME", "EXPENSE"] } },
+      entry: {
+        orgId,
+        entryDate: { gte: months[0].start, lte: months[months.length - 1].end },
+      },
+    },
+    select: {
+      debit: true,
+      credit: true,
+      entry: { select: { entryDate: true } },
+      account: { select: { type: true, code: true } },
+    },
+  });
+  return bucketLedgerByMonth(lines, months);
+}
+
+export type CashMonth = { key: string; label: string; cash: number };
+
+/** Month-end balance of Cash (1000) for each month in the span. */
+export async function cashTrend(orgId: string, months: MonthBucket[]) {
+  if (months.length === 0) return [] as CashMonth[];
+  const lines = await prisma.journalLine.findMany({
+    where: {
+      account: { code: "1000" },
+      entry: { orgId, entryDate: { lte: months[months.length - 1].end } },
+    },
+    select: { debit: true, credit: true, entry: { select: { entryDate: true } } },
+  });
+  return months.map((m) => ({
+    key: m.key,
+    label: m.label,
+    cash: round2(
+      lines
+        .filter((l) => l.entry.entryDate <= m.end)
+        .reduce((s, l) => s + Number(l.debit) - Number(l.credit), 0)
+    ),
+  }));
+}
+
+export type CollectionMonth = {
+  key: string;
+  label: string;
+  billed: number;
+  collected: number;
+  rate: number | null;
+};
+
+/** Per-month billed / collected / collection-rate over a span. */
+export async function monthlyCollectionSeries(orgId: string, months: MonthBucket[]) {
+  if (months.length === 0) return [] as CollectionMonth[];
+  const span = {
+    gte: months[0].start,
+    lte: months[months.length - 1].end,
+  };
+  const [arLines, invoices, payments] = await Promise.all([
+    prisma.journalLine.findMany({
+      where: {
+        account: { code: "1100" },
+        entry: { orgId, entryDate: { lte: months[months.length - 1].end } },
+      },
+      select: { debit: true, credit: true, entry: { select: { entryDate: true } } },
+    }),
+    prisma.invoice.findMany({
+      where: { property: { orgId }, status: { not: "VOID" }, createdAt: span },
+      select: { amount: true, createdAt: true },
+    }),
+    prisma.payment.findMany({
+      where: {
+        status: "CONFIRMED",
+        invoice: { property: { orgId } },
+        paidAt: span,
+      },
+      select: { amount: true, paidAt: true },
+    }),
+  ]);
+
+  return months.map((m) => {
+    const openingAR = arLines
+      .filter((l) => l.entry.entryDate < m.start)
+      .reduce((s, l) => s + Number(l.debit) - Number(l.credit), 0);
+    const billed = round2(
+      invoices
+        .filter((i) => i.createdAt >= m.start && i.createdAt <= m.end)
+        .reduce((s, i) => s + Number(i.amount), 0)
+    );
+    const collected = round2(
+      payments
+        .filter((p) => p.paidAt >= m.start && p.paidAt <= m.end)
+        .reduce((s, p) => s + Number(p.amount), 0)
+    );
+    const expected = openingAR + billed;
+    return {
+      key: m.key,
+      label: m.label,
+      billed,
+      collected,
+      rate: expected > 0.005 ? collected / expected : null,
+    };
+  });
+}
+
 /* ── AR aging / delinquency ───────────────────────────────────────── */
 
 export type AgingUnit = {
@@ -239,6 +457,11 @@ export async function collectionsSummary(
 /* ── board pack ───────────────────────────────────────────────────── */
 
 export async function boardPack(orgId: string, range: ReportRange) {
+  const months = eachMonth(range);
+
+  // The DB pooler runs one connection at a time (connection_limit=1). Keep the
+  // core reports in the original batch, then fetch the trailing-month chart
+  // series in a second pass so a deep fan-out never starves the pool.
   const [org, income, balance, aging, payables, collections, tb, documents] =
     await Promise.all([
       prisma.organization.findUniqueOrThrow({
@@ -262,6 +485,10 @@ export async function boardPack(orgId: string, range: ReportRange) {
       }),
     ]);
 
+  const ledgerSeries = await monthlyLedgerSeries(orgId, months);
+  const cash = await cashTrend(orgId, months);
+  const collectionSeries = await monthlyCollectionSeries(orgId, months);
+
   return {
     org,
     range,
@@ -271,6 +498,9 @@ export async function boardPack(orgId: string, range: ReportRange) {
     payables,
     collections,
     trialBalance: tb,
+    ledgerSeries,
+    cash,
+    collectionSeries,
     documents,
   };
 }

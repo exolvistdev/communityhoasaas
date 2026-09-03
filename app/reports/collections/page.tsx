@@ -1,5 +1,10 @@
 import { requireStaff } from "@/lib/rbac";
-import { parseReportRange, collectionsSummary } from "@/lib/reports";
+import {
+  parseReportRange,
+  collectionsSummary,
+  eachMonth,
+  monthlyCollectionSeries,
+} from "@/lib/reports";
 import { PrintToolbar } from "@/components/PrintToolbar";
 import { CollectionsDoc } from "@/components/reports/CollectionsDoc";
 
@@ -10,10 +15,10 @@ export default async function CollectionsPage({
 }) {
   const { org } = await requireStaff();
   const range = parseReportRange(searchParams);
-  const data = await collectionsSummary(org.id, {
-    from: range.from,
-    to: range.to,
-  });
+  const [data, series] = await Promise.all([
+    collectionsSummary(org.id, { from: range.from, to: range.to }),
+    monthlyCollectionSeries(org.id, eachMonth(range)),
+  ]);
   const qs = `from=${range.fromYmd}&to=${range.toYmd}`;
 
   return (
@@ -23,7 +28,7 @@ export default async function CollectionsPage({
         backLabel="All reports"
         csvHref={`/reports/collections/export?${qs}`}
       />
-      <CollectionsDoc orgName={org.name} data={data} />
+      <CollectionsDoc orgName={org.name} data={data} series={series} />
     </>
   );
 }

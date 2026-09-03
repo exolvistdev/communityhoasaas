@@ -1,6 +1,7 @@
 import { peso } from "@/lib/format";
 import type { payablesAging } from "@/lib/reports";
 import { ReportDoc, fmtDate } from "./shared";
+import { BucketBarChart } from "./charts/BucketBarChart";
 
 type Data = Awaited<ReturnType<typeof payablesAging>>;
 
@@ -33,6 +34,14 @@ export function PayablesDoc({ orgName, data }: { orgName: string; data: Data }) 
           <div className="font-medium tabular-nums">{peso(data.outstanding)}</div>
         </div>
       </div>
+
+      {data.outstanding > 0.005 && (
+        <BucketBarChart
+          title="Payables by aging bucket"
+          totals={data.totals}
+          currentLabel="Not due"
+        />
+      )}
 
       {data.vendors.length === 0 ? (
         <p className="mt-6 text-sm text-gray-400">No outstanding bills.</p>

@@ -40,10 +40,14 @@ export function BoardPackDoc({ data }: { data: Data }) {
       </article>
 
       <div className="break-after-page">
-        <IncomeStatementDoc orgName={org.name} data={data.income} />
+        <IncomeStatementDoc
+          orgName={org.name}
+          data={data.income}
+          series={data.ledgerSeries}
+        />
       </div>
       <div className="break-after-page">
-        <BalanceSheetDoc orgName={org.name} data={data.balance} />
+        <BalanceSheetDoc orgName={org.name} data={data.balance} cash={data.cash} />
       </div>
       <div className="break-after-page">
         <AgingReportDoc orgName={org.name} data={data.aging} />
@@ -52,7 +56,11 @@ export function BoardPackDoc({ data }: { data: Data }) {
         <PayablesDoc orgName={org.name} data={data.payables} />
       </div>
       <div className={data.documents.length > 0 ? "break-after-page" : ""}>
-        <CollectionsDoc orgName={org.name} data={data.collections} />
+        <CollectionsDoc
+          orgName={org.name}
+          data={data.collections}
+          series={data.collectionSeries}
+        />
       </div>
 
       {data.documents.length > 0 && (

@@ -1,6 +1,7 @@
 import { peso } from "@/lib/format";
 import type { agingSnapshot } from "@/lib/reports";
 import { ReportDoc, fmtDate } from "./shared";
+import { BucketBarChart } from "./charts/BucketBarChart";
 
 type Data = Awaited<ReturnType<typeof agingSnapshot>>;
 
@@ -41,6 +42,10 @@ export function AgingReportDoc({
           </div>
         </div>
       </div>
+
+      {data.outstanding > 0.005 && (
+        <BucketBarChart title="Receivables by aging bucket" totals={data.totals} />
+      )}
 
       {data.units.length === 0 ? (
         <p className="mt-6 text-sm text-gray-400">

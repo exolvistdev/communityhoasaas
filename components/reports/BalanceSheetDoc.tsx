@@ -1,15 +1,20 @@
 import { peso } from "@/lib/format";
 import type { balanceSheet } from "@/lib/ledger";
+import type { CashMonth } from "@/lib/reports";
 import { ReportDoc, AmountSection, fmtDate } from "./shared";
+import { AssetsLiabilitiesEquityChart } from "./charts/AssetsLiabilitiesEquityChart";
+import { CashTrendChart } from "./charts/CashTrendChart";
 
 type Data = Awaited<ReturnType<typeof balanceSheet>>;
 
 export function BalanceSheetDoc({
   orgName,
   data,
+  cash = [],
 }: {
   orgName: string;
   data: Data;
+  cash?: CashMonth[];
 }) {
   return (
     <ReportDoc
@@ -17,6 +22,12 @@ export function BalanceSheetDoc({
       title="Statement of Financial Position"
       periodLabel={`As of ${fmtDate(data.asOf)}`}
     >
+      <AssetsLiabilitiesEquityChart
+        assets={data.assets.total}
+        liabilities={data.liabilities.total}
+        equity={data.equity.total}
+      />
+      {cash.length > 0 && <CashTrendChart data={cash} />}
       <AmountSection
         heading="Assets"
         rows={data.assets.rows}

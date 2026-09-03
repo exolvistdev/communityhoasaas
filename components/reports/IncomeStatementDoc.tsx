@@ -1,15 +1,20 @@
 import { peso } from "@/lib/format";
 import type { incomeStatement } from "@/lib/ledger";
+import type { LedgerMonth } from "@/lib/reports";
 import { ReportDoc, AmountSection, fmtDate } from "./shared";
+import { IncomeVsExpenseChart } from "./charts/IncomeVsExpenseChart";
+import { IncomeByCategoryChart } from "./charts/IncomeByCategoryChart";
 
 type Data = Awaited<ReturnType<typeof incomeStatement>>;
 
 export function IncomeStatementDoc({
   orgName,
   data,
+  series = [],
 }: {
   orgName: string;
   data: Data;
+  series?: LedgerMonth[];
 }) {
   const period = data.from
     ? `${fmtDate(data.from)} – ${fmtDate(data.to)}`
@@ -21,6 +26,12 @@ export function IncomeStatementDoc({
       title="Statement of Income & Expenses"
       periodLabel={period}
     >
+      {series.length > 0 && (
+        <>
+          <IncomeVsExpenseChart data={series} />
+          <IncomeByCategoryChart data={series} />
+        </>
+      )}
       <AmountSection
         heading="Income"
         rows={data.income}
