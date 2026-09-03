@@ -946,8 +946,38 @@ export async function homeownersReport(orgId: string, asOf: Date) {
 
 /* ── board pack ───────────────────────────────────────────────────── */
 
-export async function boardPack(orgId: string, range: ReportRange) {
+export type BoardPackExtra =
+  | "late-fees"
+  | "vendor-spend"
+  | "violations"
+  | "homeowners";
+
+export const BOARD_PACK_EXTRAS: { value: BoardPackExtra; label: string }[] = [
+  { value: "late-fees", label: "Late fees" },
+  { value: "vendor-spend", label: "Vendor spend" },
+  { value: "violations", label: "Violations & fines" },
+  { value: "homeowners", label: "Homeowners roster" },
+];
+
+const EXTRA_SET = new Set<string>(BOARD_PACK_EXTRAS.map((e) => e.value));
+
+/** Normalise a ?extra= search param (repeated or comma-joined) to valid slugs. */
+export function parseBoardPackExtras(
+  raw: string | string[] | undefined
+): BoardPackExtra[] {
+  const parts = (Array.isArray(raw) ? raw : raw ? [raw] : []).flatMap((s) =>
+    s.split(",")
+  );
+  return BOARD_PACK_EXTRAS.map((e) => e.value).filter((v) => parts.includes(v));
+}
+
+export async function boardPack(
+  orgId: string,
+  range: ReportRange,
+  extras: BoardPackExtra[] = []
+) {
   const months = eachMonth(range);
+  const want = new Set(extras.filter((e) => EXTRA_SET.has(e)));
 
   // The DB pooler runs one connection at a time (connection_limit=1). Keep the
   // core reports in the original batch, then fetch the trailing-month chart
@@ -979,9 +1009,24 @@ export async function boardPack(orgId: string, range: ReportRange) {
   const cash = await cashTrend(orgId, months);
   const collectionSeries = await monthlyCollectionSeries(orgId, months);
 
+  // Opt-in extra reports — sequential, same pool consideration as the series.
+  const lateFees = want.has("late-fees")
+    ? await lateFeesReport(orgId, range)
+    : null;
+  const vendorSpend = want.has("vendor-spend")
+    ? await vendorSpendReport(orgId, range)
+    : null;
+  const violations = want.has("violations")
+    ? await violationsReport(orgId, range)
+    : null;
+  const homeowners = want.has("homeowners")
+    ? await homeownersReport(orgId, range.to)
+    : null;
+
   return {
     org,
     range,
+    extras: [...want],
     income,
     balance,
     aging,
@@ -991,6 +1036,10 @@ export async function boardPack(orgId: string, range: ReportRange) {
     ledgerSeries,
     cash,
     collectionSeries,
+    lateFees,
+    vendorSpend,
+    violations,
+    homeowners,
     documents,
   };
 }

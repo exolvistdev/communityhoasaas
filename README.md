@@ -29,7 +29,7 @@ walkthrough of the admin app.
 | Maintenance / work orders — residents file repair requests (category, photos, common-area flag) from the portal; staff triage a queue, assign a person / vendor, link a bill, post public or internal comments; both sides get notified | ✅ |
 | Board meetings — schedule a meeting with an agenda, residents RSVP (going / maybe / no) from the portal, staff see the tally and publish the minutes (filed to the document library); residents notified on schedule / reschedule / minutes | ✅ |
 | Violations & fines — log a rule violation (category, photos, cure-by date), track it to resolution, serve numbered fine notices that bill the resident (4300 Fine Income), print a demand letter; residents see their violations and can appeal | ✅ |
-| Financial reports (`/reports`) — income & expenses, financial position, receivables aging, payables aging, collections summary, and a bundled board pack; period picker, print-to-PDF, CSV per report | ✅ |
+| Financial reports (`/reports`) — nine reports: income & expenses, financial position, receivables aging, payables aging, collections summary, late fees, vendor spend, violations & fines, homeowners roster; each with Recharts charts (trend / bucket / donut) that print, plus click-to-filter and month drill-down on screen; a board pack bundles the first five with opt-in checkboxes for the other four; period picker, print-to-PDF, CSV per report | ✅ |
 | Gate passes — create / list / revoke, scannable code | ✅ |
 | Announcements — draft / publish | ✅ |
 | Team — invite staff/guard by email, role management | ✅ |

@@ -7,6 +7,7 @@ import {
   vendorSpendReport,
   violationsReport,
   homeownersReport,
+  boardPack,
 } from "@/lib/reports";
 import {
   hasTestDb,
@@ -154,5 +155,19 @@ describe.skipIf(!hasTestDb)("late-fees + vendor-spend reports", () => {
     expect(juan.portal).toBe("Never signed in"); // no linked user in the fixture
     expect(juan.balance).toBeGreaterThan(0); // unpaid dues + late fee
     expect(["partial", "overdue"]).toContain(juan.status);
+  });
+
+  it("boardPack only runs the opt-in extras it is asked for", async () => {
+    const range = parseReportRange({ from: "2026-09-01", to: "2026-09-30" });
+    const pack = await boardPack(orgId, range, ["late-fees", "violations"]);
+    expect(pack.extras.sort()).toEqual(["late-fees", "violations"]);
+    expect(pack.lateFees?.count).toBe(1);
+    expect(pack.violations?.count).toBe(1);
+    expect(pack.vendorSpend).toBeNull();
+    expect(pack.homeowners).toBeNull();
+
+    const bare = await boardPack(orgId, range);
+    expect(bare.extras).toEqual([]);
+    expect(bare.lateFees).toBeNull();
   });
 });
