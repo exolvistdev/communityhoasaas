@@ -8,9 +8,9 @@ import { LateFeeSettingsForm } from "./LateFeeSettingsForm";
 import { TypeRatesForm } from "./TypeRatesForm";
 import { RatePlansManager } from "./RatePlansManager";
 import { WaterSettingsForm } from "./WaterSettingsForm";
+import { WaterBulkSettingsForm } from "./WaterBulkSettingsForm";
 import { WaterSourceForm } from "./WaterSourceForm";
 import { waterConfig } from "@/lib/water-billing";
-import { waterMetered } from "@/lib/water";
 
 export const metadata = { title: "Settings · HOA SaaS" };
 
@@ -30,6 +30,15 @@ export default async function SettingsPage() {
       })
     )
   );
+
+  const waterVendors =
+    org.waterSource === "EXTERNAL_BULK"
+      ? await prisma.vendor.findMany({
+          where: { orgId: org.id, archivedAt: null },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        })
+      : [];
 
   const planData = plans.map((p, i) => ({
     id: p.id,
@@ -144,7 +153,7 @@ export default async function SettingsPage() {
         </div>
         <WaterSourceForm current={org.waterSource} />
 
-        {waterMetered(org.waterSource) && (
+        {org.waterSource === "INTERNAL" && (
           <>
             <div>
               <h3 className="text-sm font-semibold text-fg">Water billing</h3>
@@ -155,6 +164,31 @@ export default async function SettingsPage() {
               </p>
             </div>
             <WaterSettingsForm config={waterConfig(org)} />
+          </>
+        )}
+
+        {org.waterSource === "EXTERNAL_BULK" && (
+          <>
+            <div>
+              <h3 className="text-sm font-semibold text-fg">Bulk water billing</h3>
+              <p className="text-xs text-fg-muted">
+                The utility bills the HOA one master bill; the system splits it
+                across each unit&apos;s sub-meter. The bill posts to Water
+                Purchased and the resident charges to Water Income.
+              </p>
+            </div>
+            <WaterBulkSettingsForm
+              config={{
+                enabled: org.waterBillingEnabled,
+                vendorId: org.waterUtilityVendorId,
+                lossPolicy: org.waterLossPolicy,
+                adminFeeFlat:
+                  org.waterAdminFeeFlat != null
+                    ? Number(org.waterAdminFeeFlat)
+                    : null,
+              }}
+              vendors={waterVendors}
+            />
           </>
         )}
       </section>

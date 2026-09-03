@@ -5,6 +5,7 @@ import {
   bandBreakdown,
   parseRateBands,
   waterMetered,
+  allocateBulk,
   type RateBand,
 } from "@/lib/water";
 
@@ -79,6 +80,90 @@ describe("waterMetered", () => {
     expect(waterMetered("EXTERNAL_BULK")).toBe(true);
     expect(waterMetered("EXTERNAL_DIRECT")).toBe(false);
     expect(waterMetered("UNSET")).toBe(false);
+  });
+});
+
+describe("allocateBulk", () => {
+  const units = [
+    { id: "a", consumption: 50 },
+    { id: "b", consumption: 30 },
+    { id: "c", consumption: 20 },
+  ];
+
+  it("DISTRIBUTE: residents collectively pay exactly the bulk bill", () => {
+    const r = allocateBulk({
+      bulkAmount: 10000,
+      sourceConsumption: 120, // 20 m³ system loss
+      units,
+      lossPolicy: "DISTRIBUTE",
+    });
+    expect(r.error).toBeUndefined();
+    expect(r.systemLoss).toBe(20);
+    const sum = r.rows.reduce((s, x) => s + x.amount, 0);
+    expect(Math.round(sum * 100) / 100).toBe(10000);
+    expect(r.residentTotal).toBe(10000);
+  });
+
+  it("DISTRIBUTE with a per-unit admin fee: Σ == bulk + n·fee", () => {
+    const r = allocateBulk({
+      bulkAmount: 9999.97,
+      sourceConsumption: 130,
+      units,
+      lossPolicy: "DISTRIBUTE",
+      adminFeeFlat: 50,
+    });
+    const sum = r.rows.reduce((s, x) => s + x.amount, 0);
+    expect(Math.round(sum * 100) / 100).toBe(Math.round((9999.97 + 150) * 100) / 100);
+  });
+
+  it("ABSORB: units pay only metered use; shortfall == loss × rate", () => {
+    const r = allocateBulk({
+      bulkAmount: 12000,
+      sourceConsumption: 120,
+      units,
+      lossPolicy: "ABSORB",
+    });
+    const rate = 12000 / 120;
+    expect(r.shortfall).toBeCloseTo(20 * rate, 1);
+    expect(r.residentTotal).toBeCloseTo(100 * rate, 1);
+  });
+
+  it("no master reading → no system loss, split by sub-meter", () => {
+    const r = allocateBulk({
+      bulkAmount: 8000,
+      sourceConsumption: null,
+      units,
+      lossPolicy: "DISTRIBUTE",
+    });
+    expect(r.systemLoss).toBe(0);
+    expect(r.sourceConsumption).toBe(100);
+    expect(r.residentTotal).toBe(8000);
+  });
+
+  it("errors when there are no unit readings", () => {
+    const r = allocateBulk({
+      bulkAmount: 5000,
+      units: [],
+      lossPolicy: "DISTRIBUTE",
+    });
+    expect(r.error).toBeTruthy();
+  });
+
+  it("a zero-consumption unit pays only the admin fee under DISTRIBUTE", () => {
+    const r = allocateBulk({
+      bulkAmount: 6000,
+      sourceConsumption: 100,
+      units: [
+        { id: "x", consumption: 0 },
+        { id: "y", consumption: 60 },
+        { id: "z", consumption: 40 },
+      ],
+      lossPolicy: "DISTRIBUTE",
+      adminFeeFlat: 25,
+    });
+    const zero = r.rows.find((x) => x.unitId === "x")!;
+    expect(zero.billedConsumption).toBe(0);
+    expect(zero.amount).toBe(25);
   });
 });
 

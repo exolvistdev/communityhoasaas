@@ -373,6 +373,71 @@ export async function updateWaterConfig(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
+/* ─────────────────── water billing — EXTERNAL_BULK ───────────────── */
+
+const bulkWaterSchema = z.object({
+  waterBillingEnabled: z.preprocess(
+    (v) => v === true || v === "true" || v === "on",
+    z.boolean()
+  ),
+  waterUtilityVendorId: z.string().trim().optional().or(z.literal("")),
+  newVendorName: z.string().trim().max(120).optional().or(z.literal("")),
+  waterLossPolicy: z.enum(["DISTRIBUTE", "ABSORB"]),
+  waterAdminFeeFlat: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : v),
+    z.coerce.number().nonnegative("Fee must be 0 or more").max(100_000).optional()
+  ),
+});
+
+export async function updateWaterBulkConfig(input: unknown): Promise<Result> {
+  const denied = await guardRatePlan();
+  if (denied) return denied;
+
+  const parsed = bulkWaterSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const d = parsed.data;
+  const { org } = await getCurrentOrgContext();
+  if (org.waterSource !== "EXTERNAL_BULK")
+    return { ok: false, error: "This HOA isn't on bulk water billing." };
+
+  let vendorId = d.waterUtilityVendorId || null;
+  if (d.newVendorName) {
+    const vendor = await prisma.vendor.create({
+      data: { orgId: org.id, name: d.newVendorName },
+    });
+    vendorId = vendor.id;
+    await logAudit({ action: "vendor.create", target: vendor.name });
+  } else if (vendorId) {
+    const exists = await prisma.vendor.findFirst({
+      where: { id: vendorId, orgId: org.id },
+    });
+    if (!exists) return { ok: false, error: "Vendor not found" };
+  }
+
+  if (d.waterBillingEnabled && !vendorId)
+    return { ok: false, error: "Choose or add a water utility vendor first." };
+
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: {
+      waterBillingEnabled: d.waterBillingEnabled,
+      waterUtilityVendorId: vendorId,
+      waterLossPolicy: d.waterLossPolicy,
+      waterAdminFeeFlat: d.waterAdminFeeFlat ?? null,
+    },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/water");
+  await logAudit({
+    action: "settings.water_update",
+    detail: `bulk · ${d.waterBillingEnabled ? "enabled" : "disabled"}`,
+  });
+  return { ok: true };
+}
+
 /* ───────────────────────────── rate plans ────────────────────────── */
 
 const planSchema = z.object({

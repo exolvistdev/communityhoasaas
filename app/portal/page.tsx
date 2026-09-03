@@ -122,8 +122,8 @@ export default async function PortalHome() {
         closesAt: { gte: now },
       },
     }),
-    prisma.waterMeter.findUnique({
-      where: { propertyId: property.id },
+    prisma.waterMeter.findFirst({
+      where: { propertyId: property.id, retiredAt: null, kind: "UNIT" },
       select: {
         readings: {
           orderBy: { period: "desc" },

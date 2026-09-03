@@ -107,6 +107,12 @@ model Organization {
   voteProxies         VoteProxy[]
   waterMeters         WaterMeter[]
   meterReadings       MeterReading[]
+  waterAllocationRuns WaterAllocationRun[]
+
+  waterLossPolicy      WaterLossPolicy @default(DISTRIBUTE)
+  waterAdminFeeFlat    Decimal?  @db.Decimal(12, 2) // optional flat ₱/unit admin fee (EXTERNAL_BULK)
+  waterUtilityVendorId String?
+  waterUtilityVendor   Vendor?   @relation("WaterUtilityVendor", fields: [waterUtilityVendorId], references: [id], onDelete: SetNull)
 
   @@map("organizations")
 }
@@ -204,6 +210,7 @@ model User {
   proxiesHeld           VoteProxy[]           @relation("ProxyHolder")
   proxiesGrantedByMe    VoteProxy[]           @relation("ProxyGrantedBy")
   readingsEntered       MeterReading[]        @relation("ReadingEnteredBy")
+  waterRunsCreated      WaterAllocationRun[]  @relation("WaterRunCreatedBy")
 
   @@index([orgId])
   @@map("users")
@@ -298,7 +305,7 @@ model Property {
   maintenanceRequests MaintenanceRequest[]
   ballots    Ballot[]
   proxiesGranted VoteProxy[]
-  waterMeter WaterMeter?
+  waterMeters WaterMeter[] // one active UNIT meter; retired ones kept for history
 
   @@unique([orgId, unitNumber])
   @@index([orgId])
@@ -603,6 +610,7 @@ model Vendor {
 
   bills       Bill[]
   maintenanceRequests MaintenanceRequest[]
+  waterUtilityForOrgs Organization[] @relation("WaterUtilityVendor")
 
   @@index([orgId])
   @@map("vendors")
@@ -632,6 +640,7 @@ model Bill {
   payments     BillPayment[]
   journalEntry JournalEntry?
   maintenanceRequests MaintenanceRequest[]
+  waterAllocationRun WaterAllocationRun?
 
   @@index([orgId, status])
   @@index([vendorId])
@@ -886,21 +895,63 @@ enum WaterSource {
   EXTERNAL_DIRECT
 }
 
+// How an EXTERNAL_BULK HOA handles system loss (bulk m³ > Σ sub-meter m³).
+enum WaterLossPolicy {
+  DISTRIBUTE // residents collectively pay the bulk bill; loss spread pro-rata
+  ABSORB     // HOA funds the loss; residents pay only their metered use
+}
+
+enum WaterMeterKind {
+  UNIT   // a home's sub-meter
+  SOURCE // the utility's master meter for the whole subdivision (EXTERNAL_BULK)
+}
+
 model WaterMeter {
   id           String   @id @default(uuid())
   orgId        String
   org          Organization @relation(fields: [orgId], references: [id])
-  propertyId   String   @unique // one meter per unit in v1
-  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId   String?  // null for a SOURCE meter
+  property     Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  kind         WaterMeterKind @default(UNIT)
   serialNumber String?
+  initialReading Decimal @default(0) @db.Decimal(12, 2) // installed baseline for a replacement meter
   installedAt  DateTime?
-  retiredAt    DateTime?
+  retiredAt    DateTime? // replaced — kept for history; a fresh meter takes over
   createdAt    DateTime @default(now())
 
   readings     MeterReading[]
 
+  // Partial unique indexes (in the migration): at most one active UNIT meter per
+  // property, and at most one active SOURCE meter per org.
   @@index([orgId])
   @@map("water_meters")
+}
+
+// One EXTERNAL_BULK billing run: the utility bill split across the sub-meters for
+// a period. A snapshot so past bills stay reproducible.
+model WaterAllocationRun {
+  id                 String   @id @default(uuid())
+  orgId              String
+  org                Organization @relation(fields: [orgId], references: [id])
+  period             String   // "YYYY-MM"
+  billId             String?  @unique
+  bill               Bill?    @relation(fields: [billId], references: [id], onDelete: SetNull)
+  bulkAmount         Decimal  @db.Decimal(12, 2)
+  sourceConsumption  Decimal  @db.Decimal(12, 2)
+  meteredConsumption Decimal  @db.Decimal(12, 2)
+  commonConsumption  Decimal  @db.Decimal(12, 2) @default(0)
+  systemLoss         Decimal  @db.Decimal(12, 2)
+  effectiveRate      Decimal  @db.Decimal(12, 4)
+  lossPolicy         WaterLossPolicy
+  adminFeeFlat       Decimal  @db.Decimal(12, 2) @default(0)
+  unitsBilled        Int
+  createdById        String?
+  createdBy          User?    @relation("WaterRunCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt          DateTime @default(now())
+
+  @@unique([orgId, period])
+  @@index([orgId, period])
+  @@map("water_allocation_runs")
 }
 
 // One month's reading for a meter. consumption = current − prior, and amount is
@@ -918,6 +969,7 @@ model MeterReading {
   currentReading Decimal  @db.Decimal(12, 2)
   consumption    Decimal  @db.Decimal(12, 2)
   amount         Decimal  @db.Decimal(12, 2)
+  flag           String?  // null | "low" — current reading below prior (meter rollback / mis-read)
   invoiceId      String?  @unique
   invoice        Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   enteredById    String?

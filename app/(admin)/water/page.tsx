@@ -8,21 +8,54 @@ import {
   waterConfig,
   metersWithLatest,
   previewBilling,
+  bulkWaterData,
 } from "@/lib/water-billing";
 import { WaterManager } from "./WaterManager";
+import { BulkWaterManager } from "./BulkWaterManager";
 
 export const metadata = { title: "Water billing · HOA SaaS" };
 
 export default async function WaterPage() {
   const { org } = await requirePermission("billing:write");
   if (!waterMetered(org.waterSource)) redirect("/dashboard");
-  const cfg = waterConfig(org);
   const period = currentPeriod();
 
-  const [meters, unmetered, preview] = await Promise.all([
+  if (org.waterSource === "EXTERNAL_BULK") {
+    const data = await bulkWaterData(org.id, period);
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-lg font-semibold text-fg">Water billing</h1>
+          <p className="text-sm text-fg-muted">
+            Enter the master-meter and sub-meter readings for{" "}
+            {periodLabel(period)}, then split the utility bill.
+          </p>
+        </div>
+        {!data.vendor ? (
+          <p className="rounded-lg border border-dashed border-border bg-surface p-6 text-sm text-fg-muted">
+            Choose your water utility as a vendor in{" "}
+            <Link href="/settings" className="text-brand-accent underline">
+              Settings
+            </Link>{" "}
+            before you can bill a period.
+          </p>
+        ) : (
+          <BulkWaterManager period={period} data={data} />
+        )}
+      </div>
+    );
+  }
+
+  // INTERNAL — the HOA's own tariff.
+  const cfg = waterConfig(org);
+  const [{ units: meters }, unmetered, preview] = await Promise.all([
     metersWithLatest(org.id),
     prisma.property.findMany({
-      where: { orgId: org.id, archivedAt: null, waterMeter: { is: null } },
+      where: {
+        orgId: org.id,
+        archivedAt: null,
+        waterMeters: { none: { retiredAt: null } },
+      },
       select: { id: true, unitNumber: true },
       orderBy: { unitNumber: "asc" },
     }),

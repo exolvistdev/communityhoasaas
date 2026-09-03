@@ -21,6 +21,7 @@ export const SEED_ACCOUNTS = [
   { code: "4400", name: "Water Income", type: "INCOME" as const },
   { code: "5000", name: "Operating Expenses", type: "EXPENSE" as const },
   { code: "5100", name: "Utilities", type: "EXPENSE" as const },
+  { code: "5150", name: "Water Purchased", type: "EXPENSE" as const },
   { code: "5200", name: "Repairs & Maintenance", type: "EXPENSE" as const },
   { code: "5300", name: "Security", type: "EXPENSE" as const },
   { code: "5400", name: "Admin & Office", type: "EXPENSE" as const },

@@ -36,8 +36,12 @@ export async function resetTestOrg(subdomain: string) {
   await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
   await prisma.journalEntry.deleteMany({ where: { orgId } });
   await prisma.payment.deleteMany({ where: { invoice: { property: { orgId } } } });
+  await prisma.waterAllocationRun.deleteMany({ where: { orgId } });
   await prisma.meterReading.deleteMany({ where: { orgId } });
   await prisma.waterMeter.deleteMany({ where: { orgId } });
+  await prisma.billPayment.deleteMany({ where: { bill: { orgId } } });
+  await prisma.bill.deleteMany({ where: { orgId } });
+  await prisma.vendor.deleteMany({ where: { orgId } });
   await prisma.invoice.deleteMany({ where: { property: { orgId } } });
   await prisma.gatePassScan.deleteMany({ where: { orgId } });
   await prisma.gatePass.deleteMany({ where: { property: { orgId } } });

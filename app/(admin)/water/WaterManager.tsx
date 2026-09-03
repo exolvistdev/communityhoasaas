@@ -1,25 +1,19 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { peso, periodLabel } from "@/lib/format";
 import { computeWaterCharge, formatConsumption, type RateBand } from "@/lib/water";
-import { addMeter, removeMeter, saveReadings, billPeriod } from "./actions";
+import type { MeterRow } from "@/lib/water-billing";
+import {
+  addMeter,
+  removeMeter,
+  saveReadings,
+  billPeriod,
+  replaceMeter,
+} from "./actions";
 
-type Meter = {
-  id: string;
-  propertyId: string;
-  unitNumber: string;
-  archived: boolean;
-  serialNumber: string | null;
-  latest: {
-    period: string;
-    currentReading: number;
-    consumption: number;
-    amount: number;
-    billed: boolean;
-  } | null;
-};
+type Meter = MeterRow;
 
 export function WaterManager({
   period,
@@ -37,6 +31,7 @@ export function WaterManager({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [replacingId, setReplacingId] = useState<string | null>(null);
 
   // reading inputs, keyed by meterId
   const [inputs, setInputs] = useState<Record<string, string>>(() =>
@@ -54,7 +49,11 @@ export function WaterManager({
         .filter((m) => !m.archived)
         .map((m) => {
           const prior =
-            m.latest && m.latest.period < period ? m.latest.currentReading : 0;
+            m.latest && m.latest.period < period
+              ? m.latest.currentReading
+              : m.latest
+                ? m.latest.currentReading
+                : m.initialReading;
           const cur = inputs[m.id] === "" ? null : Number(inputs[m.id]);
           const consumption =
             cur == null ? null : Math.max(0, Math.round((cur - prior) * 100) / 100);
@@ -102,6 +101,7 @@ export function WaterManager({
       addMeter({
         propertyId: fd.get("propertyId"),
         serialNumber: fd.get("serialNumber"),
+        initialReading: fd.get("initialReading"),
       })
     );
   }
@@ -176,7 +176,11 @@ export function WaterManager({
                       {r.amount == null ? "—" : peso(r.amount)}
                     </td>
                     <td className="px-3 py-2 text-right text-xs">
-                      {r.thisPeriodBilled ? (
+                      {r.latest?.period === period && r.latest.flag === "low" ? (
+                        <span className="text-warning-fg" title="Below the prior reading">
+                          ⚠ below prior
+                        </span>
+                      ) : r.thisPeriodBilled ? (
                         <span className="text-success-fg">billed</span>
                       ) : r.latest?.period === period ? (
                         <span className="text-fg-subtle">saved</span>
@@ -222,7 +226,8 @@ export function WaterManager({
             <table className="w-full text-sm">
               <tbody>
                 {meters.map((m) => (
-                  <tr key={m.id} className="border-t border-border first:border-t-0">
+                  <Fragment key={m.id}>
+                  <tr className="border-t border-border first:border-t-0">
                     <td className="px-3 py-2 text-fg">
                       {m.unitNumber}
                       {m.archived && (
@@ -240,7 +245,7 @@ export function WaterManager({
                         : "never read"}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {!m.latest && (
+                      {!m.latest ? (
                         <button
                           onClick={() => run(() => removeMeter(m.id))}
                           disabled={pending}
@@ -248,9 +253,77 @@ export function WaterManager({
                         >
                           remove
                         </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            setReplacingId((cur) => (cur === m.id ? null : m.id))
+                          }
+                          disabled={pending}
+                          className="text-xs text-brand-accent hover:underline disabled:opacity-50"
+                        >
+                          {replacingId === m.id ? "cancel" : "replace"}
+                        </button>
                       )}
                     </td>
                   </tr>
+                  {replacingId === m.id && (
+                    <tr className="border-t border-border bg-surface-2">
+                      <td colSpan={4} className="px-3 py-3">
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const fd = new FormData(e.currentTarget);
+                            run(async () => {
+                              const res = await replaceMeter({
+                                meterId: m.id,
+                                serialNumber: fd.get("serialNumber"),
+                                initialReading: fd.get("initialReading"),
+                              });
+                              if (res.ok) setReplacingId(null);
+                              return res;
+                            });
+                          }}
+                          className="flex flex-wrap items-end gap-2 text-sm"
+                        >
+                          <span className="text-xs text-fg-muted">
+                            Retire this meter and install a new one on{" "}
+                            {m.unitNumber}:
+                          </span>
+                          <label className="block">
+                            <span className="text-xs text-fg-subtle">
+                              New serial (optional)
+                            </span>
+                            <input
+                              name="serialNumber"
+                              className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="text-xs text-fg-subtle">
+                              Installed reading
+                            </span>
+                            <input
+                              name="initialReading"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              defaultValue="0"
+                              required
+                              className="mt-1 block w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand"
+                            />
+                          </label>
+                          <button
+                            type="submit"
+                            disabled={pending}
+                            className="rounded-md border border-border px-3 py-1.5 hover:bg-surface disabled:opacity-50"
+                          >
+                            Replace meter
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -280,6 +353,19 @@ export function WaterManager({
               <input
                 name="serialNumber"
                 className="mt-1 rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-fg-subtle">
+                Installed reading
+              </span>
+              <input
+                name="initialReading"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue="0"
+                className="mt-1 w-28 rounded-md border border-border px-2 py-1.5 text-right outline-none focus:border-brand"
               />
             </label>
             <button

@@ -42,6 +42,24 @@ export const DEFAULT_WATER_BANDS: RateBand[] = [
 ];
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
+
+export const WATER_LOSS_POLICY_OPTIONS: {
+  value: "DISTRIBUTE" | "ABSORB";
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "DISTRIBUTE",
+    label: "Residents cover the whole bill",
+    hint: "System loss (leaks, the meter gap) is spread across units in proportion to use — the HOA collects exactly what the utility charged.",
+  },
+  {
+    value: "ABSORB",
+    label: "The HOA absorbs the loss",
+    hint: "Residents pay only for their own metered use; the HOA funds the difference between the bulk bill and the sub-meter total.",
+  },
+];
 
 /** Parse the `Organization.waterRateBands` JSON into a typed array (best effort). */
 export function parseRateBands(json: unknown): RateBand[] {
@@ -127,4 +145,134 @@ export function bandBreakdown(
 
 export function formatConsumption(n: number): string {
   return `${Number(n).toFixed(2)} m³`;
+}
+
+/* ─────────────────── EXTERNAL_BULK allocation ──────────────────── */
+
+export type AllocateUnit = { id: string; consumption: number };
+
+export type AllocateRow = {
+  unitId: string;
+  consumption: number; // the unit's own metered use
+  billedConsumption: number; // use + its share of system loss (DISTRIBUTE)
+  amount: number; // billedConsumption × rate + admin fee
+};
+
+export type AllocateBulkResult = {
+  effectiveRate: number; // ₱ per m³ = bulkAmount / sourceConsumption
+  meteredConsumption: number; // Σ unit consumption
+  commonConsumption: number; // Σ common-area meters (0 until slice 4)
+  sourceConsumption: number; // master-meter m³ (falls back to metered + common)
+  systemLoss: number; // source − metered − common, floored at 0
+  systemLossPct: number;
+  rows: AllocateRow[];
+  residentTotal: number; // Σ row.amount
+  shortfall: number; // HOA-funded loss cost (ABSORB only)
+  error?: string;
+};
+
+/**
+ * Split a utility master-meter bill across the unit sub-meters for a period.
+ *
+ * DISTRIBUTE — each unit pays for its use plus a pro-rata share of system loss,
+ * so residents collectively pay exactly `bulkAmount + Σ admin fee`. A rounding
+ * remainder is nudged onto the largest-consumption unit for an exact match.
+ *
+ * ABSORB — each unit pays only for its metered use; `shortfall` is the loss cost
+ * the HOA funds.
+ */
+export function allocateBulk(input: {
+  bulkAmount: number;
+  sourceConsumption?: number | null;
+  units: AllocateUnit[];
+  commonConsumption?: number;
+  lossPolicy: "DISTRIBUTE" | "ABSORB";
+  adminFeeFlat?: number;
+}): AllocateBulkResult {
+  const bulkAmount = Math.max(0, input.bulkAmount || 0);
+  const adminFeeFlat = Math.max(0, input.adminFeeFlat || 0);
+  const commonConsumption = r2(Math.max(0, input.commonConsumption || 0));
+  const units = input.units.map((u) => ({
+    id: u.id,
+    consumption: Math.max(0, u.consumption || 0),
+  }));
+  const meteredConsumption = r2(units.reduce((s, u) => s + u.consumption, 0));
+
+  const base: AllocateBulkResult = {
+    effectiveRate: 0,
+    meteredConsumption,
+    commonConsumption,
+    sourceConsumption: 0,
+    systemLoss: 0,
+    systemLossPct: 0,
+    rows: [],
+    residentTotal: 0,
+    shortfall: 0,
+  };
+
+  if (meteredConsumption <= 0)
+    return { ...base, error: "Enter this period's unit readings first." };
+
+  const sourceConsumption =
+    input.sourceConsumption && input.sourceConsumption > 0
+      ? r2(input.sourceConsumption)
+      : r2(meteredConsumption + commonConsumption);
+
+  const effectiveRate = r4(bulkAmount / Math.max(sourceConsumption, 0.001));
+  const systemLoss = r2(
+    Math.max(0, sourceConsumption - meteredConsumption - commonConsumption)
+  );
+  const systemLossPct =
+    sourceConsumption > 0 ? r2((systemLoss / sourceConsumption) * 100) : 0;
+
+  let rows: AllocateRow[];
+  let shortfall = 0;
+
+  if (input.lossPolicy === "DISTRIBUTE") {
+    rows = units.map((u) => {
+      const billedConsumption = r2(
+        u.consumption + (systemLoss * u.consumption) / meteredConsumption
+      );
+      return {
+        unitId: u.id,
+        consumption: r2(u.consumption),
+        billedConsumption,
+        amount: r2(billedConsumption * effectiveRate + adminFeeFlat),
+      };
+    });
+    // Remainder rule — force Σ amount == bulkAmount + n·fee exactly.
+    const target = r2(bulkAmount + units.length * adminFeeFlat);
+    const remainder = r2(target - rows.reduce((s, r) => s + r.amount, 0));
+    if (remainder !== 0 && rows.length) {
+      let idx = 0;
+      for (let i = 1; i < units.length; i++) {
+        const bigger = units[i].consumption > units[idx].consumption;
+        const tie =
+          units[i].consumption === units[idx].consumption &&
+          units[i].id < units[idx].id;
+        if (bigger || tie) idx = i;
+      }
+      rows[idx] = { ...rows[idx], amount: r2(rows[idx].amount + remainder) };
+    }
+  } else {
+    rows = units.map((u) => ({
+      unitId: u.id,
+      consumption: r2(u.consumption),
+      billedConsumption: r2(u.consumption),
+      amount: r2(u.consumption * effectiveRate + adminFeeFlat),
+    }));
+    shortfall = r2(systemLoss * effectiveRate);
+  }
+
+  return {
+    effectiveRate,
+    meteredConsumption,
+    commonConsumption,
+    sourceConsumption,
+    systemLoss,
+    systemLossPct,
+    rows,
+    residentTotal: r2(rows.reduce((s, r) => s + r.amount, 0)),
+    shortfall,
+  };
 }

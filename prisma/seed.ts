@@ -228,6 +228,7 @@ async function resetDemoOrg() {
   await prisma.payment.deleteMany({
     where: { invoice: { property: { orgId } } },
   });
+  await prisma.waterAllocationRun.deleteMany({ where: { orgId } });
   await prisma.meterReading.deleteMany({ where: { orgId } });
   await prisma.waterMeter.deleteMany({ where: { orgId } });
   await prisma.invoice.deleteMany({ where: { property: { orgId } } });
