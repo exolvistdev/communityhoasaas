@@ -25,6 +25,7 @@ export default async function DashboardPage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const canModerate = can(user.role, "marketplace:moderate");
   const canAmenities = can(user.role, "amenity:manage");
+  const canViolations = can(user.role, "violation:manage");
   const isAdmin = user.role === "ADMIN";
 
   const [
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
     marketReports,
     pendingBookings,
     pendingPrivacy,
+    openViolations,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
     prisma.payment.aggregate({
@@ -89,6 +91,11 @@ export default async function DashboardPage() {
           where: { orgId: org.id, status: "PENDING" },
         })
       : Promise.resolve(0),
+    canViolations
+      ? prisma.violation.count({
+          where: { orgId: org.id, status: { in: ["OPEN", "APPEALED"] } },
+        })
+      : Promise.resolve(0),
   ]);
 
   const collected = Number(collectedAgg._sum.amount ?? 0);
@@ -131,6 +138,14 @@ export default async function DashboardPage() {
           text: `${pendingPrivacy} privacy request${
             pendingPrivacy === 1 ? "" : "s"
           } to review`,
+        }
+      : null,
+    canViolations && openViolations > 0
+      ? {
+          href: "/violations",
+          text: `${openViolations} open violation${
+            openViolations === 1 ? "" : "s"
+          }`,
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];

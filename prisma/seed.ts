@@ -5,6 +5,7 @@ import {
   postPaymentReceived,
   postManualEntry,
   postWriteOff,
+  postFineIssued,
 } from "../lib/ledger";
 import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
@@ -26,6 +27,10 @@ import {
   uploadPaymentQr,
   clearOrgPaymentQr,
 } from "../lib/payment-qr";
+import {
+  ensureViolationPhotosBucket,
+  clearOrgViolationPhotos,
+} from "../lib/violation-photos";
 import { qrPngBase64 } from "../lib/qr";
 import { createAdminClient } from "../lib/supabase/admin";
 
@@ -191,6 +196,7 @@ async function resetDemoOrg() {
   await clearOrgListingPhotos(orgId);
   await clearOrgDocuments(orgId);
   await clearOrgPaymentQr(orgId);
+  await clearOrgViolationPhotos(orgId);
   await prisma.document.deleteMany({ where: { orgId } });
   await prisma.conversationReport.deleteMany({
     where: { conversation: { orgId } },
@@ -217,6 +223,8 @@ async function resetDemoOrg() {
   await prisma.gatePassScan.deleteMany({ where: { orgId } });
   await prisma.gatePass.deleteMany({ where: { property: { orgId } } });
   await prisma.refund.deleteMany({ where: { orgId } });
+  await prisma.fineNotice.deleteMany({ where: { orgId } });
+  await prisma.violation.deleteMany({ where: { orgId } });
   await prisma.ownershipTransfer.deleteMany({ where: { orgId } });
   await prisma.auditEvent.deleteMany({ where: { orgId } });
   await prisma.announcement.deleteMany({ where: { orgId } });
@@ -244,6 +252,9 @@ async function main() {
   );
   await ensurePaymentQrBucket().catch((e) =>
     console.log("  (payment-qr bucket setup skipped:", e.message, ")")
+  );
+  await ensureViolationPhotosBucket().catch((e) =>
+    console.log("  (violations bucket setup skipped:", e.message, ")")
   );
 
   // Platform operator — decoupled from any org.
@@ -1061,6 +1072,68 @@ async function main() {
       userId: anaUser.id,
       type: "DELETION",
       reason: "We're selling the unit and moving out of the country.",
+    },
+  });
+
+  // ── Violations & fines ───────────────────────────────────────────
+  const commercialUnit = await prisma.property.findFirstOrThrow({
+    where: { orgId: org.id, unitNumber: "Commercial Unit A" },
+  });
+
+  // Open parking violation on Juan's unit, with a ₱500 fine already served.
+  const parking = await prisma.violation.create({
+    data: {
+      orgId: org.id,
+      propertyId: firstProperty.id,
+      reportedById: admin.id,
+      category: "PARKING",
+      description:
+        "Vehicle parked in the visitor bay overnight on three occasions this week. Please use your assigned slot.",
+      status: "OPEN",
+      occurredAt: ago(6),
+      cureByDate: at(7, 12),
+    },
+  });
+  {
+    const dueDate = at(14, 12);
+    const fineInvoice = await prisma.invoice.create({
+      data: {
+        propertyId: firstProperty.id,
+        amount: 500,
+        period: null,
+        dueDate,
+        status: "SENT",
+        memo: "Fine — Blk 1 Lot 1 — Parking (notice 1)",
+      },
+    });
+    await postFineIssued(fineInvoice.id);
+    await prisma.fineNotice.create({
+      data: {
+        violationId: parking.id,
+        orgId: org.id,
+        noticeNumber: 1,
+        amount: 500,
+        invoiceId: fineInvoice.id,
+        issuedById: admin.id,
+        issuedAt: ago(3),
+        dueDate,
+        note: "First notice — repeated visitor-bay parking.",
+      },
+    });
+  }
+
+  // A resolved waste violation on the commercial unit — no fine.
+  await prisma.violation.create({
+    data: {
+      orgId: org.id,
+      propertyId: commercialUnit.id,
+      reportedById: admin.id,
+      category: "WASTE",
+      description: "Commercial waste left outside the designated collection window.",
+      status: "CURED",
+      occurredAt: ago(25),
+      resolvedAt: ago(20),
+      resolutionNote: "Tenant switched to the scheduled private hauler.",
     },
   });
 

@@ -6,6 +6,10 @@
 import { ensureMarketplaceBucket, MARKETPLACE_BUCKET } from "../lib/storage";
 import { ensureDocumentsBucket, DOCUMENTS_BUCKET } from "../lib/documents";
 import { ensurePaymentQrBucket, PAYMENT_QR_BUCKET } from "../lib/payment-qr";
+import {
+  ensureViolationPhotosBucket,
+  VIOLATION_PHOTOS_BUCKET,
+} from "../lib/violation-photos";
 
 (async () => {
   await ensureMarketplaceBucket();
@@ -14,6 +18,8 @@ import { ensurePaymentQrBucket, PAYMENT_QR_BUCKET } from "../lib/payment-qr";
   console.log(`✔ bucket "${DOCUMENTS_BUCKET}" ready (private)`);
   await ensurePaymentQrBucket();
   console.log(`✔ bucket "${PAYMENT_QR_BUCKET}" ready (public)`);
+  await ensureViolationPhotosBucket();
+  console.log(`✔ bucket "${VIOLATION_PHOTOS_BUCKET}" ready (private)`);
 })().catch((e) => {
   console.error(e);
   process.exit(1);

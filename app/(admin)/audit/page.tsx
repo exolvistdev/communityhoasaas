@@ -51,6 +51,10 @@ const ACTION_LABEL: Record<string, string> = {
   "document.delete": "Deleted a document",
   "ledger.manual_entry": "Posted a journal entry",
   "ledger.reverse_entry": "Reversed a journal entry",
+  "violation.log": "Logged a violation",
+  "violation.status": "Updated a violation's status",
+  "violation.fine": "Served a fine notice",
+  "violation.delete": "Deleted a violation",
 };
 
 const fmt = (d: Date) =>

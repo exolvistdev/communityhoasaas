@@ -19,6 +19,7 @@ import {
   Users,
   ScrollText,
   ShieldQuestion,
+  Gavel,
   Settings,
   Menu,
   X,
@@ -58,6 +59,12 @@ const GROUPS: Group[] = [
     items: [
       { href: "/gate-passes", label: "Gate passes", icon: ShieldCheck },
       { href: "/announcements", label: "Announcements", icon: Megaphone },
+      {
+        href: "/violations",
+        label: "Violations",
+        icon: Gavel,
+        show: (r) => can(r, "violation:manage"),
+      },
       {
         href: "/amenities",
         label: "Amenities",

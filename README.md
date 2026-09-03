@@ -24,7 +24,8 @@ walkthrough of the admin app.
 | Properties — list, detail, people (owner/co-owner/renter), rate plans, archive, close-out / ownership transfer (settle or write off the balance, swap residents, revoke logins) | ✅ |
 | Billing — bulk invoice generation, record payment (auto-split oldest-first across open invoices), overpayment → resident credit auto-applied to the next dues, refund a credit balance, void (a paid invoice's money moves to credit), Statement of Account (single + bulk + CSV) | ✅ |
 | Reconciliation — confirm/reject homeowner-submitted payments (allocated on confirm) | ✅ |
-| Ledger — trial balance (any date range), journal, chart of accounts (~16 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
+| Ledger — trial balance (any date range), journal, chart of accounts (~17 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
+| Violations & fines — log a rule violation (category, photos, cure-by date), track it to resolution, serve numbered fine notices that bill the resident (4300 Fine Income), print a demand letter; residents see their violations and can appeal | ✅ |
 | Financial reports (`/reports`) — income & expenses, financial position, receivables aging, collections summary, and a bundled board pack; period picker, print-to-PDF, CSV per report | ✅ |
 | Gate passes — create / list / revoke, scannable code | ✅ |
 | Announcements — draft / publish | ✅ |
@@ -81,7 +82,7 @@ invites use the service role to pre-confirm accounts).
 ```bash
 npx prisma migrate deploy   # apply migrations (use `prisma migrate dev` when authoring new ones)
 npx prisma generate
-node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace + payment-qr (public) and documents (private) Storage buckets
+node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/init-storage.ts  # once per Supabase project — creates the marketplace + payment-qr (public) and documents + violations (private) Storage buckets
 npm run db:seed             # demo HOA "sample-hoa" (also ensures the bucket)
 npm run dev
 ```

@@ -87,6 +87,8 @@ model Organization {
   dataRequests        DataRequest[]
   creditApplications  CreditApplication[]
   refunds             Refund[]
+  violations          Violation[]
+  fineNotices         FineNotice[]
 
   @@map("organizations")
 }
@@ -170,6 +172,8 @@ model User {
   dataRequestsHandled   DataRequest[]         @relation("DataRequestHandledBy")
   creditApplicationsApplied CreditApplication[] @relation("CreditAppliedBy")
   refundsIssued         Refund[]              @relation("RefundIssuedBy")
+  violationsReported    Violation[]           @relation("ViolationReporter")
+  finesIssued           FineNotice[]          @relation("FineIssuer")
 
   @@index([orgId])
   @@map("users")
@@ -191,6 +195,7 @@ enum NotificationType {
   MARKETPLACE_CONVERSATION_REPORTED
   LATE_FEE_APPLIED
   PAYMENT_REFUNDED
+  VIOLATION_NOTICE
 }
 
 model Notification {
@@ -256,6 +261,7 @@ model Property {
   ownershipTransfers OwnershipTransfer[]
   creditApplications CreditApplication[]
   refunds    Refund[]
+  violations Violation[]
 
   @@unique([orgId, unitNumber])
   @@index([orgId])
@@ -357,6 +363,7 @@ model Invoice {
   creditApplications CreditApplication[]
   journalEntry  JournalEntry?
   amenityBooking AmenityBooking?
+  fineNotice    FineNotice?
 
   @@unique([propertyId, period])
   @@index([propertyId])
@@ -460,6 +467,77 @@ model CreditApplication {
   @@index([propertyId])
   @@index([invoiceId])
   @@map("credit_applications")
+}
+
+// ─────────────────────────────────────────────
+// Violations & fines
+// ─────────────────────────────────────────────
+
+enum ViolationStatus {
+  OPEN
+  CURED       // resident fixed it
+  DISMISSED   // staff dropped it
+  APPEALED    // resident is contesting it
+}
+
+enum ViolationCategory {
+  NOISE
+  PARKING
+  PET
+  WASTE
+  LANDSCAPING
+  ARCHITECTURAL
+  NUISANCE
+  SAFETY
+  OTHER
+}
+
+model Violation {
+  id             String   @id @default(uuid())
+  orgId          String
+  org            Organization @relation(fields: [orgId], references: [id])
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id])
+  reportedById   String?
+  reportedBy     User?    @relation("ViolationReporter", fields: [reportedById], references: [id])
+  category       ViolationCategory
+  description    String
+  status         ViolationStatus @default(OPEN)
+  occurredAt     DateTime
+  cureByDate     DateTime?
+  photos         String[] // storage paths in the private "violations" bucket
+  resolvedAt     DateTime?
+  resolutionNote String?
+  createdAt      DateTime @default(now())
+
+  fineNotices    FineNotice[]
+
+  @@index([orgId, status])
+  @@index([propertyId])
+  @@map("violations")
+}
+
+// A formal fine served on a violation. Its `amount` is billed as a period:null
+// Invoice (memo "Fine — …"), so it flows onto the resident's SOA and ledger.
+model FineNotice {
+  id           String   @id @default(uuid())
+  violationId  String
+  violation    Violation @relation(fields: [violationId], references: [id], onDelete: Cascade)
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  noticeNumber Int      // 1st notice, 2nd notice, … per violation
+  amount       Decimal  @db.Decimal(12, 2)
+  invoiceId    String?  @unique
+  invoice      Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  issuedById   String?
+  issuedBy     User?    @relation("FineIssuer", fields: [issuedById], references: [id])
+  issuedAt     DateTime @default(now())
+  dueDate      DateTime
+  note         String?
+
+  @@index([orgId])
+  @@index([violationId])
+  @@map("fine_notices")
 }
 
 // ─────────────────────────────────────────────
