@@ -16,6 +16,7 @@ import { SectionHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, Thead, Th, Tbody, Tr, Td } from "@/components/ui/table";
 import { peso, periodLabel, currentPeriod } from "@/lib/format";
+import { waterMetered } from "@/lib/water";
 
 export const metadata = { title: "Dashboard · HOA SaaS" };
 
@@ -144,7 +145,7 @@ export default async function DashboardPage() {
           },
         })
       : Promise.resolve(0),
-    canBilling && org.waterBillingEnabled
+    canBilling && org.waterBillingEnabled && waterMetered(org.waterSource)
       ? prisma.meterReading.count({
           where: {
             orgId: org.id,
@@ -244,6 +245,12 @@ export default async function DashboardPage() {
           text: `${unbilledWaterReadings} water reading${
             unbilledWaterReadings === 1 ? "" : "s"
           } to bill this month`,
+        }
+      : null,
+    isAdmin && org.waterSource === "UNSET"
+      ? {
+          href: "/settings",
+          text: "Tell us how your subdivision gets water",
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];

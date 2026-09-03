@@ -5,6 +5,7 @@ import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { getNotificationSummary } from "@/lib/notifications";
+import { waterMetered } from "@/lib/water";
 
 export default async function AdminLayout({
   children,
@@ -23,7 +24,11 @@ export default async function AdminLayout({
         <ImpersonationBanner name={user.fullName} role={user.role} />
       )}
       <div className="flex flex-1">
-        <Sidebar orgName={org.name} role={user.role} />
+        <Sidebar
+          orgName={org.name}
+          role={user.role}
+          features={{ water: waterMetered(org.waterSource) }}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 hidden h-14 items-center justify-end gap-1 border-b border-border bg-surface/80 px-6 backdrop-blur lg:flex">
             <NotificationBell

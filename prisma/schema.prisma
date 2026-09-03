@@ -67,8 +67,13 @@ model Organization {
   lateFeeGraceDays      Int         @default(0)
   lateFeeMaxOccurrences Int         @default(1) // cap of late-fee charges per overdue invoice
   privacyContactEmail   String?     // DPO / data-privacy contact shown to residents
-  // Water sub-metering (opt-in). `waterRateBands` = JSON array of
-  // { upToM3: number|null, pricePerM3: number } ascending, last cap null.
+  // Water sub-metering. `waterSource` (asked at onboarding) drives whether the
+  // metering feature is shown at all and, when shown, the billing model:
+  //   INTERNAL        — HOA runs its own source; tariff (waterRateBands + service charge)
+  //   EXTERNAL_BULK   — utility master meter; allocate the actual bulk bill pro-rata
+  //   EXTERNAL_DIRECT — each lot bills the utility directly; feature hidden
+  // `waterBillingEnabled` is the operational on/off within INTERNAL / EXTERNAL_BULK.
+  waterSource           WaterSource @default(UNSET)
   waterBillingEnabled   Boolean     @default(false)
   waterServiceCharge    Decimal?    @db.Decimal(12, 2)
   waterRateBands        Json?
@@ -873,6 +878,13 @@ model VoteProxy {
 // ─────────────────────────────────────────────
 // Water sub-metering & tiered utility billing
 // ─────────────────────────────────────────────
+
+enum WaterSource {
+  UNSET
+  INTERNAL
+  EXTERNAL_BULK
+  EXTERNAL_DIRECT
+}
 
 model WaterMeter {
   id           String   @id @default(uuid())

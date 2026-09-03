@@ -4,6 +4,7 @@ import {
   validateBands,
   bandBreakdown,
   parseRateBands,
+  waterMetered,
   type RateBand,
 } from "@/lib/water";
 
@@ -69,6 +70,15 @@ describe("bandBreakdown", () => {
       { label: "10–20 m³ @ ₱30", m3: 10, amount: 300 },
       { label: "over 20 m³ @ ₱50", m3: 5, amount: 250 },
     ]);
+  });
+});
+
+describe("waterMetered", () => {
+  it("is true only for the two metered models", () => {
+    expect(waterMetered("INTERNAL")).toBe(true);
+    expect(waterMetered("EXTERNAL_BULK")).toBe(true);
+    expect(waterMetered("EXTERNAL_DIRECT")).toBe(false);
+    expect(waterMetered("UNSET")).toBe(false);
   });
 });
 

@@ -312,6 +312,7 @@ async function main() {
       lateFeeGraceDays: 3,
       lateFeeMaxOccurrences: 2,
       privacyContactEmail: "privacy@sample-hoa.ph",
+      waterSource: "INTERNAL",
       // Default dues by property type (match the rate plans below).
       typeRateResidential: 1500,
       typeRateCommercial: 5000,

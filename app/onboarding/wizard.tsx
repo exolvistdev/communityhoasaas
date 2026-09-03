@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Stepper } from "@/components/Stepper";
 import { PropertyCsvImport } from "@/components/PropertyCsvImport";
+import { WATER_SOURCE_OPTIONS } from "@/lib/water";
 import { createOrgAndAdmin } from "./actions";
 
 export function OnboardingWizard({ signedIn }: { signedIn: boolean }) {
@@ -40,6 +41,7 @@ function Step1({ onDone }: { onDone: () => void }) {
       fullName: String(fd.get("fullName") ?? ""),
       email: String(fd.get("email") ?? ""),
       password: String(fd.get("password") ?? ""),
+      waterSource: String(fd.get("waterSource") ?? ""),
     };
     setError(null);
     setFieldError(undefined);
@@ -93,6 +95,40 @@ function Step1({ onDone }: { onDone: () => void }) {
       <Field label="Your full name" name="fullName" placeholder="Maria Santos" error={fieldError === "fullName" ? error : undefined} />
       <Field label="Email" name="email" type="email" placeholder="you@example.com" error={fieldError === "email" ? error : undefined} />
       <Field label="Password" name="password" type="password" placeholder="At least 8 characters" error={fieldError === "password" ? error : undefined} />
+
+      <hr className="border-border" />
+
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-fg">
+          How does your subdivision get water?
+        </legend>
+        <p className="text-xs text-fg-muted">
+          This sets up (or hides) water sub-metering. You can change it later in
+          Settings.
+        </p>
+        {WATER_SOURCE_OPTIONS.map((o, i) => (
+          <label
+            key={o.value}
+            className="flex cursor-pointer gap-2.5 rounded-md border border-border p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-subtle"
+          >
+            <input
+              type="radio"
+              name="waterSource"
+              value={o.value}
+              defaultChecked={i === 0}
+              className="mt-0.5"
+              required
+            />
+            <span>
+              <span className="font-medium text-fg">{o.label}</span>
+              <span className="block text-xs text-fg-muted">{o.hint}</span>
+            </span>
+          </label>
+        ))}
+        {fieldError === "waterSource" && (
+          <p className="text-xs text-danger-fg">{error}</p>
+        )}
+      </fieldset>
 
       {error && !fieldError && (
         <p className="rounded-md bg-danger-subtle px-3 py-2 text-sm text-danger-fg">

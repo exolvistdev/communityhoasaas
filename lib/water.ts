@@ -1,5 +1,35 @@
 // Pure water-billing helpers — safe to import from client components.
 
+import type { WaterSource } from "@prisma/client";
+
+/** Whether the HOA meters & bills water through the system (vs. hidden). */
+export function waterMetered(source: WaterSource): boolean {
+  return source === "INTERNAL" || source === "EXTERNAL_BULK";
+}
+
+export const WATER_SOURCE_OPTIONS: {
+  value: Exclude<WaterSource, "UNSET">;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "INTERNAL",
+    label: "The HOA runs its own water source",
+    hint: "A deep well or a bulk connection the HOA manages — you set the rates and meter each unit.",
+  },
+  {
+    value: "EXTERNAL_BULK",
+    label: "A water utility, through one master meter",
+    hint: "Maynilad / Manila Water / Laguna Water / Prime Water bills the HOA one bill; the HOA sub-meters each unit and divides it.",
+  },
+  {
+    value: "EXTERNAL_DIRECT",
+    label: "A water utility, one account per lot",
+    hint: "Each home has its own utility account and pays the provider directly — the HOA isn't involved in water billing.",
+  },
+];
+
+
 /** One tier of a tiered rate. `upToM3: null` means "and above" (the last band). */
 export type RateBand = { upToM3: number | null; pricePerM3: number };
 

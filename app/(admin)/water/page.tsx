@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { currentPeriod, periodLabel } from "@/lib/format";
+import { waterMetered } from "@/lib/water";
 import {
   waterConfig,
   metersWithLatest,
@@ -13,6 +15,7 @@ export const metadata = { title: "Water billing · HOA SaaS" };
 
 export default async function WaterPage() {
   const { org } = await requirePermission("billing:write");
+  if (!waterMetered(org.waterSource)) redirect("/dashboard");
   const cfg = waterConfig(org);
   const period = currentPeriod();
 

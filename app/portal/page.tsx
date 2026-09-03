@@ -19,6 +19,7 @@ import { invoicePaid } from "@/lib/invoice";
 import { peso, periodLabel } from "@/lib/format";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { waterMetered } from "@/lib/water";
 
 const METHOD_LABEL: Record<string, string> = {
   CASH: "Cash",
@@ -34,7 +35,7 @@ const shortDate = (d: Date) =>
   d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
 
 export default async function PortalHome() {
-  const { user, property } = await getHomeownerContext();
+  const { user, property, org } = await getHomeownerContext();
 
   if (!property) {
     return (
@@ -299,7 +300,7 @@ export default async function PortalHome() {
             sub={`${openVotes} open`}
           />
         )}
-        {waterMeter?.readings[0] && (
+        {waterMetered(org.waterSource) && waterMeter?.readings[0] && (
           <Tile
             href="/portal/pay"
             icon={Droplet}

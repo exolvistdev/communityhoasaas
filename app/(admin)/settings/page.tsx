@@ -8,7 +8,9 @@ import { LateFeeSettingsForm } from "./LateFeeSettingsForm";
 import { TypeRatesForm } from "./TypeRatesForm";
 import { RatePlansManager } from "./RatePlansManager";
 import { WaterSettingsForm } from "./WaterSettingsForm";
+import { WaterSourceForm } from "./WaterSourceForm";
 import { waterConfig } from "@/lib/water-billing";
+import { waterMetered } from "@/lib/water";
 
 export const metadata = { title: "Settings · HOA SaaS" };
 
@@ -134,14 +136,27 @@ export default async function SettingsPage() {
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-fg">Water billing</h2>
+          <h2 className="text-sm font-semibold text-fg">Water</h2>
           <p className="text-xs text-fg-muted">
-            Meter each unit, enter monthly readings on the Water page, then bill
-            the period. Charges post to a separate Water Income account and land
-            on the homeowner&apos;s statement.
+            How your subdivision gets water. This sets up (or hides) sub-metering
+            and picks the billing method.
           </p>
         </div>
-        <WaterSettingsForm config={waterConfig(org)} />
+        <WaterSourceForm current={org.waterSource} />
+
+        {waterMetered(org.waterSource) && (
+          <>
+            <div>
+              <h3 className="text-sm font-semibold text-fg">Water billing</h3>
+              <p className="text-xs text-fg-muted">
+                Meter each unit, enter monthly readings on the Water page, then
+                bill the period. Charges post to Water Income and land on the
+                homeowner&apos;s statement.
+              </p>
+            </div>
+            <WaterSettingsForm config={waterConfig(org)} />
+          </>
+        )}
       </section>
 
       <section className="space-y-3">

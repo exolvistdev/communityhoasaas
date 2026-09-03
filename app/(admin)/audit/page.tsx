@@ -78,6 +78,7 @@ const ACTION_LABEL: Record<string, string> = {
   "meter.remove": "Removed a water meter",
   "water.reading": "Recorded water readings",
   "water.bill": "Billed water for the period",
+  "water.source_update": "Set the subdivision's water source",
   "settings.water_update": "Updated water billing settings",
 };
 

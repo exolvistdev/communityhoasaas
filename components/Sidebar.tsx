@@ -34,11 +34,14 @@ import { can } from "@/lib/permissions";
 import { cn } from "@/lib/cn";
 import { Wordmark } from "@/components/Wordmark";
 
+type FeatureFlags = { water: boolean };
 type Item = {
   href: string;
   label: string;
   icon: LucideIcon;
   show?: (r: UserRole) => boolean;
+  /** hidden when the org-level flag of this name is false */
+  feature?: keyof FeatureFlags;
 };
 type Group = { label: string; items: Item[] };
 
@@ -60,6 +63,7 @@ const GROUPS: Group[] = [
         label: "Water billing",
         icon: Droplet,
         show: (r) => can(r, "billing:write"),
+        feature: "water",
       },
       {
         href: "/bills",
@@ -146,12 +150,24 @@ const GROUPS: Group[] = [
   },
 ];
 
-function Nav({ role, onNavigate }: { role: UserRole; onNavigate?: () => void }) {
+function Nav({
+  role,
+  features,
+  onNavigate,
+}: {
+  role: UserRole;
+  features: FeatureFlags;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   return (
     <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
       {GROUPS.map((g) => {
-        const items = g.items.filter((i) => !i.show || i.show(role));
+        const items = g.items.filter(
+          (i) =>
+            (!i.show || i.show(role)) &&
+            (!i.feature || features[i.feature] !== false)
+        );
         if (items.length === 0) return null;
         return (
           <div key={g.label} className="space-y-1">
@@ -191,9 +207,11 @@ function Nav({ role, onNavigate }: { role: UserRole; onNavigate?: () => void }) 
 export function Sidebar({
   orgName,
   role,
+  features,
 }: {
   orgName: string;
   role: UserRole;
+  features: FeatureFlags;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -227,7 +245,7 @@ export function Sidebar({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <Nav role={role} onNavigate={() => setOpen(false)} />
+            <Nav role={role} features={features} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}
@@ -236,7 +254,7 @@ export function Sidebar({
         <div className="border-b border-border px-4 py-4">
           <Wordmark subtitle={orgName} />
         </div>
-        <Nav role={role} />
+        <Nav role={role} features={features} />
       </aside>
     </>
   );

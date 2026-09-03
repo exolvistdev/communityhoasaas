@@ -19,6 +19,9 @@ const step1Schema = z.object({
   fullName: z.string().trim().min(2, "Enter your full name"),
   email: z.string().trim().email("Enter a valid email"),
   password: z.string().min(8, "Use at least 8 characters"),
+  waterSource: z.enum(["INTERNAL", "EXTERNAL_BULK", "EXTERNAL_DIRECT"], {
+    errorMap: () => ({ message: "Choose how your subdivision gets water" }),
+  }),
 });
 
 export type Step1Result =
@@ -26,14 +29,15 @@ export type Step1Result =
   | { ok: false; error: string; field?: string };
 
 export async function createOrgAndAdmin(
-  input: z.infer<typeof step1Schema>
+  input: unknown
 ): Promise<Step1Result> {
   const parsed = step1Schema.safeParse(input);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
     return { ok: false, error: first.message, field: String(first.path[0]) };
   }
-  const { orgName, subdomain, fullName, email, password } = parsed.data;
+  const { orgName, subdomain, fullName, email, password, waterSource } =
+    parsed.data;
 
   const existing = await prisma.organization.findUnique({ where: { subdomain } });
   if (existing)
@@ -82,7 +86,7 @@ export async function createOrgAndAdmin(
   try {
     await prisma.$transaction(async (tx) => {
       const org = await tx.organization.create({
-        data: { name: orgName, subdomain },
+        data: { name: orgName, subdomain, waterSource },
       });
       await tx.user.create({
         data: { orgId: org.id, authId, email, fullName, role: "ADMIN" },

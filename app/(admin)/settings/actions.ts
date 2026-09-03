@@ -280,6 +280,50 @@ export async function reapplyTypeRate(
   return { ok: true, updated: res.count };
 }
 
+/* ───────────────────────────── water source ──────────────────────── */
+
+const waterSourceSchema = z.object({
+  waterSource: z.enum(["INTERNAL", "EXTERNAL_BULK", "EXTERNAL_DIRECT"]),
+});
+
+export async function updateWaterSource(input: unknown): Promise<Result> {
+  const denied = await guardRatePlan();
+  if (denied) return denied;
+
+  const parsed = waterSourceSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org } = await getCurrentOrgContext();
+  const next = parsed.data.waterSource;
+
+  if (next === "EXTERNAL_DIRECT") {
+    const meters = await prisma.waterMeter.count({ where: { orgId: org.id } });
+    if (meters > 0)
+      return {
+        ok: false,
+        error:
+          "Remove the water meters first — homes on direct utility accounts aren't metered here.",
+      };
+  }
+
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: {
+      waterSource: next,
+      // leaving the metered modes turns billing off
+      waterBillingEnabled:
+        next === "EXTERNAL_DIRECT" ? false : org.waterBillingEnabled,
+    },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/water");
+  revalidatePath("/dashboard");
+  await logAudit({ action: "water.source_update", detail: next });
+  return { ok: true };
+}
+
 /* ───────────────────────────── water billing ─────────────────────── */
 
 const bandSchema = z.object({
