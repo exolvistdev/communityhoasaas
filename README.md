@@ -36,7 +36,7 @@ walkthrough of the admin app.
 | Settings — HOA name, billing due-day, rate plans, default rates by property type, GCash/Maya payment details + uploadable QR, late-fee policy | ✅ |
 | Late fees — opt-in per HOA (flat ₱ or %, grace period, monthly recurrence cap); a daily sweep posts a late-fee invoice + ledger entry and notifies the homeowner | ✅ |
 | Board votes (RA 9904) — put a motion to the members, one ballot per unit (in favour / against / abstain), proxy assignment, quorum + threshold tracking, publish the result to the document library | ✅ |
-| Water — asked at onboarding how the subdivision gets water (own source / one master meter from a utility / direct utility accounts); the last hides water billing entirely. **Own source** — tiered rate bands + a service charge, staff readings, a batch action bills each unit to 4400 Water Income. **Master meter** — the utility bill is a real Bill to 5150 Water Purchased; a sub-meter reading run splits it across units (loss distributed pro-rata or absorbed by the HOA, optional flat admin fee), snapshotted per period. Meter replacement (retire + fresh baseline), suspicious-reading flag. Residents see their readings, a 12-month consumption chart and a per-bill breakdown at `/portal/water`; staff get a `/reports/water` report. | ✅ |
+| Water — asked at onboarding how the subdivision gets water (own source / one master meter from a utility / direct utility accounts); the last hides water billing entirely. **Own source** — tiered rate bands + a service charge, staff readings, a batch action bills each unit to 4400 Water Income. **Master meter** — the utility bill is a real Bill to 5150 Water Purchased; a sub-meter reading run splits it across units (loss distributed pro-rata or absorbed by the HOA, optional flat admin fee), snapshotted per period; common-area meters (clubhouse, park) are read, subtracted from loss, and HOA-funded. Meter replacement (retire + fresh baseline), suspicious-reading flag, estimated readings (trailing-3-average, auto true-up on the next actual), and a "correct a billed reading" action (over-bill → resident credit, under-bill → extra invoice). A daily cron nudges staff when readings are overdue. Residents see their readings, a 12-month consumption chart and a per-bill breakdown at `/portal/water`; staff get a `/reports/water` report. | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Password recovery (self-service + admin reset-link fallback), `/account` self-service profile/password/contact | ✅ |
 | Gate activity log + admin audit trail (`/gate-passes?view=activity`, `/audit`) | ✅ |
@@ -73,7 +73,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="…"                    # Supabase → Settings �
 SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth users, marketplace photos, document library
 RESEND_API_KEY=""                                    # optional — email notifications no-op without it (in-app center still works)
 EMAIL_FROM="HOA SaaS <onboarding@resend.dev>"        # sender for notification emails
-CRON_SECRET=""                                       # optional — gates the daily sweeps GET /api/cron/overdue and /api/cron/late-fees (vercel.json)
+CRON_SECRET=""                                       # optional — gates the daily sweeps GET /api/cron/overdue, /api/cron/late-fees and /api/cron/water-reminder (vercel.json)
 ```
 
 Use the **transaction-mode pooler** (`:6543`, `pgbouncer=true`) for `DATABASE_URL`
@@ -181,3 +181,4 @@ them: **check** (typecheck + lint + unit tests), **integration** (a `postgres:16
 | `npm run db:studio` | Prisma Studio |
 | `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/notify-overdue.ts` | overdue-invoice notification sweep (daily cron, or `GET /api/cron/overdue`) |
 | `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/apply-late-fees.ts` | late-fee sweep — adds a late-fee invoice to overdue dues (daily cron, or `GET /api/cron/late-fees`) |
+| `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/water-reminders.ts` | water-reading reminder — nudges staff of metered HOAs behind on readings/billing (daily cron, or `GET /api/cron/water-reminder`) |

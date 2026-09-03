@@ -114,10 +114,31 @@ export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data 
         </table>
       )}
 
+      {data.common.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Common-area meters
+          </div>
+          <table className="w-full border-collapse text-xs">
+            <tbody>
+              {data.common.map((c) => (
+                <tr key={c.label} className="border-b border-gray-100">
+                  <td className="py-1.5 pr-3">{c.label}</td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {formatConsumption(c.rangeConsumption)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {bulk && (
         <p className="mt-4 text-[11px] text-gray-400">
           Net position = billed to residents − utility bulk bills for the period.
-          A negative figure means the HOA absorbed system loss or fees.
+          A negative figure means the HOA absorbed system loss, common-area use
+          or fees.
         </p>
       )}
     </ReportDoc>

@@ -161,6 +161,24 @@ describe("allocateBulk", () => {
     expect(r.error).toBeTruthy();
   });
 
+  it("common-area use is HOA-funded — residents pay bulk − commonCost", () => {
+    const r = allocateBulk({
+      bulkAmount: 10000,
+      sourceConsumption: 125, // 100 units + 15 common + 10 loss
+      units,
+      commonConsumption: 15,
+      lossPolicy: "DISTRIBUTE",
+    });
+    const rate = 10000 / 125; // 80
+    expect(r.commonConsumption).toBe(15);
+    expect(r.commonCost).toBeCloseTo(15 * rate, 1);
+    expect(r.systemLoss).toBe(10);
+    const sum = r.rows.reduce((s, x) => s + x.amount, 0);
+    expect(Math.round(sum * 100) / 100).toBe(
+      Math.round((10000 - 15 * rate) * 100) / 100
+    );
+  });
+
   it("a zero-consumption unit pays only the admin fee under DISTRIBUTE", () => {
     const r = allocateBulk({
       bulkAmount: 6000,

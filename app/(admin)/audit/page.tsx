@@ -76,8 +76,13 @@ const ACTION_LABEL: Record<string, string> = {
   "proxy.revoke": "Revoked a voting proxy",
   "meter.create": "Added a water meter",
   "meter.remove": "Removed a water meter",
+  "meter.replace": "Replaced a water meter",
+  "meter.retire": "Retired a water meter",
   "water.reading": "Recorded water readings",
   "water.bill": "Billed water for the period",
+  "water.bill_bulk": "Split the utility water bill",
+  "water.adjust": "Corrected a billed water reading",
+  "water.reminder": "Sent a water-reading reminder",
   "water.source_update": "Set the subdivision's water source",
   "settings.water_update": "Updated water billing settings",
 };

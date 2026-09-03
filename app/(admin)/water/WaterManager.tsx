@@ -12,6 +12,7 @@ import {
   billPeriod,
   replaceMeter,
 } from "./actions";
+import { AdjustReadingForm } from "./AdjustReadingForm";
 
 type Meter = MeterRow;
 
@@ -32,6 +33,8 @@ export function WaterManager({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [replacingId, setReplacingId] = useState<string | null>(null);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
+  const [estimating, setEstimating] = useState<Record<string, boolean>>({});
 
   // reading inputs, keyed by meterId
   const [inputs, setInputs] = useState<Record<string, string>>(() =>
@@ -84,10 +87,17 @@ export function WaterManager({
 
   function onSaveReadings() {
     const payload = rows
-      .filter((r) => r.cur != null && !r.thisPeriodBilled)
-      .map((r) => ({ meterId: r.id, currentReading: r.cur as number }));
+      .filter(
+        (r) =>
+          !r.thisPeriodBilled && (estimating[r.id] || r.cur != null)
+      )
+      .map((r) =>
+        estimating[r.id]
+          ? { meterId: r.id, estimated: true }
+          : { meterId: r.id, currentReading: r.cur as number }
+      );
     if (payload.length === 0) {
-      setError("Enter at least one reading.");
+      setError("Enter a reading, or tick Estimate.");
       return;
     }
     run(() => saveReadings({ period, rows: payload }));
@@ -143,8 +153,13 @@ export function WaterManager({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-border first:border-t-0">
+                {rows.map((r) => {
+                  const est = !!estimating[r.id];
+                  const billedThisPeriod =
+                    r.latest?.period === period && r.latest.billed;
+                  return (
+                  <Fragment key={r.id}>
+                  <tr className="border-t border-border first:border-t-0">
                     <td className="px-3 py-2 text-fg">
                       {r.unitNumber}
                       {r.serialNumber && (
@@ -161,33 +176,88 @@ export function WaterManager({
                         type="number"
                         min={r.prior}
                         step="0.01"
-                        value={inputs[r.id] ?? ""}
-                        disabled={r.thisPeriodBilled}
+                        value={est ? "" : inputs[r.id] ?? ""}
+                        placeholder={est ? "estimate" : ""}
+                        disabled={r.thisPeriodBilled || est}
                         onChange={(e) =>
                           setInputs((cur) => ({ ...cur, [r.id]: e.target.value }))
                         }
                         className="w-24 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand disabled:opacity-50"
                       />
+                      {!r.thisPeriodBilled && (
+                        <label className="ml-2 inline-flex items-center gap-1 text-xs text-fg-subtle">
+                          <input
+                            type="checkbox"
+                            checked={est}
+                            onChange={(e) =>
+                              setEstimating((c) => ({
+                                ...c,
+                                [r.id]: e.target.checked,
+                              }))
+                            }
+                          />
+                          est.
+                        </label>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {r.consumption == null ? "—" : formatConsumption(r.consumption)}
+                      {est
+                        ? "≈ avg"
+                        : r.consumption == null
+                          ? "—"
+                          : formatConsumption(r.consumption)}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {r.amount == null ? "—" : peso(r.amount)}
+                      {est || r.amount == null ? "—" : peso(r.amount)}
                     </td>
                     <td className="px-3 py-2 text-right text-xs">
                       {r.latest?.period === period && r.latest.flag === "low" ? (
                         <span className="text-warning-fg" title="Below the prior reading">
                           ⚠ below prior
                         </span>
-                      ) : r.thisPeriodBilled ? (
-                        <span className="text-success-fg">billed</span>
+                      ) : billedThisPeriod ? (
+                        <span className="space-x-2">
+                          <span className="text-success-fg">
+                            billed{r.latest?.estimated ? " (est.)" : ""}
+                          </span>
+                          <button
+                            onClick={() =>
+                              setAdjustingId((c) =>
+                                c === r.latest!.readingId
+                                  ? null
+                                  : r.latest!.readingId
+                              )
+                            }
+                            className="text-brand-accent hover:underline"
+                          >
+                            {adjustingId === r.latest?.readingId
+                              ? "cancel"
+                              : "adjust"}
+                          </button>
+                        </span>
                       ) : r.latest?.period === period ? (
-                        <span className="text-fg-subtle">saved</span>
+                        <span className="text-fg-subtle">
+                          saved{r.latest.estimated ? " (est.)" : ""}
+                        </span>
                       ) : null}
                     </td>
                   </tr>
-                ))}
+                  {billedThisPeriod && adjustingId === r.latest?.readingId && (
+                    <tr className="border-t border-border bg-surface-2">
+                      <td colSpan={6} className="px-3 py-3">
+                        <AdjustReadingForm
+                          readingId={r.latest.readingId}
+                          current={r.latest.consumption}
+                          pending={pending}
+                          run={run}
+                          onDone={() => setAdjustingId(null)}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

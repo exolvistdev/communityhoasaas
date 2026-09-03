@@ -1,21 +1,24 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { peso, periodLabel } from "@/lib/format";
 import { formatConsumption } from "@/lib/water";
 import type { MeterRow } from "@/lib/water-billing";
 import {
   addSourceMeter,
+  addCommonMeter,
   saveReadings,
   billBulkPeriod,
   previewBulkAction,
   retireMeterAction,
 } from "./actions";
+import { AdjustReadingForm } from "./AdjustReadingForm";
 
 type BulkData = {
   source: MeterRow | null;
   units: MeterRow[];
+  common: MeterRow[];
   period: string;
   unbilledForPeriod: number;
   alreadyBilled: boolean;
@@ -40,6 +43,8 @@ type Preview = {
   alloc: {
     effectiveRate: number;
     meteredConsumption: number;
+    commonConsumption: number;
+    commonCost: number;
     sourceConsumption: number;
     systemLoss: number;
     systemLossPct: number;
@@ -48,6 +53,7 @@ type Preview = {
     error?: string;
   };
   hasSource: boolean;
+  commonConsumption: number;
   rows: {
     unitId: string;
     unitNumber: string;
@@ -71,10 +77,16 @@ export function BulkWaterManager({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
+  const [estimating, setEstimating] = useState<Record<string, boolean>>({});
 
   const [inputs, setInputs] = useState<Record<string, string>>(() => {
     const seed: Record<string, string> = {};
-    for (const m of [...(data.source ? [data.source] : []), ...data.units])
+    for (const m of [
+      ...(data.source ? [data.source] : []),
+      ...data.units,
+      ...data.common,
+    ])
       seed[m.id] =
         m.latest?.period === period ? String(m.latest.currentReading) : "";
     return seed;
@@ -110,6 +122,21 @@ export function BulkWaterManager({
     [data.units, inputs, period]
   );
 
+  const commonRows = useMemo(
+    () =>
+      data.common.map((m) => {
+        const prior = priorOf(m, period);
+        const raw = inputs[m.id];
+        const cur = raw === "" || raw == null ? null : Number(raw);
+        const consumption =
+          cur == null
+            ? null
+            : Math.max(0, Math.round((cur - prior) * 100) / 100);
+        return { ...m, prior, cur, consumption };
+      }),
+    [data.common, inputs, period]
+  );
+
   function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
     setError(null);
     start(async () => {
@@ -120,17 +147,25 @@ export function BulkWaterManager({
   }
 
   function onSaveReadings() {
-    const rows: { meterId: string; currentReading: number }[] = [];
+    const rows: {
+      meterId: string;
+      currentReading?: number;
+      estimated?: boolean;
+    }[] = [];
     if (data.source && inputs[data.source.id] !== "" && inputs[data.source.id] != null)
       rows.push({
         meterId: data.source.id,
         currentReading: Number(inputs[data.source.id]),
       });
-    for (const r of unitRows)
-      if (r.cur != null && !r.thisPeriodBilled)
-        rows.push({ meterId: r.id, currentReading: r.cur });
+    for (const r of unitRows) {
+      if (r.thisPeriodBilled) continue;
+      if (estimating[r.id]) rows.push({ meterId: r.id, estimated: true });
+      else if (r.cur != null) rows.push({ meterId: r.id, currentReading: r.cur });
+    }
+    for (const r of commonRows)
+      if (r.cur != null) rows.push({ meterId: r.id, currentReading: r.cur });
     if (rows.length === 0) {
-      setError("Enter at least one reading.");
+      setError("Enter a reading, or tick Estimate.");
       return;
     }
     setPreview(null);
@@ -301,8 +336,11 @@ export function BulkWaterManager({
                 </tr>
               </thead>
               <tbody>
-                {unitRows.map((r) => (
-                  <tr key={r.id} className="border-t border-border first:border-t-0">
+                {unitRows.map((r) => {
+                  const est = !!estimating[r.id];
+                  return (
+                  <Fragment key={r.id}>
+                  <tr className="border-t border-border first:border-t-0">
                     <td className="px-3 py-2 text-fg">
                       {r.unitNumber}
                       {r.serialNumber && (
@@ -319,18 +357,36 @@ export function BulkWaterManager({
                         type="number"
                         min={r.prior}
                         step="0.01"
-                        value={inputs[r.id] ?? ""}
-                        disabled={r.thisPeriodBilled}
+                        value={est ? "" : inputs[r.id] ?? ""}
+                        placeholder={est ? "estimate" : ""}
+                        disabled={r.thisPeriodBilled || est}
                         onChange={(e) =>
                           setInputs((c) => ({ ...c, [r.id]: e.target.value }))
                         }
                         className="w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand disabled:opacity-50"
                       />
+                      {!r.thisPeriodBilled && (
+                        <label className="ml-2 inline-flex items-center gap-1 text-xs text-fg-subtle">
+                          <input
+                            type="checkbox"
+                            checked={est}
+                            onChange={(e) =>
+                              setEstimating((c) => ({
+                                ...c,
+                                [r.id]: e.target.checked,
+                              }))
+                            }
+                          />
+                          est.
+                        </label>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {r.consumption == null
-                        ? "—"
-                        : formatConsumption(r.consumption)}
+                      {est
+                        ? "≈ avg"
+                        : r.consumption == null
+                          ? "—"
+                          : formatConsumption(r.consumption)}
                     </td>
                     <td className="px-3 py-2 text-right text-xs">
                       {r.low ? (
@@ -338,10 +394,87 @@ export function BulkWaterManager({
                           ⚠ below prior — excluded until fixed
                         </span>
                       ) : r.thisPeriodBilled ? (
-                        <span className="text-success-fg">billed</span>
+                        <span className="space-x-2">
+                          <span className="text-success-fg">
+                            billed{r.latest?.estimated ? " (est.)" : ""}
+                          </span>
+                          <button
+                            onClick={() =>
+                              setAdjustingId((c) =>
+                                c === r.latest!.readingId
+                                  ? null
+                                  : r.latest!.readingId
+                              )
+                            }
+                            className="text-brand-accent hover:underline"
+                          >
+                            {adjustingId === r.latest?.readingId
+                              ? "cancel"
+                              : "adjust"}
+                          </button>
+                        </span>
                       ) : r.latest?.period === period ? (
-                        <span className="text-fg-subtle">saved</span>
+                        <span className="text-fg-subtle">
+                          saved{r.latest.estimated ? " (est.)" : ""}
+                        </span>
                       ) : null}
+                    </td>
+                  </tr>
+                  {r.thisPeriodBilled && adjustingId === r.latest?.readingId && (
+                    <tr className="border-t border-border bg-surface-2">
+                      <td colSpan={5} className="px-3 py-3">
+                        <AdjustReadingForm
+                          readingId={r.latest.readingId}
+                          current={r.latest.consumption}
+                          pending={pending}
+                          run={run}
+                          onDone={() => setAdjustingId(null)}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* common-area meters */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-fg">Common-area meters</h2>
+        <p className="text-xs text-fg-muted">
+          Clubhouse, park, pump-house — read like sub-meters but not billed to a
+          unit. Their use is subtracted from system loss and funded by the HOA.
+        </p>
+        {commonRows.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+            <table className="w-full text-sm">
+              <tbody>
+                {commonRows.map((r) => (
+                  <tr key={r.id} className="border-t border-border first:border-t-0">
+                    <td className="px-3 py-2 text-fg">{r.label ?? r.unitNumber}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-fg-muted">
+                      prior {r.prior}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <input
+                        type="number"
+                        min={r.prior}
+                        step="0.01"
+                        value={inputs[r.id] ?? ""}
+                        onChange={(e) =>
+                          setInputs((c) => ({ ...c, [r.id]: e.target.value }))
+                        }
+                        className="w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {r.consumption == null
+                        ? "—"
+                        : formatConsumption(r.consumption)}
                     </td>
                   </tr>
                 ))}
@@ -349,6 +482,56 @@ export function BulkWaterManager({
             </table>
           </div>
         )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            e.currentTarget.reset();
+            run(() =>
+              addCommonMeter({
+                label: fd.get("label"),
+                serialNumber: fd.get("serialNumber"),
+                initialReading: fd.get("initialReading"),
+              })
+            );
+          }}
+          className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-surface p-3 text-sm"
+        >
+          <label className="block">
+            <span className="text-xs text-fg-subtle">Area</span>
+            <input
+              name="label"
+              required
+              placeholder="Clubhouse"
+              className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs text-fg-subtle">Serial (optional)</span>
+            <input
+              name="serialNumber"
+              className="mt-1 block rounded-md border border-border px-2 py-1 outline-none focus:border-brand"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs text-fg-subtle">Installed reading</span>
+            <input
+              name="initialReading"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue="0"
+              className="mt-1 block w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-md border border-border px-3 py-1.5 hover:bg-surface-2 disabled:opacity-50"
+          >
+            Add common meter
+          </button>
+        </form>
       </section>
 
       {/* utility bill + allocation */}
@@ -410,6 +593,14 @@ export function BulkWaterManager({
                     label="Σ sub-meters"
                     value={formatConsumption(preview.alloc.meteredConsumption)}
                   />
+                  {preview.commonConsumption > 0 && (
+                    <Stat
+                      label="Common area"
+                      value={`${formatConsumption(
+                        preview.alloc.commonConsumption
+                      )} · ${peso(preview.alloc.commonCost)} (HOA)`}
+                    />
+                  )}
                   <Stat
                     label="System loss"
                     value={`${formatConsumption(preview.alloc.systemLoss)} · ${preview.alloc.systemLossPct}%`}

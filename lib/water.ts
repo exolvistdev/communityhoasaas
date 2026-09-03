@@ -175,7 +175,8 @@ export type AllocateRow = {
 export type AllocateBulkResult = {
   effectiveRate: number; // ₱ per m³ = bulkAmount / sourceConsumption
   meteredConsumption: number; // Σ unit consumption
-  commonConsumption: number; // Σ common-area meters (0 until slice 4)
+  commonConsumption: number; // Σ common-area meters
+  commonCost: number; // commonConsumption × effectiveRate — always HOA-funded
   sourceConsumption: number; // master-meter m³ (falls back to metered + common)
   systemLoss: number; // source − metered − common, floored at 0
   systemLossPct: number;
@@ -189,11 +190,12 @@ export type AllocateBulkResult = {
  * Split a utility master-meter bill across the unit sub-meters for a period.
  *
  * DISTRIBUTE — each unit pays for its use plus a pro-rata share of system loss,
- * so residents collectively pay exactly `bulkAmount + Σ admin fee`. A rounding
- * remainder is nudged onto the largest-consumption unit for an exact match.
+ * so residents collectively pay `bulkAmount − commonCost + Σ admin fee` (the
+ * common-area draw is HOA-funded). A rounding remainder is nudged onto the
+ * largest-consumption unit for an exact match.
  *
  * ABSORB — each unit pays only for its metered use; `shortfall` is the loss cost
- * the HOA funds.
+ * the HOA funds (on top of `commonCost`).
  */
 export function allocateBulk(input: {
   bulkAmount: number;
@@ -216,6 +218,7 @@ export function allocateBulk(input: {
     effectiveRate: 0,
     meteredConsumption,
     commonConsumption,
+    commonCost: 0,
     sourceConsumption: 0,
     systemLoss: 0,
     systemLossPct: 0,
@@ -233,6 +236,7 @@ export function allocateBulk(input: {
       : r2(meteredConsumption + commonConsumption);
 
   const effectiveRate = r4(bulkAmount / Math.max(sourceConsumption, 0.001));
+  const commonCost = r2(commonConsumption * effectiveRate);
   const systemLoss = r2(
     Math.max(0, sourceConsumption - meteredConsumption - commonConsumption)
   );
@@ -254,8 +258,9 @@ export function allocateBulk(input: {
         amount: r2(billedConsumption * effectiveRate + adminFeeFlat),
       };
     });
-    // Remainder rule — force Σ amount == bulkAmount + n·fee exactly.
-    const target = r2(bulkAmount + units.length * adminFeeFlat);
+    // Remainder rule — force Σ amount == bulkAmount − commonCost + n·fee exactly
+    // (residents cover the bill minus the HOA-funded common-area draw).
+    const target = r2(bulkAmount - commonCost + units.length * adminFeeFlat);
     const remainder = r2(target - rows.reduce((s, r) => s + r.amount, 0));
     if (remainder !== 0 && rows.length) {
       let idx = 0;
@@ -282,6 +287,7 @@ export function allocateBulk(input: {
     effectiveRate,
     meteredConsumption,
     commonConsumption,
+    commonCost,
     sourceConsumption,
     systemLoss,
     systemLossPct,

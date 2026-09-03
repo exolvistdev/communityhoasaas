@@ -12,6 +12,7 @@ import {
   billBulk,
   previewBulk,
   retireMeter,
+  adjustBilledReading,
 } from "@/lib/water-billing";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
@@ -152,6 +153,39 @@ export async function addSourceMeter(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
+const commonMeterSchema = z.object({
+  label: z.string().trim().min(1, "Name the area").max(60),
+  serialNumber: z.string().trim().max(80).optional().or(z.literal("")),
+  initialReading: z.coerce.number().nonnegative().max(9_999_999).optional(),
+});
+
+/** Add a common-area meter (clubhouse, park) — read but not billed. */
+export async function addCommonMeter(input: unknown): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const parsed = commonMeterSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org } = await getCurrentOrgContext();
+  if (org.waterSource !== "EXTERNAL_BULK")
+    return { ok: false, error: "Common-area meters apply to bulk-water HOAs." };
+
+  await prisma.waterMeter.create({
+    data: {
+      orgId: org.id,
+      kind: "COMMON",
+      label: parsed.data.label,
+      serialNumber: parsed.data.serialNumber || null,
+      initialReading: parsed.data.initialReading ?? 0,
+      installedAt: new Date(),
+    },
+  });
+  await logAudit({ action: "meter.create", target: `${parsed.data.label} (common)` });
+  revalidate();
+  return { ok: true };
+}
+
 export async function removeMeter(meterId: string): Promise<Result> {
   const denied = await guard();
   if (denied) return denied;
@@ -184,7 +218,8 @@ export async function removeMeter(meterId: string): Promise<Result> {
 
 const readingRow = z.object({
   meterId: z.string().min(1),
-  currentReading: z.coerce.number().nonnegative(),
+  currentReading: z.coerce.number().nonnegative().optional(),
+  estimated: z.boolean().optional(),
 });
 
 const readingsSchema = z.object({
@@ -210,11 +245,13 @@ export async function saveReadings(input: unknown): Promise<Result<{ saved: numb
   let saved = 0;
   for (const row of parsed.data.rows) {
     if (!owned.has(row.meterId)) continue;
+    if (!row.estimated && row.currentReading == null) continue;
     await recordReading({
       meterId: row.meterId,
       period: parsed.data.period,
       readingDate,
-      currentReading: row.currentReading,
+      currentReading: row.estimated ? undefined : row.currentReading,
+      kind: row.estimated ? "ESTIMATED" : "ACTUAL",
     });
     saved++;
   }
@@ -264,6 +301,43 @@ const bulkSchema = z.object({
   bulkAmount: z.coerce.number().positive("Enter the utility bill amount"),
   billDate: z.string().min(1),
 });
+
+const adjustSchema = z.object({
+  readingId: z.string().min(1),
+  correctConsumption: z.coerce.number().nonnegative().max(9_999_999),
+  reason: z.string().trim().min(3, "Give a brief reason").max(300),
+});
+
+export async function adjustReadingAction(
+  input: unknown
+): Promise<Result<{ delta: number }>> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const parsed = adjustSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org, user } = await getCurrentOrgContext();
+  const reading = await prisma.meterReading.findFirst({
+    where: { id: parsed.data.readingId, orgId: org.id },
+    select: { id: true },
+  });
+  if (!reading) return { ok: false, error: "Reading not found" };
+
+  const res = await adjustBilledReading({
+    readingId: parsed.data.readingId,
+    correctConsumption: parsed.data.correctConsumption,
+    reason: parsed.data.reason,
+    actorId: user.id,
+  });
+  if (!res.ok) return res;
+
+  revalidatePath("/water");
+  revalidatePath("/billing");
+  revalidatePath("/statements");
+  revalidatePath("/dashboard");
+  return { ok: true, delta: res.delta };
+}
 
 const previewSchema = z.object({
   period: z.string().regex(PERIOD),

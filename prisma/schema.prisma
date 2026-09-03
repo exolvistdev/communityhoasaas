@@ -904,6 +904,12 @@ enum WaterLossPolicy {
 enum WaterMeterKind {
   UNIT   // a home's sub-meter
   SOURCE // the utility's master meter for the whole subdivision (EXTERNAL_BULK)
+  COMMON // a common-area meter (clubhouse, park) — read but not billed
+}
+
+enum ReadingKind {
+  ACTUAL
+  ESTIMATED // no physical reading — consumption is the trailing 3-actual average
 }
 
 model WaterMeter {
@@ -913,6 +919,7 @@ model WaterMeter {
   propertyId   String?  // null for a SOURCE meter
   property     Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   kind         WaterMeterKind @default(UNIT)
+  label        String?  // for a COMMON meter — "Clubhouse", "Park"
   serialNumber String?
   initialReading Decimal @default(0) @db.Decimal(12, 2) // installed baseline for a replacement meter
   installedAt  DateTime?
@@ -969,6 +976,7 @@ model MeterReading {
   currentReading Decimal  @db.Decimal(12, 2)
   consumption    Decimal  @db.Decimal(12, 2)
   amount         Decimal  @db.Decimal(12, 2)
+  kind           ReadingKind @default(ACTUAL)
   flag           String?  // null | "low" — current reading below prior (meter rollback / mis-read)
   invoiceId      String?  @unique
   invoice        Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)

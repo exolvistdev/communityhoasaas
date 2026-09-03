@@ -77,7 +77,14 @@ export default async function PortalWaterPage() {
                     key={r.period}
                     className="border-t border-border align-top first:border-t-0"
                   >
-                    <td className="px-3 py-2 text-fg">{periodLabel(r.period)}</td>
+                    <td className="px-3 py-2 text-fg">
+                      {periodLabel(r.period)}
+                      {r.estimated && (
+                        <span className="ml-1.5 text-xs text-fg-subtle">
+                          (estimated)
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-right tabular-nums text-fg-muted">
                       {r.currentReading}
                     </td>

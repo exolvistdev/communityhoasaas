@@ -4,6 +4,7 @@ import {
   postWaterChargeIssued,
   postCreditApplied,
   postBillIssued,
+  postManualEntry,
 } from "@/lib/ledger";
 import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
@@ -38,63 +39,74 @@ export function waterConfig(org: {
 
 export type MeterRow = {
   id: string;
-  kind: "UNIT" | "SOURCE";
+  kind: "UNIT" | "SOURCE" | "COMMON";
+  label: string | null;
   propertyId: string | null;
   unitNumber: string | null;
   archived: boolean;
   serialNumber: string | null;
   initialReading: number;
   latest: {
+    readingId: string;
     period: string;
     currentReading: number;
     consumption: number;
     amount: number;
     billed: boolean;
     flag: string | null;
+    estimated: boolean;
   } | null;
 };
 
 function meterRow(m: {
   id: string;
-  kind: "UNIT" | "SOURCE";
+  kind: "UNIT" | "SOURCE" | "COMMON";
+  label: string | null;
   propertyId: string | null;
   serialNumber: string | null;
   initialReading: unknown;
   property: { unitNumber: string; archivedAt: Date | null } | null;
   readings: {
+    id: string;
     period: string;
     currentReading: unknown;
     consumption: unknown;
     amount: unknown;
     invoiceId: string | null;
     flag: string | null;
+    kind: "ACTUAL" | "ESTIMATED";
   }[];
 }): MeterRow {
   return {
     id: m.id,
     kind: m.kind,
+    label: m.label,
     propertyId: m.propertyId,
-    unitNumber: m.property?.unitNumber ?? null,
+    unitNumber: m.property?.unitNumber ?? m.label ?? null,
     archived: m.property?.archivedAt != null,
     serialNumber: m.serialNumber,
     initialReading: Number(m.initialReading),
     latest: m.readings[0]
       ? {
+          readingId: m.readings[0].id,
           period: m.readings[0].period,
           currentReading: Number(m.readings[0].currentReading),
           consumption: Number(m.readings[0].consumption),
           amount: Number(m.readings[0].amount),
           billed: m.readings[0].invoiceId != null,
           flag: m.readings[0].flag,
+          estimated: m.readings[0].kind === "ESTIMATED",
         }
       : null,
   };
 }
 
 /** Active meters + their latest reading, for the admin water page. */
-export async function metersWithLatest(
-  orgId: string
-): Promise<{ source: MeterRow | null; units: MeterRow[] }> {
+export async function metersWithLatest(orgId: string): Promise<{
+  source: MeterRow | null;
+  units: MeterRow[];
+  common: MeterRow[];
+}> {
   const meters = await prisma.waterMeter.findMany({
     where: { orgId, retiredAt: null },
     include: {
@@ -103,11 +115,30 @@ export async function metersWithLatest(
     },
   });
   const rows = meters.map(meterRow);
-  const units = rows
-    .filter((r) => r.kind === "UNIT")
-    .sort((a, b) => (a.unitNumber ?? "").localeCompare(b.unitNumber ?? ""));
-  const source = rows.find((r) => r.kind === "SOURCE") ?? null;
-  return { source, units };
+  const byName = (a: MeterRow, b: MeterRow) =>
+    (a.unitNumber ?? "").localeCompare(b.unitNumber ?? "");
+  return {
+    source: rows.find((r) => r.kind === "SOURCE") ?? null,
+    units: rows.filter((r) => r.kind === "UNIT").sort(byName),
+    common: rows.filter((r) => r.kind === "COMMON").sort(byName),
+  };
+}
+
+/** Trailing 3-ACTUAL-reading average consumption for a meter (0 when none). */
+async function estimateConsumption(
+  meterId: string,
+  period: string
+): Promise<number> {
+  const actuals = await prisma.meterReading.findMany({
+    where: { meterId, period: { lt: period }, kind: "ACTUAL" },
+    orderBy: { period: "desc" },
+    take: 3,
+    select: { consumption: true },
+  });
+  if (actuals.length === 0) return 0;
+  return r2(
+    actuals.reduce((s, r) => s + Number(r.consumption), 0) / actuals.length
+  );
 }
 
 /**
@@ -119,7 +150,8 @@ export async function recordReading(input: {
   meterId: string;
   period: string;
   readingDate: Date;
-  currentReading: number;
+  currentReading?: number;
+  kind?: "ACTUAL" | "ESTIMATED";
   priorOverride?: number | null;
   note?: string | null;
 }) {
@@ -128,6 +160,7 @@ export async function recordReading(input: {
     include: { org: true },
   });
   const cfg = waterConfig(meter.org);
+  const kind = input.kind ?? "ACTUAL";
 
   const last = await prisma.meterReading.findFirst({
     where: { meterId: meter.id, period: { lt: input.period } },
@@ -140,40 +173,48 @@ export async function recordReading(input: {
       : last
         ? Number(last.currentReading)
         : Number(meter.initialReading);
-  const consumption = r2(Math.max(0, input.currentReading - prior));
-  const flag = input.currentReading < prior ? "low" : null;
 
-  // A SOURCE meter and every meter on an EXTERNAL_BULK org carry no tariff —
-  // billing comes from `billBulk` splitting the utility bill.
+  let currentReading: number;
+  let consumption: number;
+  let flag: string | null = null;
+
+  if (kind === "ESTIMATED") {
+    // No physical reading — carry the trailing 3-actual average forward. The
+    // next ACTUAL reading trues up automatically (its consumption is measured
+    // against this estimated currentReading).
+    consumption = await estimateConsumption(meter.id, input.period);
+    currentReading = r2(prior + consumption);
+  } else {
+    if (input.currentReading == null)
+      throw new Error("A meter reading value is required.");
+    currentReading = input.currentReading;
+    consumption = r2(Math.max(0, currentReading - prior));
+    flag = currentReading < prior ? "low" : null;
+  }
+
+  // A SOURCE / COMMON meter and every meter on an EXTERNAL_BULK org carry no
+  // tariff — billing comes from `billBulk` splitting the utility bill.
   const tariffApplies =
     meter.kind === "UNIT" && meter.org.waterSource !== "EXTERNAL_BULK";
   const amount = tariffApplies
     ? computeWaterCharge(consumption, cfg.bands, cfg.serviceCharge)
     : 0;
 
+  const data = {
+    readingDate: input.readingDate,
+    priorReading: prior,
+    currentReading,
+    consumption,
+    amount,
+    kind,
+    flag,
+    note: input.note ?? null,
+  };
+
   return prisma.meterReading.upsert({
     where: { meterId_period: { meterId: meter.id, period: input.period } },
-    create: {
-      meterId: meter.id,
-      orgId: meter.orgId,
-      period: input.period,
-      readingDate: input.readingDate,
-      priorReading: prior,
-      currentReading: input.currentReading,
-      consumption,
-      amount,
-      flag,
-      note: input.note ?? null,
-    },
-    update: {
-      readingDate: input.readingDate,
-      priorReading: prior,
-      currentReading: input.currentReading,
-      consumption,
-      amount,
-      flag,
-      note: input.note ?? null,
-    },
+    create: { meterId: meter.id, orgId: meter.orgId, period: input.period, ...data },
+    update: data,
   });
 }
 
@@ -193,6 +234,7 @@ export type ResidentWaterRow = {
   amount: number;
   status: string | null; // linked invoice status, null = not billed
   flag: string | null;
+  estimated: boolean;
   breakdown: string | null;
 };
 
@@ -227,6 +269,7 @@ export async function residentWaterHistory(
           consumption: true,
           amount: true,
           flag: true,
+          kind: true,
           invoice: { select: { status: true } },
         },
       },
@@ -282,6 +325,7 @@ export async function residentWaterHistory(
         currentReading: Number(r.currentReading),
         consumption,
         amount: Number(r.amount),
+        estimated: r.kind === "ESTIMATED",
         status: r.invoice?.status ?? null,
         flag: r.flag,
         breakdown,
@@ -293,11 +337,16 @@ export async function residentWaterHistory(
 }
 
 /** INTERNAL invoice memo — consumption + a compact tier breakdown. */
-function waterMemo(consumption: number, period: string, cfg: WaterConfig): string {
+function waterMemo(
+  consumption: number,
+  period: string,
+  cfg: WaterConfig,
+  estimated = false
+): string {
   const bd = bandBreakdownText(consumption, cfg.bands, cfg.serviceCharge);
-  return `Water — ${formatConsumption(consumption)} (${periodLabel(period)})${
-    bd ? ` · ${bd}` : ""
-  }`;
+  return `Water — ${formatConsumption(consumption)} (${periodLabel(period)}${
+    estimated ? ", estimated" : ""
+  })${bd ? ` · ${bd}` : ""}`;
 }
 
 /** Count + total of this period's readings that haven't been billed yet. */
@@ -359,7 +408,12 @@ export async function billReadings(
           period: null,
           dueDate,
           status: "SENT",
-          memo: waterMemo(Number(reading.consumption), period, cfg),
+          memo: waterMemo(
+            Number(reading.consumption),
+            period,
+            cfg,
+            reading.kind === "ESTIMATED"
+          ),
         },
       });
       await postWaterChargeIssued(invoice.id);
@@ -453,11 +507,17 @@ export async function previewBulk(
   const flagged = readings.filter(
     (r) => r.meter.kind === "UNIT" && r.flag === "low"
   );
+  const commonConsumption = r2(
+    readings
+      .filter((r) => r.meter.kind === "COMMON")
+      .reduce((s, r) => s + Number(r.consumption), 0)
+  );
 
   const alloc = allocateBulk({
     bulkAmount,
     sourceConsumption: sourceReading ? Number(sourceReading.consumption) : null,
     units: billable.map((r) => ({ id: r.id, consumption: Number(r.consumption) })),
+    commonConsumption,
     lossPolicy: org.waterLossPolicy,
     adminFeeFlat: Number(org.waterAdminFeeFlat ?? 0),
   });
@@ -470,6 +530,7 @@ export async function previewBulk(
     alloc,
     hasSource: sourceReading != null,
     sourceConsumption: sourceReading ? Number(sourceReading.consumption) : null,
+    commonConsumption,
     rows: alloc.rows.map((row) => ({
       ...row,
       unitNumber: unitLabel.get(row.unitId) ?? "—",
@@ -485,7 +546,7 @@ export async function previewBulk(
 
 /** Everything the EXTERNAL_BULK water page needs. */
 export async function bulkWaterData(orgId: string, period: string) {
-  const [{ source, units }, org, runs, unbilledForPeriod, existingRun] =
+  const [{ source, units, common }, org, runs, unbilledForPeriod, existingRun] =
     await Promise.all([
       metersWithLatest(orgId),
       prisma.organization.findUniqueOrThrow({ where: { id: orgId } }),
@@ -510,6 +571,7 @@ export async function bulkWaterData(orgId: string, period: string) {
   return {
     source,
     units,
+    common,
     period,
     unbilledForPeriod,
     alreadyBilled: existingRun != null,
@@ -537,12 +599,13 @@ function bulkMemo(
   consumption: number,
   period: string,
   rate: number,
-  adminFeeFlat: number
+  adminFeeFlat: number,
+  estimated = false
 ): string {
   const fee = adminFeeFlat > 0 ? ` + ₱${r2(adminFeeFlat)} admin` : "";
-  return `Water — ${formatConsumption(consumption)} (${periodLabel(
-    period
-  )}) · ₱${rate.toFixed(2)}/m³${fee}`;
+  return `Water — ${formatConsumption(consumption)} (${periodLabel(period)}${
+    estimated ? ", estimated" : ""
+  }) · ₱${rate.toFixed(2)}/m³${fee}`;
 }
 
 type BillBulkResult =
@@ -606,6 +669,11 @@ export async function billBulk(input: {
   const unitReadings = readings.filter(
     (r) => r.meter.kind === "UNIT" && r.flag !== "low" && r.meter.property
   );
+  const commonConsumption = r2(
+    readings
+      .filter((r) => r.meter.kind === "COMMON")
+      .reduce((s, r) => s + Number(r.consumption), 0)
+  );
 
   const adminFeeFlat = Number(org.waterAdminFeeFlat ?? 0);
   const alloc = allocateBulk({
@@ -615,6 +683,7 @@ export async function billBulk(input: {
       id: r.id,
       consumption: Number(r.consumption),
     })),
+    commonConsumption,
     lossPolicy: org.waterLossPolicy,
     adminFeeFlat,
   });
@@ -657,7 +726,8 @@ export async function billBulk(input: {
             Number(reading.consumption),
             input.period,
             alloc.effectiveRate,
-            adminFeeFlat
+            adminFeeFlat,
+            reading.kind === "ESTIMATED"
           ),
         },
       });
@@ -736,4 +806,105 @@ export async function billBulk(input: {
     }).catch(() => {});
 
   return { ok: true, created, billId: bill.id, residentTotal: alloc.residentTotal };
+}
+
+/* ─────────────────── correct a wrongly-billed reading ─────────────── */
+
+type AdjustResult =
+  | { ok: true; delta: number }
+  | { ok: false; error: string };
+
+/**
+ * Correct a reading that was already billed. Recomputes the charge for
+ * `correctConsumption` and settles the difference: an over-bill becomes resident
+ * credit (DR 4400 / CR 2100); an under-bill becomes a small extra invoice.
+ */
+export async function adjustBilledReading(input: {
+  readingId: string;
+  correctConsumption: number;
+  reason: string;
+  actorId: string;
+}): Promise<AdjustResult> {
+  const reading = await prisma.meterReading.findUnique({
+    where: { id: input.readingId },
+    include: { meter: { include: { org: true, property: true } }, invoice: true },
+  });
+  if (!reading || !reading.invoiceId || !reading.invoice)
+    return { ok: false, error: "That reading hasn't been billed yet." };
+  if (reading.invoice.status === "VOID")
+    return { ok: false, error: "The linked invoice was voided." };
+
+  const org = reading.meter.org;
+  const property = reading.meter.property;
+  if (!property) return { ok: false, error: "This meter isn't on a unit." };
+
+  const correct = r2(Math.max(0, input.correctConsumption));
+  const billedAmount = Number(reading.amount);
+
+  let correctAmount: number;
+  if (org.waterSource === "EXTERNAL_BULK") {
+    const run = await prisma.waterAllocationRun.findUnique({
+      where: { orgId_period: { orgId: org.id, period: reading.period } },
+    });
+    if (!run)
+      return { ok: false, error: "No allocation run on file for that period." };
+    const rate = Number(run.effectiveRate);
+    const fee = Number(run.adminFeeFlat);
+    const metered = Number(run.meteredConsumption);
+    const lossShare =
+      run.lossPolicy === "DISTRIBUTE" && metered > 0
+        ? (Number(run.systemLoss) * correct) / metered
+        : 0;
+    correctAmount = r2((correct + lossShare) * rate + fee);
+  } else {
+    const cfg = waterConfig(org);
+    correctAmount = computeWaterCharge(correct, cfg.bands, cfg.serviceCharge);
+  }
+
+  const delta = r2(correctAmount - billedAmount);
+  const [year, month] = reading.period.split("-").map(Number);
+  const dueDate = new Date(year, month - 1, org.billingDueDay);
+  const label = `${property.unitNumber} · ${periodLabel(reading.period)}`;
+
+  if (delta < -0.005) {
+    const refund = r2(-delta);
+    await prisma.property.update({
+      where: { id: property.id },
+      data: { creditBalance: { increment: refund } },
+    });
+    await postManualEntry({
+      orgId: org.id,
+      entryDate: new Date(),
+      memo: `Water adjustment — ${label}`,
+      createdById: input.actorId,
+      lines: [
+        { code: "4400", debit: refund, credit: 0 },
+        { code: "2100", debit: 0, credit: refund },
+      ],
+    });
+  } else if (delta > 0.005) {
+    const inv = await prisma.invoice.create({
+      data: {
+        propertyId: property.id,
+        amount: delta,
+        period: null,
+        dueDate,
+        status: "SENT",
+        memo: `Water adjustment — ${label}`,
+      },
+    });
+    await postWaterChargeIssued(inv.id);
+  }
+
+  await prisma.meterReading.update({
+    where: { id: reading.id },
+    data: { consumption: correct, amount: correctAmount },
+  });
+  await logAudit({
+    action: "water.adjust",
+    target: label,
+    detail: `${input.reason} · Δ ₱${delta}`,
+  });
+
+  return { ok: true, delta };
 }

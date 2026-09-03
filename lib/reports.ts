@@ -970,7 +970,7 @@ export async function waterReport(orgId: string, range: ReportRange) {
   const monthKeys = months.map((m) => m.key);
   const lastKey = monthKeys[monthKeys.length - 1];
 
-  const [org, meters, runs] = await Promise.all([
+  const [org, meters, commonMeters, runs] = await Promise.all([
     prisma.organization.findUniqueOrThrow({
       where: { id: orgId },
       select: { waterSource: true },
@@ -996,6 +996,17 @@ export async function waterReport(orgId: string, range: ReportRange) {
         },
       },
     }),
+    prisma.waterMeter.findMany({
+      where: { orgId, kind: "COMMON", retiredAt: null },
+      select: {
+        id: true,
+        label: true,
+        readings: {
+          where: { period: { in: monthKeys } },
+          select: { consumption: true },
+        },
+      },
+    }),
     prisma.waterAllocationRun.findMany({
       where: { orgId, period: { in: monthKeys } },
       select: {
@@ -1006,6 +1017,13 @@ export async function waterReport(orgId: string, range: ReportRange) {
       },
     }),
   ]);
+
+  const common = commonMeters.map((m) => ({
+    label: m.label ?? "Common area",
+    rangeConsumption: round2(
+      m.readings.reduce((s, r) => s + Number(r.consumption), 0)
+    ),
+  }));
 
   const rows: WaterReportRow[] = meters
     .filter((m) => m.property)
@@ -1069,6 +1087,7 @@ export async function waterReport(orgId: string, range: ReportRange) {
     to: range.to,
     mode: org.waterSource,
     rows,
+    common,
     monthly,
     topConsumers,
     totals: {
@@ -1076,6 +1095,7 @@ export async function waterReport(orgId: string, range: ReportRange) {
       billed,
       bulkCost,
       netPosition: bulkCost == null ? null : round2(billed - bulkCost),
+      commonConsumption: round2(common.reduce((s, c) => s + c.rangeConsumption, 0)),
     },
   };
 }
