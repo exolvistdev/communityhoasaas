@@ -55,6 +55,12 @@ const ACTION_LABEL: Record<string, string> = {
   "violation.status": "Updated a violation's status",
   "violation.fine": "Served a fine notice",
   "violation.delete": "Deleted a violation",
+  "vendor.create": "Added a vendor",
+  "vendor.update": "Updated a vendor",
+  "vendor.archive": "Archived / restored a vendor",
+  "bill.record": "Recorded a bill",
+  "bill.pay": "Paid a bill",
+  "bill.void": "Voided a bill",
 };
 
 const fmt = (d: Date) =>

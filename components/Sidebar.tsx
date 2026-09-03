@@ -11,6 +11,7 @@ import {
   CheckCheck,
   BookOpen,
   FileBarChart,
+  Truck,
   ShieldCheck,
   Megaphone,
   CalendarDays,
@@ -50,6 +51,12 @@ const GROUPS: Group[] = [
     items: [
       { href: "/billing", label: "Billing", icon: Receipt },
       { href: "/reconciliation", label: "Reconciliation", icon: CheckCheck },
+      {
+        href: "/bills",
+        label: "Vendors & bills",
+        icon: Truck,
+        show: (r) => can(r, "vendor:manage"),
+      },
       { href: "/ledger", label: "Ledger", icon: BookOpen },
       { href: "/reports", label: "Reports", icon: FileBarChart },
     ],

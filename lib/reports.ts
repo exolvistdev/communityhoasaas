@@ -80,6 +80,86 @@ export async function agingSnapshot(orgId: string, asOf: Date) {
   return { asOf, units, totals, outstanding, count: units.length };
 }
 
+/* ── accounts-payable aging ───────────────────────────────────────── */
+
+export type PayablesVendor = {
+  vendorId: string;
+  vendorName: string;
+  outstanding: number;
+  aging: Aging;
+};
+
+const emptyAging = (): Aging => ({
+  current: 0,
+  d1_30: 0,
+  d31_60: 0,
+  d61_90: 0,
+  d90plus: 0,
+});
+
+/** Bucket a bill's remaining balance by how far past due it is (current = not
+ *  yet due). Mirrors the AR aging buckets. */
+function agingBucket(dueDate: Date, asOf: Date): keyof Aging {
+  const age = Math.floor((asOf.getTime() - dueDate.getTime()) / 86_400_000);
+  if (age <= 0) return "current";
+  if (age <= 30) return "d1_30";
+  if (age <= 60) return "d31_60";
+  if (age <= 90) return "d61_90";
+  return "d90plus";
+}
+
+/** Org-wide unpaid bills, aged by due date and grouped by vendor, as of a date. */
+export async function payablesAging(orgId: string, asOf: Date) {
+  const bills = await prisma.bill.findMany({
+    where: {
+      orgId,
+      status: { not: "VOID" },
+      billDate: { lte: asOf },
+    },
+    select: {
+      amount: true,
+      dueDate: true,
+      vendor: { select: { id: true, name: true } },
+      payments: {
+        where: { paidAt: { lte: asOf } },
+        select: { amount: true },
+      },
+    },
+  });
+
+  const byVendor = new Map<string, PayablesVendor>();
+  const totals = emptyAging();
+  let outstanding = 0;
+
+  for (const b of bills) {
+    const paid = b.payments.reduce((s, p) => s + Number(p.amount), 0);
+    const remaining = Math.round((Number(b.amount) - paid) * 100) / 100;
+    if (remaining <= 0.005) continue;
+
+    const bucket = agingBucket(b.dueDate, asOf);
+    const row =
+      byVendor.get(b.vendor.id) ??
+      {
+        vendorId: b.vendor.id,
+        vendorName: b.vendor.name,
+        outstanding: 0,
+        aging: emptyAging(),
+      };
+    row.outstanding += remaining;
+    row.aging[bucket] += remaining;
+    byVendor.set(b.vendor.id, row);
+
+    totals[bucket] += remaining;
+    outstanding += remaining;
+  }
+
+  const vendors = [...byVendor.values()].sort(
+    (a, b) => b.outstanding - a.outstanding
+  );
+
+  return { asOf, vendors, totals, outstanding, count: vendors.length };
+}
+
 /* ── collections summary ──────────────────────────────────────────── */
 
 async function arBalanceAsOf(orgId: string, asOf: Date) {
@@ -159,7 +239,7 @@ export async function collectionsSummary(
 /* ── board pack ───────────────────────────────────────────────────── */
 
 export async function boardPack(orgId: string, range: ReportRange) {
-  const [org, income, balance, aging, collections, tb, documents] =
+  const [org, income, balance, aging, payables, collections, tb, documents] =
     await Promise.all([
       prisma.organization.findUniqueOrThrow({
         where: { id: orgId },
@@ -168,6 +248,7 @@ export async function boardPack(orgId: string, range: ReportRange) {
       incomeStatement(orgId, { from: range.from, to: range.to }),
       balanceSheet(orgId, range.to),
       agingSnapshot(orgId, range.to),
+      payablesAging(orgId, range.to),
       collectionsSummary(orgId, range),
       trialBalance(orgId, { to: range.to }),
       prisma.document.findMany({
@@ -181,5 +262,15 @@ export async function boardPack(orgId: string, range: ReportRange) {
       }),
     ]);
 
-  return { org, range, income, balance, aging, collections, trialBalance: tb, documents };
+  return {
+    org,
+    range,
+    income,
+    balance,
+    aging,
+    payables,
+    collections,
+    trialBalance: tb,
+    documents,
+  };
 }

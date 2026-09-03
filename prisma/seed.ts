@@ -6,6 +6,8 @@ import {
   postManualEntry,
   postWriteOff,
   postFineIssued,
+  postBillIssued,
+  postBillPayment,
 } from "../lib/ledger";
 import { currentPeriod } from "../lib/format";
 import { generateGatePassCode } from "../lib/gatepass";
@@ -225,6 +227,9 @@ async function resetDemoOrg() {
   await prisma.refund.deleteMany({ where: { orgId } });
   await prisma.fineNotice.deleteMany({ where: { orgId } });
   await prisma.violation.deleteMany({ where: { orgId } });
+  await prisma.billPayment.deleteMany({ where: { bill: { orgId } } });
+  await prisma.bill.deleteMany({ where: { orgId } });
+  await prisma.vendor.deleteMany({ where: { orgId } });
   await prisma.ownershipTransfer.deleteMany({ where: { orgId } });
   await prisma.auditEvent.deleteMany({ where: { orgId } });
   await prisma.announcement.deleteMany({ where: { orgId } });
@@ -1135,6 +1140,106 @@ async function main() {
       resolvedAt: ago(20),
       resolutionNote: "Tenant switched to the scheduled private hauler.",
     },
+  });
+
+  // ── Vendors & bills (accounts payable) ───────────────────────────
+  const security = await prisma.vendor.create({
+    data: {
+      orgId: org.id,
+      name: "Metro Guard Security Services",
+      contactName: "Rick Ocampo",
+      email: "billing@metroguard.ph",
+      phone: "0917 222 0100",
+    },
+  });
+  const landscaping = await prisma.vendor.create({
+    data: {
+      orgId: org.id,
+      name: "GreenScape Landscaping",
+      contactName: "Malou Fernandez",
+      phone: "0918 444 0200",
+      notes: "Weekly common-area maintenance; invoices monthly.",
+    },
+  });
+
+  const mkBill = async (
+    vendorId: string,
+    data: {
+      description: string;
+      amount: number;
+      code: string;
+      billDaysAgo: number;
+      dueInDays: number; // relative to bill date
+      billNumber?: string;
+    }
+  ) => {
+    const billDate = ago(data.billDaysAgo);
+    const bill = await prisma.bill.create({
+      data: {
+        orgId: org.id,
+        vendorId,
+        billNumber: data.billNumber ?? null,
+        description: data.description,
+        amount: data.amount,
+        billDate,
+        dueDate: new Date(billDate.getTime() + data.dueInDays * 24 * 60 * 60 * 1000),
+        status: "UNPAID",
+        expenseAccountCode: data.code,
+        createdById: admin.id,
+      },
+    });
+    await postBillIssued(bill.id);
+    return bill;
+  };
+
+  const paidBill = await mkBill(security.id, {
+    description: "August guard services (3 posts)",
+    amount: 12000,
+    code: "5300",
+    billDaysAgo: 35,
+    dueInDays: 15,
+    billNumber: "MG-2608",
+  });
+  {
+    const bp = await prisma.billPayment.create({
+      data: {
+        billId: paidBill.id,
+        amount: 12000,
+        method: "BANK_TRANSFER",
+        reference: "BDO-778120",
+        paidAt: ago(18),
+        recordedById: admin.id,
+      },
+    });
+    await postBillPayment(bp.id);
+  }
+
+  const partialBill = await mkBill(landscaping.id, {
+    description: "August common-area landscaping",
+    amount: 4500,
+    code: "5000",
+    billDaysAgo: 30,
+    dueInDays: 15, // due ~15 days ago → overdue
+  });
+  {
+    const bp = await prisma.billPayment.create({
+      data: {
+        billId: partialBill.id,
+        amount: 2000,
+        method: "GCASH",
+        paidAt: ago(10),
+        recordedById: admin.id,
+      },
+    });
+    await postBillPayment(bp.id);
+  }
+
+  await mkBill(landscaping.id, {
+    description: "September common-area landscaping",
+    amount: 4500,
+    code: "5000",
+    billDaysAgo: 3,
+    dueInDays: 15,
   });
 
   // ── Notifications ─────────────────────────────────────────────────

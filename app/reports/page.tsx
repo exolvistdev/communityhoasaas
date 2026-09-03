@@ -5,6 +5,7 @@ import {
   AlarmClock,
   Wallet,
   Layers,
+  Truck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { requireStaff } from "@/lib/rbac";
@@ -120,6 +121,12 @@ export default async function ReportsIndex({
           icon={AlarmClock}
           title="Receivables aging"
           sub="Delinquency by unit and age bucket"
+        />
+        <ReportCard
+          href={`/reports/payables?${qs}`}
+          icon={Truck}
+          title="Payables aging"
+          sub="Unpaid vendor bills by age bucket"
         />
         <ReportCard
           href={`/reports/collections?${qs}`}

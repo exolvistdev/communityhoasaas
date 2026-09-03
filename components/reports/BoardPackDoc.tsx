@@ -2,6 +2,7 @@ import type { boardPack } from "@/lib/reports";
 import { IncomeStatementDoc } from "./IncomeStatementDoc";
 import { BalanceSheetDoc } from "./BalanceSheetDoc";
 import { AgingReportDoc } from "./AgingReportDoc";
+import { PayablesDoc } from "./PayablesDoc";
 import { CollectionsDoc } from "./CollectionsDoc";
 import { fmtDate } from "./shared";
 
@@ -32,6 +33,7 @@ export function BoardPackDoc({ data }: { data: Data }) {
           <li>Statement of Income &amp; Expenses</li>
           <li>Statement of Financial Position</li>
           <li>Accounts Receivable Aging</li>
+          <li>Accounts Payable Aging</li>
           <li>Collections Summary</li>
           {data.documents.length > 0 && <li>Supporting documents</li>}
         </ol>
@@ -45,6 +47,9 @@ export function BoardPackDoc({ data }: { data: Data }) {
       </div>
       <div className="break-after-page">
         <AgingReportDoc orgName={org.name} data={data.aging} />
+      </div>
+      <div className="break-after-page">
+        <PayablesDoc orgName={org.name} data={data.payables} />
       </div>
       <div className={data.documents.length > 0 ? "break-after-page" : ""}>
         <CollectionsDoc orgName={org.name} data={data.collections} />

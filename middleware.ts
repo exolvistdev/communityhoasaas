@@ -11,6 +11,8 @@ const PROTECTED = [
   "/statements",
   "/gate-passes",
   "/announcements",
+  "/vendors",
+  "/bills",
   "/violations",
   "/violation-letters",
   "/violation-photos",

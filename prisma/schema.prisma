@@ -89,6 +89,8 @@ model Organization {
   refunds             Refund[]
   violations          Violation[]
   fineNotices         FineNotice[]
+  vendors             Vendor[]
+  bills               Bill[]
 
   @@map("organizations")
 }
@@ -174,6 +176,8 @@ model User {
   refundsIssued         Refund[]              @relation("RefundIssuedBy")
   violationsReported    Violation[]           @relation("ViolationReporter")
   finesIssued           FineNotice[]          @relation("FineIssuer")
+  billsCreated          Bill[]                @relation("BillCreatedBy")
+  billPaymentsRecorded  BillPayment[]         @relation("BillPaymentRecordedBy")
 
   @@index([orgId])
   @@map("users")
@@ -541,6 +545,81 @@ model FineNotice {
 }
 
 // ─────────────────────────────────────────────
+// Vendors & bills (accounts payable)
+// ─────────────────────────────────────────────
+
+enum BillStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  VOID
+}
+
+model Vendor {
+  id          String   @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  notes       String?
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  bills       Bill[]
+
+  @@index([orgId])
+  @@map("vendors")
+}
+
+// A bill owed to a vendor. Issuing it books the expense and an A/P liability
+// (DR expenseAccountCode / CR 2000); paying it draws down A/P and cash.
+model Bill {
+  id                 String   @id @default(uuid())
+  orgId              String
+  org                Organization @relation(fields: [orgId], references: [id])
+  vendorId           String
+  vendor             Vendor @relation(fields: [vendorId], references: [id])
+  billNumber         String?
+  description        String
+  amount             Decimal  @db.Decimal(12, 2)
+  billDate           DateTime
+  dueDate            DateTime
+  status             BillStatus @default(UNPAID)
+  expenseAccountCode String   // an EXPENSE account code, e.g. "5100"
+  createdById        String?
+  createdBy          User?    @relation("BillCreatedBy", fields: [createdById], references: [id])
+  voidedAt           DateTime?
+  voidReason         String?
+  createdAt          DateTime @default(now())
+
+  payments     BillPayment[]
+  journalEntry JournalEntry?
+
+  @@index([orgId, status])
+  @@index([vendorId])
+  @@map("bills")
+}
+
+model BillPayment {
+  id           String   @id @default(uuid())
+  billId       String
+  bill         Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  amount       Decimal  @db.Decimal(12, 2)
+  method       PaymentMethod
+  reference    String?
+  paidAt       DateTime @default(now())
+  recordedById String?
+  recordedBy   User?    @relation("BillPaymentRecordedBy", fields: [recordedById], references: [id])
+
+  journalEntry JournalEntry?
+
+  @@index([billId])
+  @@map("bill_payments")
+}
+
+// ─────────────────────────────────────────────
 // Double-entry ledger
 // ─────────────────────────────────────────────
 
@@ -575,11 +654,15 @@ model JournalEntry {
   orgId      String
   org        Organization @relation(fields: [orgId], references: [id])
   entryDate  DateTime @default(now()) // when the transaction is dated (not row creation)
-  sourceType String   // "invoice" | "invoice_void" | "payment" | "manual" | "late_fee" | "write_off"
+  sourceType String   // "invoice" | "invoice_void" | "payment" | "manual" | "late_fee" | "write_off" | "fine" | "credit_applied" | "refund" | "void_to_credit" | "bill" | "bill_payment" | "bill_void"
   invoiceId  String?  @unique
   invoice    Invoice? @relation(fields: [invoiceId], references: [id])
   paymentId  String?  @unique
   payment    Payment? @relation(fields: [paymentId], references: [id])
+  billId     String?  @unique
+  bill       Bill?    @relation(fields: [billId], references: [id])
+  billPaymentId String? @unique
+  billPayment   BillPayment? @relation(fields: [billPaymentId], references: [id])
   memo       String?
   createdById String? // staff member who posted a manual entry
   createdBy   User?   @relation("JournalEntryCreator", fields: [createdById], references: [id])

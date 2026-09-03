@@ -25,8 +25,9 @@ walkthrough of the admin app.
 | Billing — bulk invoice generation, record payment (auto-split oldest-first across open invoices), overpayment → resident credit auto-applied to the next dues, refund a credit balance, void (a paid invoice's money moves to credit), Statement of Account (single + bulk + CSV) | ✅ |
 | Reconciliation — confirm/reject homeowner-submitted payments (allocated on confirm) | ✅ |
 | Ledger — trial balance (any date range), journal, chart of accounts (~17 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
+| Vendors & bills (accounts payable) — vendor directory, record a bill (books the expense + a 2000 A/P liability), pay it in full or part, void, an AP-aging report by vendor; the balance sheet shows real payables | ✅ |
 | Violations & fines — log a rule violation (category, photos, cure-by date), track it to resolution, serve numbered fine notices that bill the resident (4300 Fine Income), print a demand letter; residents see their violations and can appeal | ✅ |
-| Financial reports (`/reports`) — income & expenses, financial position, receivables aging, collections summary, and a bundled board pack; period picker, print-to-PDF, CSV per report | ✅ |
+| Financial reports (`/reports`) — income & expenses, financial position, receivables aging, payables aging, collections summary, and a bundled board pack; period picker, print-to-PDF, CSV per report | ✅ |
 | Gate passes — create / list / revoke, scannable code | ✅ |
 | Announcements — draft / publish | ✅ |
 | Team — invite staff/guard by email, role management | ✅ |

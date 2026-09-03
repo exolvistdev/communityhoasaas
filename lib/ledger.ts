@@ -1,5 +1,6 @@
 import type { AccountType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { billStatus } from "@/lib/bill";
 
 /**
  * Standard chart of accounts every org gets on creation. The migration
@@ -364,6 +365,108 @@ export async function postWriteOff(paymentId: string) {
 
   await recalculateInvoiceStatus(payment.invoiceId);
   return entry;
+}
+
+/* ─────────────────────── vendors / accounts payable ─────────────── */
+
+/** Bill issued — Expense up (bill.expenseAccountCode), A/P up (2000). */
+export async function postBillIssued(billId: string) {
+  const bill = await prisma.bill.findUniqueOrThrow({ where: { id: billId } });
+
+  const [expense, ap] = await Promise.all([
+    getAccount(bill.orgId, bill.expenseAccountCode),
+    getAccount(bill.orgId, "2000"),
+  ]);
+
+  return prisma.journalEntry.create({
+    data: {
+      orgId: bill.orgId,
+      sourceType: "bill",
+      billId: bill.id,
+      entryDate: bill.billDate,
+      memo: `Bill — ${bill.description}`,
+      lines: {
+        create: [
+          { accountId: expense.id, debit: bill.amount, credit: 0 },
+          { accountId: ap.id, debit: 0, credit: bill.amount },
+        ],
+      },
+    },
+    include: { lines: true },
+  });
+}
+
+/** Bill payment — A/P down (2000), Cash down (1000). */
+export async function postBillPayment(billPaymentId: string) {
+  const bp = await prisma.billPayment.findUniqueOrThrow({
+    where: { id: billPaymentId },
+    include: { bill: true },
+  });
+
+  const [ap, cash] = await Promise.all([
+    getAccount(bp.bill.orgId, "2000"),
+    getAccount(bp.bill.orgId, "1000"),
+  ]);
+
+  const entry = await prisma.journalEntry.create({
+    data: {
+      orgId: bp.bill.orgId,
+      sourceType: "bill_payment",
+      billPaymentId: bp.id,
+      entryDate: bp.paidAt,
+      memo: `Bill payment via ${bp.method} — ${bp.bill.description}`,
+      lines: {
+        create: [
+          { accountId: ap.id, debit: bp.amount, credit: 0 },
+          { accountId: cash.id, debit: 0, credit: bp.amount },
+        ],
+      },
+    },
+    include: { lines: true },
+  });
+
+  await recalculateBillStatus(bp.billId);
+  return entry;
+}
+
+/** Reverse a bill's "issued" entry when it's voided. */
+export async function postBillVoided(billId: string) {
+  const bill = await prisma.bill.findUniqueOrThrow({
+    where: { id: billId },
+    include: { journalEntry: { include: { lines: true } } },
+  });
+  if (!bill.journalEntry) return null;
+
+  return prisma.journalEntry.create({
+    data: {
+      orgId: bill.orgId,
+      sourceType: "bill_void",
+      entryDate: new Date(),
+      memo: `Void — bill ${bill.description}`,
+      lines: {
+        create: bill.journalEntry.lines.map((l) => ({
+          accountId: l.accountId,
+          debit: l.credit,
+          credit: l.debit,
+        })),
+      },
+    },
+    include: { lines: true },
+  });
+}
+
+async function recalculateBillStatus(billId: string) {
+  const bill = await prisma.bill.findUniqueOrThrow({
+    where: { id: billId },
+    include: { payments: { select: { amount: true } } },
+  });
+  if (bill.status === "VOID") return;
+
+  const paid = bill.payments.reduce((s, p) => s + Number(p.amount), 0);
+  await prisma.bill.update({
+    where: { id: billId },
+    data: { status: billStatus(Number(bill.amount), paid) },
+  });
 }
 
 export type ManualLine = { code: string; debit: number; credit: number };

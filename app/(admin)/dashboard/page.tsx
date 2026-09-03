@@ -26,6 +26,7 @@ export default async function DashboardPage() {
   const canModerate = can(user.role, "marketplace:moderate");
   const canAmenities = can(user.role, "amenity:manage");
   const canViolations = can(user.role, "violation:manage");
+  const canVendors = can(user.role, "vendor:manage");
   const isAdmin = user.role === "ADMIN";
 
   const [
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
     pendingBookings,
     pendingPrivacy,
     openViolations,
+    billsDueSoon,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
     prisma.payment.aggregate({
@@ -96,6 +98,15 @@ export default async function DashboardPage() {
           where: { orgId: org.id, status: { in: ["OPEN", "APPEALED"] } },
         })
       : Promise.resolve(0),
+    canVendors
+      ? prisma.bill.count({
+          where: {
+            orgId: org.id,
+            status: { in: ["UNPAID", "PARTIALLY_PAID"] },
+            dueDate: { lt: new Date(now.getTime() + 7 * 86_400_000) },
+          },
+        })
+      : Promise.resolve(0),
   ]);
 
   const collected = Number(collectedAgg._sum.amount ?? 0);
@@ -146,6 +157,14 @@ export default async function DashboardPage() {
           text: `${openViolations} open violation${
             openViolations === 1 ? "" : "s"
           }`,
+        }
+      : null,
+    canVendors && billsDueSoon > 0
+      ? {
+          href: "/bills",
+          text: `${billsDueSoon} vendor bill${
+            billsDueSoon === 1 ? "" : "s"
+          } due soon or overdue`,
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];
