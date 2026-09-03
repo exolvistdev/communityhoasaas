@@ -27,6 +27,7 @@ walkthrough of the admin app.
 | Ledger — trial balance (any date range), journal, chart of accounts (~17 accounts), manual / expense / other-income journal entries with reversals, CSV export | ✅ |
 | Vendors & bills (accounts payable) — vendor directory, record a bill (books the expense + a 2000 A/P liability), pay it in full or part, void, an AP-aging report by vendor; the balance sheet shows real payables | ✅ |
 | Maintenance / work orders — residents file repair requests (category, photos, common-area flag) from the portal; staff triage a queue, assign a person / vendor, link a bill, post public or internal comments; both sides get notified | ✅ |
+| Board meetings — schedule a meeting with an agenda, residents RSVP (going / maybe / no) from the portal, staff see the tally and publish the minutes (filed to the document library); residents notified on schedule / reschedule / minutes | ✅ |
 | Violations & fines — log a rule violation (category, photos, cure-by date), track it to resolution, serve numbered fine notices that bill the resident (4300 Fine Income), print a demand letter; residents see their violations and can appeal | ✅ |
 | Financial reports (`/reports`) — income & expenses, financial position, receivables aging, payables aging, collections summary, and a bundled board pack; period picker, print-to-PDF, CSV per report | ✅ |
 | Gate passes — create / list / revoke, scannable code | ✅ |

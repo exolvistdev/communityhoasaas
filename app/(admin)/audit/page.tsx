@@ -63,6 +63,10 @@ const ACTION_LABEL: Record<string, string> = {
   "bill.void": "Voided a bill",
   "maintenance.status": "Updated a maintenance request",
   "maintenance.assign": "Assigned a maintenance request",
+  "meeting.schedule": "Scheduled a board meeting",
+  "meeting.update": "Updated a board meeting",
+  "meeting.cancel": "Cancelled a board meeting",
+  "meeting.minutes": "Published meeting minutes",
 };
 
 const fmt = (d: Date) =>

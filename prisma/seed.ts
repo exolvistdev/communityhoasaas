@@ -236,6 +236,8 @@ async function resetDemoOrg() {
     where: { request: { orgId } },
   });
   await prisma.maintenanceRequest.deleteMany({ where: { orgId } });
+  await prisma.meetingRsvp.deleteMany({ where: { meeting: { orgId } } });
+  await prisma.boardMeeting.deleteMany({ where: { orgId } });
   await prisma.billPayment.deleteMany({ where: { bill: { orgId } } });
   await prisma.bill.deleteMany({ where: { orgId } });
   await prisma.vendor.deleteMany({ where: { orgId } });
@@ -1332,6 +1334,72 @@ async function main() {
       createdAt: ago(4),
     },
   });
+
+  // ── Board meetings ───────────────────────────────────────────────
+  const upcomingMeeting = await prisma.boardMeeting.create({
+    data: {
+      orgId: org.id,
+      createdById: elenaUser.id,
+      title: "Q4 board meeting",
+      scheduledAt: at(9, 19), // ~9 days out, 7pm Manila
+      location: "Clubhouse function hall",
+      agenda:
+        "1. Approval of the previous minutes\n2. Treasurer's report (Q3)\n3. Landscaping contract renewal\n4. Proposed 2027 dues schedule\n5. Open forum",
+    },
+  });
+  await prisma.meetingRsvp.createMany({
+    data: [
+      { meetingId: upcomingMeeting.id, userId: homeownerUser.id, response: "YES" },
+      {
+        meetingId: upcomingMeeting.id,
+        userId: anaUser.id,
+        response: "MAYBE",
+        note: "May be a few minutes late.",
+      },
+      { meetingId: upcomingMeeting.id, userId: elenaUser.id, response: "YES" },
+    ],
+  });
+
+  const pastMeeting = await prisma.boardMeeting.create({
+    data: {
+      orgId: org.id,
+      createdById: elenaUser.id,
+      title: "Special meeting — perimeter fence repair",
+      scheduledAt: ago(21),
+      location: "Clubhouse",
+      agenda:
+        "1. Review of contractor quotes for the perimeter fence\n2. Vote on the awarded contractor\n3. Assessment schedule",
+      status: "HELD",
+    },
+  });
+  try {
+    const up = await uploadDocument(
+      new File([pdfBytes], "minutes-special-fence.pdf", { type: "application/pdf" }),
+      { orgId: org.id }
+    );
+    if (up) {
+      const minutesDoc = await prisma.document.create({
+        data: {
+          orgId: org.id,
+          title: `Minutes — ${pastMeeting.title}`,
+          description: "Board meeting held three weeks ago.",
+          category: "BOARD_MINUTES",
+          staffOnly: false,
+          storagePath: up.storagePath,
+          fileName: up.fileName,
+          mimeType: up.mimeType,
+          sizeBytes: up.sizeBytes,
+          uploadedById: admin.id,
+        },
+      });
+      await prisma.boardMeeting.update({
+        where: { id: pastMeeting.id },
+        data: { minutesDocumentId: minutesDoc.id },
+      });
+    }
+  } catch (e) {
+    console.log("  (seed meeting minutes skipped:", (e as Error).message, ")");
+  }
 
   // ── Notifications ─────────────────────────────────────────────────
   const nDay = 24 * 60 * 60 * 1000;

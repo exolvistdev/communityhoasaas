@@ -14,7 +14,8 @@ export type Action =
   | "document:write"
   | "violation:manage"
   | "vendor:manage"
-  | "maintenance:manage";
+  | "maintenance:manage"
+  | "meeting:manage";
 
 const PERMISSIONS: Record<Action, UserRole[]> = {
   "billing:write": ["ADMIN", "TREASURER"],
@@ -29,6 +30,7 @@ const PERMISSIONS: Record<Action, UserRole[]> = {
   "violation:manage": ["ADMIN", "BOARD_MEMBER", "TREASURER"],
   "vendor:manage": ["ADMIN", "TREASURER"],
   "maintenance:manage": ["ADMIN", "TREASURER", "BOARD_MEMBER"],
+  "meeting:manage": ["ADMIN", "BOARD_MEMBER"],
 };
 
 export const STAFF_ROLES: UserRole[] = ["ADMIN", "TREASURER", "BOARD_MEMBER"];

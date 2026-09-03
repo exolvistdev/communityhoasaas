@@ -5,6 +5,7 @@ import {
   Store,
   MessageSquare,
   CalendarDays,
+  CalendarClock,
   FileText,
   Gavel,
   type LucideIcon,
@@ -54,6 +55,7 @@ export default async function PortalHome() {
     upcomingBookings,
     documentCount,
     violationCount,
+    upcomingMeetings,
   ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
     prisma.invoice.findMany({
@@ -100,6 +102,13 @@ export default async function PortalHome() {
       where: { orgId: property.orgId, staffOnly: false },
     }),
     prisma.violation.count({ where: { propertyId: property.id } }),
+    prisma.boardMeeting.count({
+      where: {
+        orgId: property.orgId,
+        status: "SCHEDULED",
+        scheduledAt: { gte: now },
+      },
+    }),
   ]);
 
   const balance = statement?.closingBalance ?? 0;
@@ -250,6 +259,14 @@ export default async function PortalHome() {
             icon={Gavel}
             label="Violations"
             sub={`${violationCount} on record`}
+          />
+        )}
+        {upcomingMeetings > 0 && (
+          <Tile
+            href="/portal/meetings"
+            icon={CalendarClock}
+            label="Board meetings"
+            sub={`${upcomingMeetings} upcoming`}
           />
         )}
       </div>

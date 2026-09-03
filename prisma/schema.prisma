@@ -92,6 +92,7 @@ model Organization {
   vendors             Vendor[]
   bills               Bill[]
   maintenanceRequests MaintenanceRequest[]
+  boardMeetings       BoardMeeting[]
 
   @@map("organizations")
 }
@@ -182,6 +183,8 @@ model User {
   maintenanceRequested  MaintenanceRequest[]  @relation("MaintenanceRequester")
   maintenanceAssigned   MaintenanceRequest[]  @relation("MaintenanceAssignee")
   maintenanceComments   MaintenanceComment[]  @relation("MaintenanceCommentAuthor")
+  meetingsCreated       BoardMeeting[]        @relation("MeetingCreatedBy")
+  meetingRsvps          MeetingRsvp[]         @relation("MeetingRsvpUser")
 
   @@index([orgId])
   @@map("users")
@@ -205,6 +208,7 @@ enum NotificationType {
   PAYMENT_REFUNDED
   VIOLATION_NOTICE
   MAINTENANCE_UPDATE
+  BOARD_MEETING
 }
 
 model Notification {
@@ -701,6 +705,59 @@ model MaintenanceComment {
 }
 
 // ─────────────────────────────────────────────
+// Board meetings
+// ─────────────────────────────────────────────
+
+enum MeetingStatus {
+  SCHEDULED
+  HELD
+  CANCELLED
+}
+
+enum RsvpResponse {
+  YES
+  NO
+  MAYBE
+}
+
+model BoardMeeting {
+  id                String   @id @default(uuid())
+  orgId             String
+  org               Organization @relation(fields: [orgId], references: [id])
+  title             String
+  scheduledAt       DateTime
+  location          String?
+  agenda            String
+  status            MeetingStatus @default(SCHEDULED)
+  minutesDocumentId String?
+  minutesDocument   Document? @relation(fields: [minutesDocumentId], references: [id], onDelete: SetNull)
+  createdById       String?
+  createdBy         User?    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime @default(now())
+
+  rsvps             MeetingRsvp[]
+
+  @@index([orgId, scheduledAt])
+  @@map("board_meetings")
+}
+
+model MeetingRsvp {
+  id        String   @id @default(uuid())
+  meetingId String
+  meeting   BoardMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("MeetingRsvpUser", fields: [userId], references: [id], onDelete: Cascade)
+  response  RsvpResponse
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([meetingId, userId])
+  @@index([meetingId])
+  @@map("meeting_rsvps")
+}
+
+// ─────────────────────────────────────────────
 // Double-entry ledger
 // ─────────────────────────────────────────────
 
@@ -1046,6 +1103,8 @@ model Document {
   uploadedBy   User?    @relation("DocumentUploader", fields: [uploadedById], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  meetingMinutes BoardMeeting[]
 
   @@index([orgId, category])
   @@index([orgId, createdAt])

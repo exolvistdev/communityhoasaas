@@ -18,6 +18,7 @@ const PROTECTED = [
   "/violation-photos",
   "/maintenance",
   "/maintenance-files",
+  "/meetings",
   "/team",
   "/audit",
   "/data-requests",
