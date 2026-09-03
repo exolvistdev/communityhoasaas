@@ -8,6 +8,7 @@ import { LateFeesDoc } from "./LateFeesDoc";
 import { VendorSpendDoc } from "./VendorSpendDoc";
 import { ViolationsReportDoc } from "./ViolationsReportDoc";
 import { HomeownersDoc } from "./HomeownersDoc";
+import { WaterReportDoc } from "./WaterReportDoc";
 import { fmtDate } from "./shared";
 
 type Data = Awaited<ReturnType<typeof boardPack>>;
@@ -84,6 +85,12 @@ export function BoardPackDoc({ data }: { data: Data }) {
       key: "homeowners",
       toc: "Homeowners",
       node: <HomeownersDoc orgName={org.name} data={data.homeowners} />,
+    });
+  if (data.water)
+    sections.push({
+      key: "water",
+      toc: "Water",
+      node: <WaterReportDoc orgName={org.name} data={data.water} />,
     });
 
   if (data.documents.length > 0)

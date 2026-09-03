@@ -147,6 +147,20 @@ export function formatConsumption(n: number): string {
   return `${Number(n).toFixed(2)} m³`;
 }
 
+/** Compact one-line tier breakdown for an invoice memo: "10@₱20 + 8@₱30 + ₱150 service". */
+export function bandBreakdownText(
+  consumption: number,
+  bands: RateBand[],
+  serviceCharge: number
+): string {
+  const parts = bandBreakdown(consumption, bands).map((b) => {
+    const price = b.m3 ? Math.round((b.amount / b.m3) * 100) / 100 : 0;
+    return `${b.m3}@₱${price}`;
+  });
+  if (serviceCharge > 0) parts.push(`₱${r2(serviceCharge)} service`);
+  return parts.join(" + ");
+}
+
 /* ─────────────────── EXTERNAL_BULK allocation ──────────────────── */
 
 export type AllocateUnit = { id: string; consumption: number };

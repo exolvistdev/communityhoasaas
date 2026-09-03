@@ -22,10 +22,11 @@ export function RankBarChart({
   title: string;
   note?: string;
   data: { name: string; value: number }[];
-  unit?: "peso" | "count";
+  unit?: "peso" | "count" | "m3";
   color?: string;
 }) {
-  const fmt = (v: number) => (unit === "peso" ? peso(v) : String(v));
+  const fmt = (v: number) =>
+    unit === "peso" ? peso(v) : unit === "m3" ? `${v} m³` : String(v);
   const tickFmt = (v: number) => (unit === "peso" ? compactPeso(v) : String(v));
   const height = Math.max(120, data.length * 26 + 24);
 

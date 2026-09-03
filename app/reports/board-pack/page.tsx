@@ -5,6 +5,7 @@ import {
   parseBoardPackExtras,
   BOARD_PACK_EXTRAS,
 } from "@/lib/reports";
+import { waterMetered } from "@/lib/water";
 import { PrintToolbar } from "@/components/PrintToolbar";
 import { BoardPackDoc } from "@/components/reports/BoardPackDoc";
 
@@ -18,6 +19,11 @@ export default async function BoardPackPage({
   const extras = parseBoardPackExtras(searchParams.extra);
   const data = await boardPack(org.id, range, extras);
   const qs = `from=${range.fromYmd}&to=${range.toYmd}`;
+
+  const metered = waterMetered(org.waterSource);
+  const extraOptions = BOARD_PACK_EXTRAS.filter(
+    (e) => e.value !== "water" || metered
+  );
 
   return (
     <>
@@ -33,7 +39,7 @@ export default async function BoardPackPage({
           Include extra reports
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          {BOARD_PACK_EXTRAS.map((e) => (
+          {extraOptions.map((e) => (
             <label key={e.value} className="flex items-center gap-1.5">
               <input
                 type="checkbox"

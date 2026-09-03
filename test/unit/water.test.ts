@@ -3,6 +3,7 @@ import {
   computeWaterCharge,
   validateBands,
   bandBreakdown,
+  bandBreakdownText,
   parseRateBands,
   waterMetered,
   allocateBulk,
@@ -80,6 +81,17 @@ describe("waterMetered", () => {
     expect(waterMetered("EXTERNAL_BULK")).toBe(true);
     expect(waterMetered("EXTERNAL_DIRECT")).toBe(false);
     expect(waterMetered("UNSET")).toBe(false);
+  });
+});
+
+describe("bandBreakdownText", () => {
+  it("renders a compact one-line tier breakdown with the service charge", () => {
+    expect(bandBreakdownText(25, bands, 150)).toBe(
+      "10@₱20 + 10@₱30 + 5@₱50 + ₱150 service"
+    );
+  });
+  it("omits the service charge when zero", () => {
+    expect(bandBreakdownText(6, bands, 0)).toBe("6@₱20");
   });
 });
 

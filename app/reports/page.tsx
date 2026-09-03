@@ -10,11 +10,13 @@ import {
   Receipt,
   ShieldAlert,
   Users,
+  Droplet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { requireStaff } from "@/lib/rbac";
 import { zonedParts } from "@/lib/amenity";
 import { parseReportRange } from "@/lib/reports";
+import { waterMetered } from "@/lib/water";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -23,7 +25,7 @@ export default async function ReportsIndex({
 }: {
   searchParams: { from?: string; to?: string };
 }) {
-  await requireStaff();
+  const { org } = await requireStaff();
   const range = parseReportRange(searchParams);
   const qs = `from=${range.fromYmd}&to=${range.toYmd}`;
 
@@ -162,6 +164,14 @@ export default async function ReportsIndex({
           title="Homeowners"
           sub="Roster with balance status and portal sign-in"
         />
+        {waterMetered(org.waterSource) && (
+          <ReportCard
+            href={`/reports/water?${qs}`}
+            icon={Droplet}
+            title="Water"
+            sub="Consumption by unit and month; utility cost vs. billed"
+          />
+        )}
       </div>
     </div>
   );

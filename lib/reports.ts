@@ -948,19 +948,153 @@ export async function homeownersReport(orgId: string, asOf: Date) {
   return { asOf, ...rollUpHomeowners(homeowners, statements) };
 }
 
+/* ── water report ─────────────────────────────────────────────────── */
+
+export type WaterReportRow = {
+  propertyId: string;
+  unitNumber: string;
+  homeownerName: string | null;
+  serialNumber: string | null;
+  periodConsumption: number | null; // the last month in the range
+  rangeConsumption: number;
+  rangeBilled: number;
+};
+
+/**
+ * Water consumption & billing for the period — a per-unit table, a
+ * trailing-month series, and (EXTERNAL_BULK) the utility cost vs. what was
+ * billed to residents and the system-loss trend.
+ */
+export async function waterReport(orgId: string, range: ReportRange) {
+  const months = eachMonth(range);
+  const monthKeys = months.map((m) => m.key);
+  const lastKey = monthKeys[monthKeys.length - 1];
+
+  const [org, meters, runs] = await Promise.all([
+    prisma.organization.findUniqueOrThrow({
+      where: { id: orgId },
+      select: { waterSource: true },
+    }),
+    prisma.waterMeter.findMany({
+      where: { orgId, kind: "UNIT", retiredAt: null, property: { isNot: null } },
+      select: {
+        serialNumber: true,
+        property: {
+          select: {
+            id: true,
+            unitNumber: true,
+            homeowners: {
+              orderBy: { isPrimary: "desc" },
+              take: 1,
+              select: { fullName: true },
+            },
+          },
+        },
+        readings: {
+          where: { period: { in: monthKeys } },
+          select: { period: true, consumption: true, amount: true },
+        },
+      },
+    }),
+    prisma.waterAllocationRun.findMany({
+      where: { orgId, period: { in: monthKeys } },
+      select: {
+        period: true,
+        bulkAmount: true,
+        systemLoss: true,
+        sourceConsumption: true,
+      },
+    }),
+  ]);
+
+  const rows: WaterReportRow[] = meters
+    .filter((m) => m.property)
+    .map((m) => {
+      const p = m.property!;
+      const rangeConsumption = round2(
+        m.readings.reduce((s, r) => s + Number(r.consumption), 0)
+      );
+      const rangeBilled = round2(
+        m.readings.reduce((s, r) => s + Number(r.amount), 0)
+      );
+      const last = m.readings.find((r) => r.period === lastKey);
+      return {
+        propertyId: p.id,
+        unitNumber: p.unitNumber,
+        homeownerName: p.homeowners[0]?.fullName ?? null,
+        serialNumber: m.serialNumber,
+        periodConsumption: last ? Number(last.consumption) : null,
+        rangeConsumption,
+        rangeBilled,
+      };
+    })
+    .sort((a, b) => a.unitNumber.localeCompare(b.unitNumber));
+
+  const runByPeriod = new Map(runs.map((r) => [r.period, r]));
+  const monthly = months.map((m) => {
+    let consumption = 0;
+    let billed = 0;
+    for (const meter of meters)
+      for (const r of meter.readings)
+        if (r.period === m.key) {
+          consumption += Number(r.consumption);
+          billed += Number(r.amount);
+        }
+    const run = runByPeriod.get(m.key);
+    const src = run ? Number(run.sourceConsumption) : 0;
+    return {
+      label: m.label,
+      consumption: round2(consumption),
+      billed: round2(billed),
+      bulkCost: run ? Number(run.bulkAmount) : null,
+      lossPct: run && src > 0 ? round2((Number(run.systemLoss) / src) * 100) : null,
+    };
+  });
+
+  const topConsumers = [...rows]
+    .filter((r) => r.rangeConsumption > 0)
+    .sort((a, b) => b.rangeConsumption - a.rangeConsumption)
+    .slice(0, 10)
+    .map((r) => ({ name: r.unitNumber, value: r.rangeConsumption }));
+
+  const consumption = round2(rows.reduce((s, r) => s + r.rangeConsumption, 0));
+  const billed = round2(rows.reduce((s, r) => s + r.rangeBilled, 0));
+  const bulkCost =
+    org.waterSource === "EXTERNAL_BULK"
+      ? round2(runs.reduce((s, r) => s + Number(r.bulkAmount), 0))
+      : null;
+
+  return {
+    from: range.from,
+    to: range.to,
+    mode: org.waterSource,
+    rows,
+    monthly,
+    topConsumers,
+    totals: {
+      consumption,
+      billed,
+      bulkCost,
+      netPosition: bulkCost == null ? null : round2(billed - bulkCost),
+    },
+  };
+}
+
 /* ── board pack ───────────────────────────────────────────────────── */
 
 export type BoardPackExtra =
   | "late-fees"
   | "vendor-spend"
   | "violations"
-  | "homeowners";
+  | "homeowners"
+  | "water";
 
 export const BOARD_PACK_EXTRAS: { value: BoardPackExtra; label: string }[] = [
   { value: "late-fees", label: "Late fees" },
   { value: "vendor-spend", label: "Vendor spend" },
   { value: "violations", label: "Violations & fines" },
   { value: "homeowners", label: "Homeowners roster" },
+  { value: "water", label: "Water" },
 ];
 
 const EXTRA_SET = new Set<string>(BOARD_PACK_EXTRAS.map((e) => e.value));
@@ -990,7 +1124,7 @@ export async function boardPack(
     await Promise.all([
       prisma.organization.findUniqueOrThrow({
         where: { id: orgId },
-        select: { name: true, subdomain: true },
+        select: { name: true, subdomain: true, waterSource: true },
       }),
       incomeStatement(orgId, { from: range.from, to: range.to }),
       balanceSheet(orgId, range.to),
@@ -1026,6 +1160,12 @@ export async function boardPack(
   const homeowners = want.has("homeowners")
     ? await homeownersReport(orgId, range.to)
     : null;
+  const waterMode = org.waterSource;
+  const water =
+    want.has("water") &&
+    (waterMode === "INTERNAL" || waterMode === "EXTERNAL_BULK")
+      ? await waterReport(orgId, range)
+      : null;
 
   return {
     org,
@@ -1044,6 +1184,7 @@ export async function boardPack(
     vendorSpend,
     violations,
     homeowners,
+    water,
     documents,
   };
 }

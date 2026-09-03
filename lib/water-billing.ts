@@ -9,6 +9,7 @@ import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 import {
   allocateBulk,
+  bandBreakdownText,
   computeWaterCharge,
   formatConsumption,
   parseRateBands,
@@ -184,6 +185,121 @@ export async function retireMeter(meterId: string) {
   });
 }
 
+export type ResidentWaterRow = {
+  period: string;
+  readingDate: Date;
+  currentReading: number;
+  consumption: number;
+  amount: number;
+  status: string | null; // linked invoice status, null = not billed
+  flag: string | null;
+  breakdown: string | null;
+};
+
+/** A unit's last ~12 water readings for `/portal/water`, with a per-row breakdown. */
+export async function residentWaterHistory(
+  propertyId: string
+): Promise<{
+  serialNumber: string | null;
+  mode: string;
+  rows: ResidentWaterRow[];
+} | null> {
+  const meter = await prisma.waterMeter.findFirst({
+    where: { propertyId, kind: "UNIT", retiredAt: null },
+    select: {
+      orgId: true,
+      serialNumber: true,
+      org: {
+        select: {
+          waterSource: true,
+          waterBillingEnabled: true,
+          waterServiceCharge: true,
+          waterRateBands: true,
+        },
+      },
+      readings: {
+        orderBy: { period: "desc" },
+        take: 12,
+        select: {
+          period: true,
+          readingDate: true,
+          currentReading: true,
+          consumption: true,
+          amount: true,
+          flag: true,
+          invoice: { select: { status: true } },
+        },
+      },
+    },
+  });
+  if (!meter) return null;
+
+  const mode = meter.org.waterSource;
+  const cfg = waterConfig(meter.org);
+  const periods = meter.readings.map((r) => r.period);
+  const runs =
+    mode === "EXTERNAL_BULK" && periods.length
+      ? await prisma.waterAllocationRun.findMany({
+          where: { orgId: meter.orgId, period: { in: periods } },
+          select: {
+            period: true,
+            effectiveRate: true,
+            adminFeeFlat: true,
+            meteredConsumption: true,
+            systemLoss: true,
+          },
+        })
+      : [];
+  const runByPeriod = new Map(runs.map((r) => [r.period, r]));
+
+  const rows: ResidentWaterRow[] = meter.readings
+    .map((r) => {
+      const consumption = Number(r.consumption);
+      let breakdown: string | null = null;
+      if (r.invoice) {
+        if (mode === "INTERNAL") {
+          breakdown =
+            bandBreakdownText(consumption, cfg.bands, cfg.serviceCharge) || null;
+        } else if (mode === "EXTERNAL_BULK") {
+          const run = runByPeriod.get(r.period);
+          if (run) {
+            const rate = Number(run.effectiveRate);
+            const fee = Number(run.adminFeeFlat);
+            const metered = Number(run.meteredConsumption);
+            const lossShare =
+              metered > 0
+                ? r2((Number(run.systemLoss) * consumption) / metered)
+                : 0;
+            breakdown = `${consumption.toFixed(2)} m³${
+              lossShare > 0 ? ` + ${lossShare.toFixed(2)} m³ loss share` : ""
+            } × ₱${rate.toFixed(2)}/m³${fee > 0 ? ` + ₱${r2(fee)} admin` : ""}`;
+          }
+        }
+      }
+      return {
+        period: r.period,
+        readingDate: r.readingDate,
+        currentReading: Number(r.currentReading),
+        consumption,
+        amount: Number(r.amount),
+        status: r.invoice?.status ?? null,
+        flag: r.flag,
+        breakdown,
+      };
+    })
+    .reverse(); // oldest → newest
+
+  return { serialNumber: meter.serialNumber, mode, rows };
+}
+
+/** INTERNAL invoice memo — consumption + a compact tier breakdown. */
+function waterMemo(consumption: number, period: string, cfg: WaterConfig): string {
+  const bd = bandBreakdownText(consumption, cfg.bands, cfg.serviceCharge);
+  return `Water — ${formatConsumption(consumption)} (${periodLabel(period)})${
+    bd ? ` · ${bd}` : ""
+  }`;
+}
+
 /** Count + total of this period's readings that haven't been billed yet. */
 export async function previewBilling(orgId: string, period: string) {
   const rows = await prisma.meterReading.findMany({
@@ -207,6 +323,7 @@ export async function billReadings(
   actorId: string
 ): Promise<{ created: number }> {
   const org = await prisma.organization.findUniqueOrThrow({ where: { id: orgId } });
+  const cfg = waterConfig(org);
   const [year, month] = period.split("-").map(Number);
   const dueDate = new Date(year, month - 1, org.billingDueDay);
 
@@ -242,7 +359,7 @@ export async function billReadings(
           period: null,
           dueDate,
           status: "SENT",
-          memo: `Water — ${formatConsumption(Number(reading.consumption))} (${periodLabel(period)})`,
+          memo: waterMemo(Number(reading.consumption), period, cfg),
         },
       });
       await postWaterChargeIssued(invoice.id);

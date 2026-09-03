@@ -302,7 +302,7 @@ export default async function PortalHome() {
         )}
         {waterMetered(org.waterSource) && waterMeter?.readings[0] && (
           <Tile
-            href="/portal/pay"
+            href="/portal/water"
             icon={Droplet}
             label="Water"
             sub={`${Number(waterMeter.readings[0].consumption).toFixed(1)} m³ · ${peso(
