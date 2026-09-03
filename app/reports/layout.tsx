@@ -17,6 +17,9 @@ export default async function ReportsLayout({
           .break-after-page { break-after: page; }
           body { background: #fff; }
           @page { margin: 16mm; }
+          /* long report tables: repeat the header on each page, never split a row */
+          thead { display: table-header-group; }
+          tr { break-inside: avoid; }
         }
       `}</style>
       {children}

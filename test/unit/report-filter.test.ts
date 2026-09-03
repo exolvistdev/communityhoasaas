@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   filterByAgingBucket,
-  pickLedgerMonth,
+  pickMonth,
   AGING_BUCKET_LABEL,
 } from "@/lib/report-filter";
 import type { Aging } from "@/lib/soa";
-import type { LedgerMonth } from "@/lib/reports";
 
 const aging = (o: Partial<Aging>): Aging => ({
   current: 0,
@@ -39,18 +38,20 @@ describe("filterByAgingBucket", () => {
   });
 });
 
-describe("pickLedgerMonth", () => {
+describe("pickMonth", () => {
   const series = [
-    { key: "2026-07", label: "Jul '26" },
-    { key: "2026-08", label: "Aug '26" },
-  ] as LedgerMonth[];
+    { key: "2026-07", label: "Jul '26", cash: 100 },
+    { key: "2026-08", label: "Aug '26", cash: 250 },
+  ];
 
   it("is null when nothing is selected or the key is unknown", () => {
-    expect(pickLedgerMonth(series, null)).toBeNull();
-    expect(pickLedgerMonth(series, "2026-01")).toBeNull();
+    expect(pickMonth(series, null)).toBeNull();
+    expect(pickMonth(series, "2026-01")).toBeNull();
   });
 
-  it("returns the matching month", () => {
-    expect(pickLedgerMonth(series, "2026-08")?.label).toBe("Aug '26");
+  it("returns the matching row, keeping its shape", () => {
+    const hit = pickMonth(series, "2026-08");
+    expect(hit?.label).toBe("Aug '26");
+    expect(hit?.cash).toBe(250);
   });
 });

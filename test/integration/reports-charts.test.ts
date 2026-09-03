@@ -6,6 +6,7 @@ import {
   eachMonth,
   monthlyLedgerSeries,
   cashTrend,
+  monthlyCollectionSeries,
 } from "@/lib/reports";
 import {
   hasTestDb,
@@ -77,5 +78,25 @@ describe.skipIf(!hasTestDb)("monthly chart series", () => {
     const cash = await cashTrend(orgId, months);
     expect(cash.find((m) => m.key === "2026-07")!.cash).toBeCloseTo(1500, 2);
     expect(cash.find((m) => m.key === "2026-08")!.cash).toBeCloseTo(1500, 2);
+  });
+
+  it("monthlyCollectionSeries surfaces openingAR, billed, collected and a bounded rate", async () => {
+    const months = eachMonth(
+      parseReportRange({ from: "2026-07-01", to: "2026-08-31" })
+    );
+    const series = await monthlyCollectionSeries(orgId, months);
+    const jul = series.find((m) => m.key === "2026-07")!;
+    const aug = series.find((m) => m.key === "2026-08")!;
+
+    expect(jul.openingAR).toBe(0); // nothing billed before July
+    expect(jul.billed).toBeCloseTo(1500, 2);
+    expect(jul.collected).toBeCloseTo(1500, 2);
+    expect(aug.openingAR).toBeCloseTo(0, 2); // July fully collected
+    expect(aug.billed).toBeCloseTo(2000, 2);
+    for (const m of series)
+      if (m.rate != null) {
+        expect(m.rate).toBeGreaterThanOrEqual(0);
+        expect(m.rate).toBeLessThanOrEqual(1.0001);
+      }
   });
 });

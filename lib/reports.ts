@@ -239,6 +239,7 @@ export async function cashTrend(orgId: string, months: MonthBucket[]) {
 export type CollectionMonth = {
   key: string;
   label: string;
+  openingAR: number;
   billed: number;
   collected: number;
   rate: number | null;
@@ -274,9 +275,11 @@ export async function monthlyCollectionSeries(orgId: string, months: MonthBucket
   ]);
 
   return months.map((m) => {
-    const openingAR = arLines
-      .filter((l) => l.entry.entryDate < m.start)
-      .reduce((s, l) => s + Number(l.debit) - Number(l.credit), 0);
+    const openingAR = round2(
+      arLines
+        .filter((l) => l.entry.entryDate < m.start)
+        .reduce((s, l) => s + Number(l.debit) - Number(l.credit), 0)
+    );
     const billed = round2(
       invoices
         .filter((i) => i.createdAt >= m.start && i.createdAt <= m.end)
@@ -291,6 +294,7 @@ export async function monthlyCollectionSeries(orgId: string, months: MonthBucket
     return {
       key: m.key,
       label: m.label,
+      openingAR,
       billed,
       collected,
       rate: expected > 0.005 ? collected / expected : null,

@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { peso, periodLabel } from "@/lib/format";
 import type { incomeStatement } from "@/lib/ledger";
 import type { LedgerMonth } from "@/lib/reports";
-import { pickLedgerMonth } from "@/lib/report-filter";
+import { pickMonth } from "@/lib/report-filter";
 import { AmountSection } from "./shared";
 import { IncomeVsExpenseChart } from "./charts/IncomeVsExpenseChart";
 import { IncomeByCategoryChart } from "./charts/IncomeByCategoryChart";
@@ -23,7 +23,7 @@ export function IncomeStatementInteractive({
   const clear = useCallback(() => setMonth(null), []);
   useClearOnPrint(clear);
 
-  const drill = pickLedgerMonth(series, month);
+  const drill = pickMonth(series, month);
   const income = drill ? drill.incomeRows : data.income;
   const expense = drill ? drill.expenseRows : data.expense;
   const incomeTotal = drill ? drill.income : data.incomeTotal;

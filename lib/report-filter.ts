@@ -2,7 +2,6 @@
 // components. A chart click sets a filter; these narrow the table to match.
 
 import type { Aging } from "@/lib/soa";
-import type { LedgerMonth } from "@/lib/reports";
 
 export type AgingBucketKey = keyof Aging;
 
@@ -26,11 +25,11 @@ export function filterByAgingBucket<T extends { aging: Aging }>(
   return rows.filter((r) => r.aging[bucket] > 0.005);
 }
 
-/** The one month's slice of a ledger series, or null when nothing is selected. */
-export function pickLedgerMonth(
-  series: LedgerMonth[],
+/** The one selected month's row of a `{ key }`-shaped series, or null. */
+export function pickMonth<T extends { key: string }>(
+  series: T[],
   key: string | null
-): LedgerMonth | null {
+): T | null {
   if (!key) return null;
   return series.find((m) => m.key === key) ?? null;
 }
