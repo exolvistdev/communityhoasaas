@@ -8,6 +8,8 @@ import {
   Truck,
   Clock,
   Receipt,
+  ShieldAlert,
+  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { requireStaff } from "@/lib/rbac";
@@ -147,6 +149,18 @@ export default async function ReportsIndex({
           icon={Receipt}
           title="Vendor spend"
           sub="Where operating money went, by vendor and category"
+        />
+        <ReportCard
+          href={`/reports/violations?${qs}`}
+          icon={ShieldAlert}
+          title="Violations & fines"
+          sub="Enforcement activity, resolution rate and fine revenue"
+        />
+        <ReportCard
+          href={`/reports/homeowners?${qs}`}
+          icon={Users}
+          title="Homeowners"
+          sub="Roster with balance status and portal sign-in"
         />
       </div>
     </div>

@@ -1,9 +1,19 @@
-import type { PaymentMethod } from "@prisma/client";
+import type {
+  PaymentMethod,
+  ViolationCategory,
+  ViolationStatus,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { zonedInstant, zonedParts } from "@/lib/amenity";
 import { periodLabel } from "@/lib/format";
 import { incomeStatement, balanceSheet, trialBalance } from "@/lib/ledger";
 import { buildStatementsForOrg, type Aging } from "@/lib/soa";
+import {
+  VIOLATION_CATEGORIES,
+  VIOLATION_CATEGORY_LABEL,
+  VIOLATION_STATUS_BADGE,
+  RESOLVED_STATUSES,
+} from "@/lib/violation";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
@@ -721,6 +731,217 @@ export async function vendorSpendReport(orgId: string, range: ReportRange) {
     to: range.to,
     ...rollUpVendorSpend(bills, range, accountName),
   };
+}
+
+/* ── violations & fines report ────────────────────────────────────── */
+
+export type ViolationRow = {
+  violationId: string;
+  unitNumber: string;
+  homeownerName: string | null;
+  category: ViolationCategory;
+  categoryLabel: string;
+  loggedDate: Date;
+  status: ViolationStatus;
+  statusLabel: string;
+  fineAmount: number;
+};
+
+/** Rule-enforcement activity logged in the period. */
+export async function violationsReport(orgId: string, range: ReportRange) {
+  const violations = await prisma.violation.findMany({
+    where: { orgId, createdAt: { gte: range.from, lte: range.to } },
+    select: {
+      id: true,
+      category: true,
+      status: true,
+      createdAt: true,
+      property: {
+        select: {
+          unitNumber: true,
+          homeowners: {
+            orderBy: { isPrimary: "desc" },
+            take: 1,
+            select: { fullName: true },
+          },
+        },
+      },
+      fineNotices: { select: { amount: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const rows: ViolationRow[] = violations.map((v) => ({
+    violationId: v.id,
+    unitNumber: v.property.unitNumber,
+    homeownerName: v.property.homeowners[0]?.fullName ?? null,
+    category: v.category,
+    categoryLabel: VIOLATION_CATEGORY_LABEL[v.category],
+    loggedDate: v.createdAt,
+    status: v.status,
+    statusLabel: VIOLATION_STATUS_BADGE[v.status].label,
+    fineAmount: round2(
+      v.fineNotices.reduce((s, f) => s + Number(f.amount), 0)
+    ),
+  }));
+
+  const byCategory = VIOLATION_CATEGORIES.map((c) => ({
+    name: c.label,
+    value: rows.filter((r) => r.category === c.value).length,
+  }))
+    .filter((c) => c.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const resolution = [
+    { name: "Open", value: rows.filter((r) => r.status === "OPEN").length },
+    { name: "Appealed", value: rows.filter((r) => r.status === "APPEALED").length },
+    {
+      name: "Resolved",
+      value: rows.filter((r) => RESOLVED_STATUSES.includes(r.status)).length,
+    },
+  ];
+
+  return {
+    from: range.from,
+    to: range.to,
+    rows,
+    byCategory,
+    resolution,
+    count: rows.length,
+    openCount: rows.filter(
+      (r) => r.status === "OPEN" || r.status === "APPEALED"
+    ).length,
+    totalFines: round2(rows.reduce((s, r) => s + r.fineAmount, 0)),
+  };
+}
+
+/* ── homeowners roster ────────────────────────────────────────────── */
+
+export type HomeownerRosterRow = {
+  key: string;
+  name: string;
+  units: string[];
+  contactComplete: boolean;
+  balance: number;
+  status: "current" | "partial" | "overdue";
+  portal: "Signed in" | "Never signed in";
+};
+
+type RosterHomeowner = {
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  user: { id: string; acceptedAt: Date | null } | null;
+  property: { id: string; unitNumber: string };
+};
+type RosterStatement = {
+  propertyId: string;
+  closingBalance: number;
+  aging: Aging;
+};
+
+/**
+ * Pure: group primary homeowners into one row per distinct owner (by linked
+ * user, else by name), summing balances across their units. `status` — current
+ * (no balance) / overdue (any past-due) / partial (owed but not yet due);
+ * `portal` — from `User.acceptedAt` (set on first sign-in).
+ */
+export function rollUpHomeowners(
+  homeowners: RosterHomeowner[],
+  statements: RosterStatement[]
+) {
+  const byProperty = new Map(statements.map((s) => [s.propertyId, s]));
+
+  type Group = {
+    key: string;
+    name: string;
+    signedIn: boolean;
+    email: boolean;
+    phone: boolean;
+    props: Map<string, string>;
+  };
+  const groups = new Map<string, Group>();
+  for (const h of homeowners) {
+    const key = h.user?.id ?? `name:${h.fullName.trim().toLowerCase()}`;
+    const g =
+      groups.get(key) ??
+      {
+        key,
+        name: h.fullName,
+        signedIn: false,
+        email: false,
+        phone: false,
+        props: new Map<string, string>(),
+      };
+    if (h.user?.acceptedAt) g.signedIn = true;
+    if (h.email) g.email = true;
+    if (h.phone) g.phone = true;
+    g.props.set(h.property.id, h.property.unitNumber);
+    groups.set(key, g);
+  }
+
+  const rows: HomeownerRosterRow[] = [...groups.values()]
+    .map((g) => {
+      let balance = 0;
+      let overdue = false;
+      for (const propertyId of g.props.keys()) {
+        const s = byProperty.get(propertyId);
+        if (!s) continue;
+        balance += s.closingBalance;
+        if (
+          s.aging.d1_30 + s.aging.d31_60 + s.aging.d61_90 + s.aging.d90plus >
+          0.005
+        )
+          overdue = true;
+      }
+      balance = round2(balance);
+      return {
+        key: g.key,
+        name: g.name,
+        units: [...g.props.values()].sort(),
+        contactComplete: g.email && g.phone,
+        balance,
+        status: (balance <= 0.005
+          ? "current"
+          : overdue
+          ? "overdue"
+          : "partial") as HomeownerRosterRow["status"],
+        portal: (g.signedIn ? "Signed in" : "Never signed in") as
+          | "Signed in"
+          | "Never signed in",
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    rows,
+    count: rows.length,
+    totalBalance: round2(rows.reduce((s, r) => s + r.balance, 0)),
+    multiUnit: rows.filter((r) => r.units.length > 1).length,
+    byStatus: {
+      current: rows.filter((r) => r.status === "current").length,
+      partial: rows.filter((r) => r.status === "partial").length,
+      overdue: rows.filter((r) => r.status === "overdue").length,
+    },
+  };
+}
+
+/** Homeowner-centric roster as of a date. */
+export async function homeownersReport(orgId: string, asOf: Date) {
+  const [statements, homeowners] = await Promise.all([
+    buildStatementsForOrg(orgId, { from: null, to: asOf }),
+    prisma.homeowner.findMany({
+      where: { property: { orgId, archivedAt: null }, isPrimary: true },
+      select: {
+        fullName: true,
+        email: true,
+        phone: true,
+        user: { select: { id: true, acceptedAt: true } },
+        property: { select: { id: true, unitNumber: true } },
+      },
+    }),
+  ]);
+  return { asOf, ...rollUpHomeowners(homeowners, statements) };
 }
 
 /* ── board pack ───────────────────────────────────────────────────── */

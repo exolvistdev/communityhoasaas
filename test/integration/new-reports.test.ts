@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { postLateFeeIssued, postBillIssued, postBillPayment } from "@/lib/ledger";
-import { parseReportRange, lateFeesReport, vendorSpendReport } from "@/lib/reports";
+import {
+  parseReportRange,
+  lateFeesReport,
+  vendorSpendReport,
+  violationsReport,
+  homeownersReport,
+} from "@/lib/reports";
 import {
   hasTestDb,
   resetTestOrg,
@@ -67,6 +73,32 @@ describe.skipIf(!hasTestDb)("late-fees + vendor-spend reports", () => {
       },
     });
     await postBillPayment(bp.id);
+
+    // an OPEN violation with a fine notice
+    const violation = await prisma.violation.create({
+      data: {
+        orgId,
+        propertyId: p.id,
+        category: "PARKING",
+        description: "Blocked the fire lane",
+        status: "OPEN",
+        occurredAt: new Date("2026-09-08T04:00:00Z"),
+      },
+    });
+    await prisma.violation.update({
+      where: { id: violation.id },
+      data: { createdAt: new Date("2026-09-08T04:00:00Z") },
+    });
+    await prisma.fineNotice.create({
+      data: {
+        violationId: violation.id,
+        orgId,
+        noticeNumber: 1,
+        amount: 500,
+        issuedAt: new Date("2026-09-09T04:00:00Z"),
+        dueDate: new Date("2026-09-23T04:00:00Z"),
+      },
+    });
   });
 
   afterAll(async () => {
@@ -98,5 +130,29 @@ describe.skipIf(!hasTestDb)("late-fees + vendor-spend reports", () => {
     expect(green.openBalance).toBe(2500);
     expect(green.category).toBe("Utilities");
     expect(r.byCategory.find((c) => c.name === "Utilities")?.value).toBe(4000);
+  });
+
+  it("violationsReport counts the violation, its category and fine total", async () => {
+    const r = await violationsReport(
+      orgId,
+      parseReportRange({ from: "2026-09-01", to: "2026-09-30" })
+    );
+    expect(r.count).toBe(1);
+    expect(r.openCount).toBe(1);
+    expect(r.totalFines).toBe(500);
+    expect(r.byCategory).toEqual([{ name: "Parking", value: 1 }]);
+    expect(r.resolution.find((x) => x.name === "Open")?.value).toBe(1);
+  });
+
+  it("homeownersReport rosters the primary owner with their balance and portal state", async () => {
+    const r = await homeownersReport(
+      orgId,
+      parseReportRange({ from: "2026-01-01", to: "2026-12-31" }).to
+    );
+    const juan = r.rows.find((x) => x.name === "Juan")!;
+    expect(juan.units).toHaveLength(1);
+    expect(juan.portal).toBe("Never signed in"); // no linked user in the fixture
+    expect(juan.balance).toBeGreaterThan(0); // unpaid dues + late fee
+    expect(["partial", "overdue"]).toContain(juan.status);
   });
 });
