@@ -75,6 +75,15 @@ const config: Config = {
       ringColor: {
         DEFAULT: c("--ring"),
       },
+      keyframes: {
+        swing: {
+          "0%, 100%": { transform: "rotate(-12deg)" },
+          "50%": { transform: "rotate(12deg)" },
+        },
+      },
+      animation: {
+        swing: "swing 1.4s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
