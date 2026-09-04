@@ -24,9 +24,12 @@ Work top to bottom. Details for each step are in `DEPLOYMENT.md`.
 
 ## Vercel
 
-- [ ] Every env var from `DEPLOYMENT.md` §2 set for **Production** and **Preview**
-- [ ] Build command = `prisma generate && next build`
-- [ ] `NEXT_PUBLIC_SITE_URL` = production origin (email links break without it)
+- [ ] Every `✅` env var from `DEPLOYMENT.md` §2 set for **Production** (and Preview if used)
+      — `.env` is git-ignored, so Vercel starts with nothing; a missing `DATABASE_URL`
+      500s every request
+- [ ] After any env-var change: **redeploy** (changes don't touch the running deployment)
+- [ ] Build command = **default** (repo `build` script already runs `prisma generate`)
+- [ ] `NEXT_PUBLIC_SITE_URL` = the deployed origin, **never `localhost`** (email links)
 - [ ] `RESEND_API_KEY` set + `EMAIL_FROM` on a Resend-verified domain
       *(or accept: notifications are in-app only, email silently no-ops)*
 - [ ] Custom domain attached; DNS verified

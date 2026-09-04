@@ -48,7 +48,10 @@ still `localhost`, invited staff can't accept.
 ## 2. Environment variables
 
 Set every one of these in Vercel (Project → Settings → Environment Variables), for
-**Production** and **Preview**:
+**Production** and **Preview**. `.env` is git-ignored, so Vercel has **nothing** until you
+add them here — a missing `DATABASE_URL` fails every request with
+`PrismaClientInitializationError` (see Troubleshooting). **Changing a variable takes effect
+only on the next deploy** — redeploy after editing.
 
 | var | required | notes |
 | --- | --- | --- |
@@ -57,22 +60,27 @@ Set every one of these in Vercel (Project → Settings → Environment Variables
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | `https://<ref>.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | public — safe in the client bundle |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | **secret** — invites, seed auth users, storage writes |
-| `NEXT_PUBLIC_SITE_URL` | ✅ | the production origin — used for links in outbound email |
+| `NEXT_PUBLIC_SITE_URL` | ✅ | the deployed origin (`https://<project>.vercel.app` or your domain) — **never `localhost`**; used for links in outbound email |
 | `CRON_SECRET` | ✅ | gates the 3 cron routes; Vercel Cron sends it as a bearer token |
 | `RESEND_API_KEY` | ⬜ | email notifications no-op without it (in-app still works) |
 | `EMAIL_FROM` | ⬜ | must be on a domain verified in Resend, else sends bounce |
 | `DATABASE_URL_TEST` | ⬜ | CI only — never set in Vercel |
+
+Values come straight from your local `.env` (same Supabase project) — **except**
+`NEXT_PUBLIC_SITE_URL`, which must be the deployed origin.
 
 ---
 
 ## 3. Vercel
 
 1. Import the GitHub repo. Framework preset: **Next.js** (auto-detected).
-2. Build command / output: defaults. `prisma generate` runs automatically via the
-   `postinstall` hook if present, else add `prisma generate && next build` as the build
-   command. *(Check: `package.json` has no `postinstall` — set the build command to
-   `prisma generate && next build`.)*
-3. Set the env vars from §2.
+2. Build command / output: **defaults** — the repo's `build` script is
+   `prisma generate && next build`, so the Prisma client is regenerated on every build
+   (Vercel's cached `node_modules` can otherwise ship a stale client). No custom build
+   command needed.
+3. Set the env vars from §2 **before** the first deploy. The `next.config.mjs` build guard
+   aborts the build with a clear message if `DATABASE_URL` /
+   `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` are missing.
 4. `vercel.json` already declares 3 daily crons:
    - `/api/cron/overdue` — 01:00 UTC — overdue-invoice notifications
    - `/api/cron/late-fees` — 02:00 UTC — late-fee sweep
@@ -150,3 +158,38 @@ response.
 
 After any rotation, re-run the §5 smoke test. Existing user sessions stay valid — the JWT
 signing secret is separate and is not rotated here.
+
+---
+
+## 7. Troubleshooting
+
+### `PrismaClientInitializationError: … DATABASE_URL resolved to an empty string`
+
+Every page 500s. `DATABASE_URL` (and probably the rest) is **not set in Vercel**, or was
+set for the wrong environment (Preview but not Production), or was set but there's been no
+redeploy since. Fix:
+
+1. Add all `✅` vars from §2 for **Production**.
+2. **Deployments → ⋯ → Redeploy** — env changes don't apply to the running deployment.
+3. `curl https://<app>/api/health` → `{"ok":true,"db":"up"}`.
+
+`next.config.mjs` now aborts the *build* when `DATABASE_URL` /
+`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` are missing on Vercel, so a
+future env-less deploy fails visibly instead of shipping a 500.
+
+### `@prisma/client did not initialize yet. Please run "prisma generate"`
+
+The generated client is stale/absent. The repo `build` script runs `prisma generate`, so
+a plain redeploy usually fixes it. If it persists, **redeploy with the build cache
+cleared** (Deployments → ⋯ → Redeploy → untick "Use existing Build Cache").
+
+### `prepared statement "s0" already exists` / connection timeouts / "too many connections"
+
+`DATABASE_URL` is pointed at the direct DB host or the session pooler. It must be the
+**transaction** pooler (`:6543`) with `?pgbouncer=true&connection_limit=1`. `DIRECT_URL`
+(`:5432`, session pooler) is for migrations only.
+
+### Invite / reset links point at `localhost`
+
+`NEXT_PUBLIC_SITE_URL` is unset or still the `.env` dev value — set it to the deployed
+origin and redeploy. Also add that origin to Supabase → Auth → URL Configuration (§1).
