@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePlatformAdmin } from "@/lib/platform";
+import { OrgStatusBadge } from "./OrgStatusBadge";
 
 export default async function PlatformDirectoryPage() {
   await requirePlatformAdmin();
@@ -45,6 +46,7 @@ export default async function PlatformDirectoryPage() {
               <th className="px-4 py-2.5 font-medium">Name</th>
               <th className="px-4 py-2.5 font-medium">Subdomain</th>
               <th className="px-4 py-2.5 font-medium">Plan</th>
+              <th className="px-4 py-2.5 font-medium">Status</th>
               <th className="px-4 py-2.5 text-right font-medium">Properties</th>
               <th className="px-4 py-2.5 text-right font-medium">Users</th>
               <th className="px-4 py-2.5 font-medium">Created</th>
@@ -60,6 +62,9 @@ export default async function PlatformDirectoryPage() {
                 </td>
                 <td className="px-4 py-2.5 text-fg-muted">{org.subdomain}</td>
                 <td className="px-4 py-2.5 text-fg-muted">{org.plan}</td>
+                <td className="px-4 py-2.5">
+                  <OrgStatusBadge org={org} />
+                </td>
                 <td className="px-4 py-2.5 text-right text-fg-muted">
                   {org._count.properties}
                 </td>
@@ -73,7 +78,7 @@ export default async function PlatformDirectoryPage() {
             ))}
             {orgs.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-fg-subtle">
+                <td colSpan={7} className="px-4 py-8 text-center text-fg-subtle">
                   No organizations yet.
                 </td>
               </tr>

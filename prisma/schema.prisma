@@ -20,6 +20,7 @@ model PlatformAdmin {
   createdAt DateTime @default(now())
 
   impersonations ImpersonationEvent[]
+  activatedOrgs  Organization[]
 
   @@map("platform_admins")
 }
@@ -42,11 +43,25 @@ model ImpersonationEvent {
 // Tenancy
 // ─────────────────────────────────────────────
 
+enum OrgStatus {
+  TRIAL
+  ACTIVE
+}
+
 model Organization {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   name          String
-  subdomain     String   @unique
-  plan          String   @default("growth")
+  subdomain     String    @unique
+  plan          String    @default("growth")
+  // Self-serve signup starts a 30-day TRIAL; anything else (seed, a
+  // manually-provisioned org) defaults straight to ACTIVE — no gate. A
+  // platform admin flips TRIAL -> ACTIVE from /platform once the customer
+  // has settled a contract/payment outside the app (see lib/trial.ts).
+  status        OrgStatus @default(ACTIVE)
+  trialEndsAt   DateTime?
+  activatedAt   DateTime?
+  activatedById String?
+  activatedBy   PlatformAdmin? @relation(fields: [activatedById], references: [id], onDelete: SetNull)
   billingDueDay Int      @default(15) // day of month monthly-dues invoices fall due
   gcashNumber         String?
   gcashName           String?

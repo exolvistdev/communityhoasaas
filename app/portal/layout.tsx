@@ -3,11 +3,13 @@ import { Home } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { TrialBanner } from "@/components/TrialBanner";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PortalTabBar } from "@/components/PortalTabBar";
 import { UnitSwitcher } from "@/components/UnitSwitcher";
 import { getNotificationSummary } from "@/lib/notifications";
+import { trialDaysLeft } from "@/lib/trial";
 
 export const metadata = { title: "Homeowner portal · HOA SaaS" };
 
@@ -45,11 +47,15 @@ export default async function PortalLayout({
     }),
     getNotificationSummary(user.id),
   ]);
+  const daysLeft = trialDaysLeft(org);
 
   return (
     <div className="min-h-screen bg-bg">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
+      )}
+      {daysLeft !== null && daysLeft <= 7 && (
+        <TrialBanner daysLeft={daysLeft} orgName={org.name} />
       )}
       {isStaffViewing && !impersonating && (
         <div className="flex items-center justify-between gap-3 bg-surface-2 px-4 py-1.5 text-xs text-fg-muted">

@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/rbac";
 import { Sidebar } from "@/components/Sidebar";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { TrialBanner } from "@/components/TrialBanner";
 import { getNotificationSummary } from "@/lib/notifications";
 import { waterMetered } from "@/lib/water";
+import { trialDaysLeft } from "@/lib/trial";
 
 export default async function AdminLayout({
   children,
@@ -15,11 +17,15 @@ export default async function AdminLayout({
     getNotificationSummary(user.id),
     prisma.homeowner.count({ where: { userId: user.id } }),
   ]);
+  const daysLeft = trialDaysLeft(org);
 
   return (
     <div className="flex min-h-screen flex-col">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
+      )}
+      {daysLeft !== null && daysLeft <= 7 && (
+        <TrialBanner daysLeft={daysLeft} orgName={org.name} />
       )}
       <div className="flex flex-1">
         <Sidebar

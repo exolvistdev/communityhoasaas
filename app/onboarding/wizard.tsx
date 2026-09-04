@@ -63,7 +63,8 @@ function Step1({ onDone }: { onDone: () => void }) {
       <div>
         <h1 className="text-xl font-semibold text-fg">Set up your HOA</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          Create your organization and admin account. Takes about a minute.
+          Create your organization and admin account. Takes about a minute —
+          starts with a free 30-day trial, no card required.
         </p>
       </div>
 

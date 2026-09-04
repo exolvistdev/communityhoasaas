@@ -58,7 +58,7 @@ export default function LoginPage() {
                 href="/onboarding"
                 className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
               >
-                Set one up
+                Start your free 30-day trial
               </Link>
             </span>
             <span aria-hidden="true" className="text-slate-300">

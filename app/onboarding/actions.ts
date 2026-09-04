@@ -87,7 +87,13 @@ export async function createOrgAndAdmin(
   try {
     await prisma.$transaction(async (tx) => {
       const org = await tx.organization.create({
-        data: { name: orgName, subdomain, waterSource },
+        data: {
+          name: orgName,
+          subdomain,
+          waterSource,
+          status: "TRIAL",
+          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
       });
       await tx.user.create({
         data: { orgId: org.id, authId, email, fullName, role: "ADMIN" },

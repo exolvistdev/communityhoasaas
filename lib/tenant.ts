@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { resolveImpersonation } from "@/lib/impersonation";
 import { requestCache } from "@/lib/react-cache";
+import { isOrgLocked } from "@/lib/trial";
 
 /**
  * Resolve the current Supabase-authenticated user and their HOA org.
@@ -16,8 +17,10 @@ import { requestCache } from "@/lib/react-cache";
  * that one branch is what makes impersonation transparent everywhere else in
  * the app.
  *
- * Redirects to /login if unauthenticated, or /onboarding if the auth user
- * has no HOA membership yet.
+ * Redirects to /login if unauthenticated, /onboarding if the auth user has
+ * no HOA membership yet, or /trial-ended if their org's trial has lapsed
+ * (not checked on the impersonation branch — a platform admin helping out
+ * can still reach a locked org).
  *
  * Wrapped in React's `cache()` — layouts and pages both call this (directly,
  * or via requireStaff()/requirePermission()/getHomeownerContext()) on every
@@ -58,6 +61,8 @@ export const getCurrentOrgContext = requestCache(async function getCurrentOrgCon
       .update({ where: { id: user.id }, data: { acceptedAt: user.acceptedAt } })
       .catch(() => {});
   }
+
+  if (isOrgLocked(user.org)) redirect("/trial-ended");
 
   return { authUser, user, org: user.org, impersonating: false as const };
 });

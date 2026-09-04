@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePlatformAdmin } from "@/lib/platform";
+import { OrgStatusBadge } from "../../OrgStatusBadge";
 import { ImpersonateButton } from "./ImpersonateButton";
+import { ActivateOrgButton } from "./ActivateOrgButton";
 
 export default async function PlatformOrgPage({
   params,
@@ -26,10 +28,20 @@ export default async function PlatformOrgPage({
         <Link href="/platform" className="text-sm text-fg-muted hover:text-fg">
           ← Organizations
         </Link>
-        <h1 className="mt-1 text-lg font-semibold text-fg">{org.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h1 className="text-lg font-semibold text-fg">{org.name}</h1>
+          <OrgStatusBadge org={org} />
+        </div>
         <p className="text-sm text-fg-muted">
           {org.subdomain} · {org.plan} plan · {org._count.properties} properties
+          {org.trialEndsAt &&
+            ` · trial ends ${org.trialEndsAt.toLocaleDateString("en-PH", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}`}
         </p>
+        {org.status !== "ACTIVE" && <ActivateOrgButton orgId={org.id} />}
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">

@@ -1,9 +1,11 @@
 import { ShieldCheck } from "lucide-react";
 import { requirePortalRole } from "@/lib/rbac";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { TrialBanner } from "@/components/TrialBanner";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { getNotificationSummary } from "@/lib/notifications";
+import { trialDaysLeft } from "@/lib/trial";
 
 export const metadata = { title: "Gate — pass validation" };
 
@@ -14,11 +16,15 @@ export default async function GuardLayout({
 }) {
   const { org, user, impersonating } = await requirePortalRole("GUARD");
   const notifications = await getNotificationSummary(user.id);
+  const daysLeft = trialDaysLeft(org);
 
   return (
     <div className="min-h-screen bg-bg">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
+      )}
+      {daysLeft !== null && daysLeft <= 7 && (
+        <TrialBanner daysLeft={daysLeft} orgName={org.name} />
       )}
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-xl items-center justify-between px-5 py-3">

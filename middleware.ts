@@ -34,6 +34,7 @@ const PROTECTED = [
   "/portal",
   "/account",
   "/notifications",
+  "/trial-ended",
 ];
 
 export async function middleware(request: NextRequest) {
