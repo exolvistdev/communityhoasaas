@@ -9,7 +9,7 @@ import { notifyListingReported } from "@/lib/notify";
 import {
   uploadListingPhotos,
   deleteListingPhotos,
-  MAX_PHOTOS,
+  MAX_LISTING_PHOTOS,
 } from "@/lib/storage";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
@@ -111,7 +111,7 @@ export async function updateListing(id: string, fd: FormData): Promise<Result> {
     orgId: owned.org.id,
     listingId: id,
   });
-  photos = [...photos, ...newPaths].slice(0, MAX_PHOTOS);
+  photos = [...photos, ...newPaths].slice(0, MAX_LISTING_PHOTOS);
 
   await prisma.marketplaceListing.update({
     where: { id },

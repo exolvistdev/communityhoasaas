@@ -2,10 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LISTING_CATEGORIES, publicPhotoUrl } from "@/lib/marketplace";
+import { LISTING_CATEGORIES, publicPhotoUrl, MAX_LISTING_PHOTOS } from "@/lib/marketplace";
 import { createListing, updateListing } from "./actions";
-
-const MAX_PHOTOS = 5;
 
 type Initial = {
   id: string;
@@ -55,7 +53,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
 
   function addFiles(list: FileList | null) {
     if (!list) return;
-    const room = MAX_PHOTOS - slots;
+    const room = MAX_LISTING_PHOTOS - slots;
     setNewFiles((f) => [...f, ...Array.from(list).slice(0, room)]);
     if (fileInput.current) fileInput.current.value = "";
   }
@@ -147,7 +145,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
       </label>
 
       <div className="text-sm">
-        <span className="text-fg">Photos ({slots}/{MAX_PHOTOS})</span>
+        <span className="text-fg">Photos ({slots}/{MAX_LISTING_PHOTOS})</span>
         <div className="mt-2 flex flex-wrap gap-2">
           {keptPhotos.map((p) => (
             <div key={p} className="relative h-20 w-20">
@@ -185,7 +183,7 @@ export function ListingForm({ initial }: { initial?: Initial }) {
               </button>
             </div>
           ))}
-          {slots < MAX_PHOTOS && (
+          {slots < MAX_LISTING_PHOTOS && (
             <button
               type="button"
               onClick={() => fileInput.current?.click()}

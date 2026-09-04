@@ -5,6 +5,9 @@ import { peso } from "@/lib/format";
 
 export const MARKETPLACE_BUCKET = "marketplace";
 
+/** Max photos a seller can attach to one listing. */
+export const MAX_LISTING_PHOTOS = 10;
+
 /** How long a new listing stays visible in browse before it must be renewed. */
 export const LISTING_TTL_DAYS = 30;
 

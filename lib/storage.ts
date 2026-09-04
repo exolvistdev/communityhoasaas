@@ -1,10 +1,9 @@
 import { randomUUID } from "crypto";
 import { createAdminClient } from "./supabase/admin";
-import { MARKETPLACE_BUCKET } from "./marketplace";
+import { MARKETPLACE_BUCKET, MAX_LISTING_PHOTOS } from "./marketplace";
 
-export { MARKETPLACE_BUCKET, publicPhotoUrl } from "./marketplace";
+export { MARKETPLACE_BUCKET, publicPhotoUrl, MAX_LISTING_PHOTOS } from "./marketplace";
 
-export const MAX_PHOTOS = 5;
 const MAX_BYTES = 5 * 1024 * 1024;
 const MIME_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -29,7 +28,7 @@ export async function ensureMarketplaceBucket() {
 /**
  * Upload listing photos via the service-role client (bypasses Storage RLS).
  * Silently drops files that aren't a supported image or exceed the size cap,
- * and never accepts more than MAX_PHOTOS. Returns the stored object paths.
+ * and never accepts more than MAX_LISTING_PHOTOS. Returns the stored object paths.
  */
 export async function uploadListingPhotos(
   files: File[],
@@ -37,7 +36,7 @@ export async function uploadListingPhotos(
 ): Promise<string[]> {
   const usable = files
     .filter((f) => f && f.size > 0 && f.size <= MAX_BYTES && MIME_EXT[f.type])
-    .slice(0, MAX_PHOTOS);
+    .slice(0, MAX_LISTING_PHOTOS);
   if (usable.length === 0) return [];
 
   const admin = createAdminClient();
