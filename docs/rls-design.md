@@ -1,6 +1,38 @@
-# Postgres row-level security — design (not implemented)
+# Postgres row-level security
 
-## Status: deferred
+## Baseline hardening — done
+
+Migration `20260904190000_enable_rls_public` runs `ALTER TABLE ... ENABLE ROW
+LEVEL SECURITY` (no `FORCE`, no policies) on every table in `public`, and
+revokes all `anon`/`authenticated` table grants (`REVOKE ALL ...` +
+`ALTER DEFAULT PRIVILEGES ... REVOKE ALL`, so future tables inherit no access
+either).
+
+This is **not** the tenant-isolation design below — it doesn't touch the app.
+Prisma connects as `postgres`, which owns every table (confirmed live:
+`SELECT tableowner FROM pg_tables WHERE schemaname='public'` → all `postgres`);
+an owning role bypasses RLS unless `FORCE` is set, which this migration never
+sets. So the app is unaffected (verified: full integration suite green in a
+disposable probe schema with the migration applied, then a live smoke test
+across `/dashboard`, `/elections`, `/board`, `/reports`, `/billing`, `/portal`
+after applying it to `public`).
+
+What it actually fixes: Supabase's PostgREST Data API
+(`https://<ref>.supabase.co/rest/v1/<table>`) is always live and reachable with
+nothing but the public `NEXT_PUBLIC_SUPABASE_ANON_KEY` already shipped in the
+browser bundle. Before this migration, the `anon` role held Supabase's default
+table grants, so a direct request there could read/write these tables —
+completely bypassing the app and its `orgId` checks. Verified before/after:
+`GET /rest/v1/invoices` with the anon key went from returning real rows to
+`401 permission denied for table invoices`. The app never uses this API (only
+`.auth.*` and `.storage.*` — grepped, no `supabase.from(...)` table query
+anywhere), so closing it costs nothing.
+
+**Reminder:** a new table's migration must also enable RLS on it
+(`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`) — unlike grants, this doesn't
+apply automatically to tables created later.
+
+## Status: full tenant-isolation design — still deferred
 
 Tenant isolation today is **application-layer**:
 
@@ -14,10 +46,14 @@ Tenant isolation today is **application-layer**:
   bypasses RLS unless `FORCE ROW LEVEL SECURITY` is set — so turning RLS on without the
   plumbing below would change nothing.
 
-RLS is therefore **defense-in-depth** (catch a query that forgets `orgId`; contain a
-leaked connection string), not a hole being filled. It also can't be integration-tested on
-the dev machine (no local Postgres) — only in CI. Given the cost/benefit and that nothing
-is deployed yet, it's deferred.
+The design below would be **defense-in-depth** (catch a query that forgets `orgId`;
+contain a leaked connection string) on top of that, not a hole being filled — the actual
+hole (Supabase's PostgREST Data API reachable with the public anon key) is the one closed
+above. It's testable in the disposable probe schema (`npm run test:integration:probe`,
+used to validate the baseline migration above), so "no local Postgres" is no longer a
+blocker to building it — it remains deferred purely on cost/benefit: the app-layer
+`orgId` convention plus the baseline hardening above already cover the realistic threat
+model for a single-tenant-DB, org-per-user app.
 
 ## The design, when it's built
 

@@ -171,8 +171,9 @@ them: **check** (typecheck + lint + unit tests), **integration** (a `postgres:16
 connection strings, the env-var table, storage-bucket provisioning, Supabase Auth
 URLs, cron wiring, migrations, and the secret-rotation procedure — is in
 [`DEPLOYMENT.md`](DEPLOYMENT.md). Pre-launch checklist: [`GO-LIVE.md`](GO-LIVE.md).
-Row-level-security is app-layer today; the design to add Postgres RLS is in
-[`docs/rls-design.md`](docs/rls-design.md).
+Baseline Postgres RLS (enabled, no policies — closes the PostgREST/anon-key exposure) is
+live; tenant isolation is still app-layer + org-per-user. The fuller per-org-policy design
+is in [`docs/rls-design.md`](docs/rls-design.md).
 
 - **App health**: `GET /api/health` → `{ ok, db, time }` (200 / 503).
 - `npm run db:seed` refuses to run when `NODE_ENV=production` or `VERCEL` is set.

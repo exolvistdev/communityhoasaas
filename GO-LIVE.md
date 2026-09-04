@@ -64,8 +64,12 @@ vendor-spend, violations, homeowners, water}` **and** `/reports/board-pack`:
 
 - [ ] `<img>` lint warnings in `app/portal/market/**` and `app/(admin)/marketplace/**`
       — cosmetic (`next/image` migration is optional, tracked as future work)
-- [ ] **Postgres RLS not enabled** — tenant isolation is app-layer + org-per-user; design
-      to add it is in `docs/rls-design.md`
+- [x] **Postgres RLS** — baseline hardening is live (migration
+      `20260904190000_enable_rls_public`: RLS enabled on every `public` table, no
+      policies, `anon`/`authenticated` grants revoked — closes the PostgREST/anon-key
+      exposure; app is unaffected since Prisma connects as the owning role). Tenant
+      isolation stays app-layer + org-per-user; the fuller per-org-policy design is in
+      `docs/rls-design.md`, still deferred
 - [ ] **Subdomain routing (`{sub}.hoasaas.ph`) not built** — it would be cosmetic only
       (a user can never reach another org). Revisit only if signup ever allows one user in
       multiple orgs.
