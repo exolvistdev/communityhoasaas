@@ -2,38 +2,43 @@
 
 Work top to bottom. Details for each step are in `DEPLOYMENT.md`.
 
+## Done
+
+- [x] GitHub repo (`exolvistdev/communityhoasaas`) + `main` pushed
+- [x] Vercel project connected; env vars set for Production; deploy is up
+      (`/api/health` → ok)
+- [x] Prod DB migrated — prod uses the **same Supabase project** as local `.env`,
+      already at all 43 migrations (47 tables)
+- [x] Storage buckets — all 5 (`marketplace`, `documents`, `payment-qr`, `violations`,
+      `maintenance`) already exist on that project
+- [x] `prisma/seed.ts` guarded against production
+- [x] Production Vercel builds run `prisma migrate deploy` automatically
+      (`scripts/prebuild-migrate.mjs`)
+
 ## Repo & CI
 
-- [ ] GitHub repo created; `git remote add origin <url> && git push -u origin main`
-- [ ] All 3 CI jobs green on `main` (**check** · **integration** · **build**)
+- [ ] All 3 CI jobs green on `main` — https://github.com/exolvistdev/communityhoasaas/actions
 - [ ] Branch protection on `main` — require the CI checks to pass before merge
 
-## Secrets (do before the repo is shared)
+## Supabase — still required
 
-- [ ] Database password rotated → `DATABASE_URL` + `DIRECT_URL` updated in Vercel + local `.env`
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` rotated → updated in Vercel + local
-- [ ] `CRON_SECRET` generated (`openssl rand -hex 32`) → set in Vercel
+- [ ] **Auth → URL Configuration**: Site URL + `…/**` redirect = the Vercel origin.
+      Until this is set, invite / password-reset links point at `localhost`.
 
-## Supabase
+## Vercel — verify
 
-- [ ] `prisma migrate deploy` run against the production database (`DIRECT_URL`)
-- [ ] Storage buckets provisioned — `node --env-file=.env … scripts/provision-storage.ts`
-- [ ] Auth → URL Configuration: Site URL + `…/**` redirect = production origin
-- [ ] Confirm the pooled connection strings (transaction `:6543` for `DATABASE_URL`,
-      session `:5432` for `DIRECT_URL`)
+- [ ] `NEXT_PUBLIC_SITE_URL` = the deployed origin, **not** the `localhost` value from
+      `.env` (redeploy if you change it)
+- [ ] `RESEND_API_KEY` + `EMAIL_FROM` on a Resend-verified domain — or accept email
+      no-ops (in-app notifications still work)
+- [ ] Node version 22.x or 24.x (Project → Settings → General) — `@supabase/supabase-js`
+      wants Node ≥ 22
+- [ ] Custom domain (optional)
 
-## Vercel
+## Secrets — precautionary (`.env` was never committed, so not urgent)
 
-- [ ] Every `✅` env var from `DEPLOYMENT.md` §2 set for **Production** (and Preview if used)
-      — `.env` is git-ignored, so Vercel starts with nothing; a missing `DATABASE_URL`
-      500s every request
-- [ ] After any env-var change: **redeploy** (changes don't touch the running deployment)
-- [ ] Build command = **default** (repo `build` script already runs `prisma generate`)
-- [ ] `NEXT_PUBLIC_SITE_URL` = the deployed origin, **never `localhost`** (email links)
-- [ ] `RESEND_API_KEY` set + `EMAIL_FROM` on a Resend-verified domain
-      *(or accept: notifications are in-app only, email silently no-ops)*
-- [ ] Custom domain attached; DNS verified
-- [ ] First deploy succeeded
+- [ ] Rotate DB password / `SUPABASE_SERVICE_ROLE_KEY` / `CRON_SECRET` per
+      `DEPLOYMENT.md §6` — do it before anyone else can clone the repo
 
 ## Smoke test (post-deploy)
 

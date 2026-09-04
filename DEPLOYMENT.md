@@ -96,19 +96,21 @@ Values come straight from your local `.env` (same Supabase project) — **except
 
 ## 4. Migrations
 
-`prisma migrate deploy` is **not** run by `next build`. Run it against the production
-database on every release, before the new build serves traffic:
+**Production Vercel builds run `prisma migrate deploy` automatically** —
+`scripts/prebuild-migrate.mjs` (wired into the `build` script) applies pending
+migrations before `next build` whenever `VERCEL_ENV === "production"`. So a schema change
+ships ahead of the code that needs it, and a broken migration fails the build instead of
+500-ing prod. Preview builds and local builds skip it.
+
+For a one-off (a rollback, or applying migrations without a deploy), run it by hand
+against `DIRECT_URL` (session connection — migrations don't go through pgbouncer):
 
 ```
 DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy
 ```
 
-(Use `DIRECT_URL` — migrations need a session connection, not pgbouncer.) Options:
-
-- a manual step in your release checklist, or
-- a Vercel "Deploy Hook" / GitHub Action that runs it on push to `main` before promoting.
-
-All 43 migrations apply cleanly from an empty database (verified via
+To move back to a manual gate, drop `node scripts/prebuild-migrate.mjs` from the `build`
+script. All 43 migrations apply cleanly from an empty database (verified via
 `npm run test:integration:probe`).
 
 ---
