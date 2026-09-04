@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/rbac";
 import { Sidebar } from "@/components/Sidebar";
-import { UserMenu } from "@/components/UserMenu";
-import { NotificationBell } from "@/components/NotificationBell";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { getNotificationSummary } from "@/lib/notifications";
 import { waterMetered } from "@/lib/water";
@@ -28,19 +26,11 @@ export default async function AdminLayout({
           orgName={org.name}
           role={user.role}
           features={{ water: waterMetered(org.waterSource) }}
+          userName={user.fullName}
+          residentHref={homeownerLinks > 0 ? "/portal" : undefined}
+          notifications={notifications}
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 hidden h-14 items-center justify-end gap-1 border-b border-border bg-surface/80 px-6 backdrop-blur lg:flex">
-            <NotificationBell
-              unread={notifications.unread}
-              recent={notifications.recent}
-            />
-            <UserMenu
-              name={user.fullName}
-              role={user.role}
-              residentHref={homeownerLinks > 0 ? "/portal" : undefined}
-            />
-          </header>
           <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6 lg:p-8">
             {children}
           </main>

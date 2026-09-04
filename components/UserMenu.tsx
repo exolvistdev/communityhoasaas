@@ -20,12 +20,18 @@ export function UserMenu({
   role,
   accountHref = "/account",
   residentHref,
+  openUp = false,
+  align = "right",
 }: {
   name: string;
   role: string;
   accountHref?: string;
   /** Set when this staff member also owns a unit — links to the resident portal. */
   residentHref?: string;
+  /** Open the dropdown above the trigger (for footer / bottom-of-viewport use). */
+  openUp?: boolean;
+  /** Which edge the dropdown aligns to. */
+  align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -53,7 +59,13 @@ export function UserMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-40 mt-1.5 w-60 rounded-lg border border-border bg-surface p-1.5 shadow-lg">
+        <div
+          className={cn(
+            "absolute z-40 w-60 rounded-lg border border-border bg-surface p-1.5 shadow-lg",
+            openUp ? "bottom-full mb-1.5" : "mt-1.5",
+            align === "left" ? "left-0" : "right-0"
+          )}
+        >
           <div className="px-2.5 py-2">
             <div className="text-sm font-medium text-fg">{name}</div>
             <div className="text-xs capitalize text-fg-subtle">

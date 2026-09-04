@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { cn } from "@/lib/cn";
 import { relativeTime } from "@/lib/format";
 import { markRead, markAllRead } from "@/app/notifications/actions";
 
@@ -19,9 +20,15 @@ export type BellItem = {
 export function NotificationBell({
   unread,
   recent,
+  openUp = false,
+  align = "right",
 }: {
   unread: number;
   recent: BellItem[];
+  /** Open the dropdown above the trigger (for footer / bottom-of-viewport use). */
+  openUp?: boolean;
+  /** Which edge the dropdown aligns to. */
+  align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -62,7 +69,13 @@ export function NotificationBell({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-40 mt-1.5 w-80 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+        <div
+          className={cn(
+            "absolute z-40 w-80 overflow-hidden rounded-lg border border-border bg-surface shadow-lg",
+            openUp ? "bottom-full mb-1.5" : "mt-1.5",
+            align === "left" ? "left-0" : "right-0"
+          )}
+        >
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <span className="text-sm font-medium text-fg">Notifications</span>
             {unread > 0 && (
