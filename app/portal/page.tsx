@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Vote,
   Landmark,
+  Users,
   Droplet,
   FileText,
   Gavel,
@@ -62,6 +63,7 @@ export default async function PortalHome() {
     upcomingMeetings,
     openVotes,
     openElections,
+    activeTrustees,
     waterMeter,
   ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
@@ -130,6 +132,14 @@ export default async function PortalHome() {
         status: "OPEN",
         opensAt: { lte: now },
         closesAt: { gte: now },
+      },
+    }),
+    prisma.trustee.count({
+      where: {
+        orgId: property.orgId,
+        endedAt: null,
+        termStart: { lte: now },
+        termEnd: { gte: now },
       },
     }),
     prisma.waterMeter.findFirst({
@@ -316,6 +326,14 @@ export default async function PortalHome() {
             icon={Landmark}
             label="Elections"
             sub={`${openElections} open`}
+          />
+        )}
+        {activeTrustees > 0 && (
+          <Tile
+            href="/portal/board"
+            icon={Users}
+            label="Your Board"
+            sub={`${activeTrustees} trustee${activeTrustees === 1 ? "" : "s"}`}
           />
         )}
         {waterMetered(org.waterSource) && waterMeter?.readings[0] && (
