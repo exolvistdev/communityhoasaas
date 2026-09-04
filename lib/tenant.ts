@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { resolveImpersonation } from "@/lib/impersonation";
+import { requestCache } from "@/lib/react-cache";
 
 /**
  * Resolve the current Supabase-authenticated user and their HOA org.
@@ -17,8 +18,14 @@ import { resolveImpersonation } from "@/lib/impersonation";
  *
  * Redirects to /login if unauthenticated, or /onboarding if the auth user
  * has no HOA membership yet.
+ *
+ * Wrapped in React's `cache()` — layouts and pages both call this (directly,
+ * or via requireStaff()/requirePermission()/getHomeownerContext()) on every
+ * request; caching it means those repeat calls share one
+ * supabase.auth.getUser() + prisma.user.findFirst() per request instead of
+ * each re-running it.
  */
-export async function getCurrentOrgContext() {
+export const getCurrentOrgContext = requestCache(async function getCurrentOrgContext() {
   const supabase = createClient();
   const {
     data: { user: authUser },
@@ -53,11 +60,14 @@ export async function getCurrentOrgContext() {
   }
 
   return { authUser, user, org: user.org, impersonating: false as const };
-}
+});
 
-/** Same as above but returns null instead of redirecting — for pages that
- *  need to branch on onboarding state (e.g. the onboarding page itself). */
-export async function tryGetOrgContext() {
+/**
+ * Same as above but returns null instead of redirecting — for pages that
+ * need to branch on onboarding state (e.g. the onboarding page itself).
+ * Also `cache()`-wrapped for the same reason.
+ */
+export const tryGetOrgContext = requestCache(async function tryGetOrgContext() {
   const supabase = createClient();
   const {
     data: { user: authUser },
@@ -85,4 +95,4 @@ export async function tryGetOrgContext() {
   return user
     ? { authUser, user, org: user.org, impersonating: false as const }
     : { authUser, user: null, org: null, impersonating: false as const };
-}
+});

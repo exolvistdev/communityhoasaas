@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 import { Providers } from "./providers";
 
 const inter = Inter({
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="font-sans">
+        <NextTopLoader color="#4f46e5" showSpinner={false} height={2} />
         <Providers>{children}</Providers>
       </body>
     </html>

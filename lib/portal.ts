@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
+import { requestCache } from "@/lib/react-cache";
 
 /** Cookie holding the propertyId of the unit the resident is currently viewing. */
 export const ACTIVE_UNIT_COOKIE = "hoa_unit";
@@ -38,8 +39,13 @@ export function pickActiveHomeowner(
  *
  * Portal access = the HOMEOWNER role, OR any user (e.g. a board member) who is
  * linked to at least one unit. Everyone else is bounced to their own home.
+ *
+ * Wrapped in React's `cache()` — ~30 portal pages/actions call this again on
+ * top of the portal layout's call, on every request; caching it dedupes both
+ * the underlying getCurrentOrgContext() and this function's own
+ * homeowner.findMany() to one run per request.
  */
-export async function getHomeownerContext() {
+export const getHomeownerContext = requestCache(async function getHomeownerContext() {
   const { user, org, impersonating } = await getCurrentOrgContext();
 
   const homeowners = await prisma.homeowner.findMany({
@@ -61,4 +67,4 @@ export async function getHomeownerContext() {
     homeowner: active,
     property: active?.property ?? null,
   };
-}
+});

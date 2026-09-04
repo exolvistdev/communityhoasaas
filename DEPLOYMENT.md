@@ -14,7 +14,7 @@ The Supabase project already exists (it's what `.env` points at).
 
 | var | pooler | port | used by |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | **transaction** mode | `6543` | the app at runtime — must carry `?pgbouncer=true&connection_limit=1` |
+| `DATABASE_URL` | **transaction** mode | `6543` | the app at runtime — must carry `?pgbouncer=true&connection_limit=5` |
 | `DIRECT_URL` | **session** mode | `5432` | `prisma migrate deploy` only |
 
 Both are under Supabase → Settings → Database → Connection string (use the "URI" tab, and
@@ -55,7 +55,7 @@ only on the next deploy** — redeploy after editing.
 
 | var | required | notes |
 | --- | --- | --- |
-| `DATABASE_URL` | ✅ | transaction pooler, `?pgbouncer=true&connection_limit=1` |
+| `DATABASE_URL` | ✅ | transaction pooler, `?pgbouncer=true&connection_limit=5` |
 | `DIRECT_URL` | ✅ | session pooler `:5432` (migrations) |
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | `https://<ref>.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | public — safe in the client bundle |
@@ -188,7 +188,7 @@ cleared** (Deployments → ⋯ → Redeploy → untick "Use existing Build Cache
 ### `prepared statement "s0" already exists` / connection timeouts / "too many connections"
 
 `DATABASE_URL` is pointed at the direct DB host or the session pooler. It must be the
-**transaction** pooler (`:6543`) with `?pgbouncer=true&connection_limit=1`. `DIRECT_URL`
+**transaction** pooler (`:6543`) with `?pgbouncer=true&connection_limit=5`. `DIRECT_URL`
 (`:5432`, session pooler) is for migrations only.
 
 ### Invite / reset links point at `localhost`
