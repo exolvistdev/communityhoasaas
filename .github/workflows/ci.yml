@@ -54,6 +54,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
+      # Supabase provisions `anon`/`authenticated` roles on every project; the
+      # RLS migration revokes their table grants. Mirror that on CI's plain
+      # postgres:16 service so the migration replays cleanly from empty.
+      - run: psql "$DATABASE_URL" -c "CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;"
       - run: npx prisma migrate deploy
       - run: npm run test:integration
 
