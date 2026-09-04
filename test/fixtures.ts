@@ -4,6 +4,7 @@ import {
   postInvoiceIssued,
   postPaymentReceived,
 } from "@/lib/ledger";
+import { deleteOrgCascade } from "@/lib/org-teardown";
 import type { PaymentMethod, PaymentStatus } from "@prisma/client";
 
 /** True when an integration Postgres is configured (CI, or a local scratch DB). */
@@ -11,52 +12,13 @@ export const hasTestDb = Boolean(process.env.DATABASE_URL_TEST);
 
 /**
  * Drop a test org and every row that hangs off it, in FK order.
- * Mirrors `resetDemoOrg()` in prisma/seed.ts — keep the two in sync when a new
- * table gains an FK to organizations / users / properties / invoices.
+ * Delegates to `deleteOrgCascade` — the same teardown `resetDemoOrg()` uses — so
+ * the two never drift.
  */
 export async function resetTestOrg(subdomain: string) {
   const org = await prisma.organization.findUnique({ where: { subdomain } });
   if (!org) return;
-  const orgId = org.id;
-
-  await prisma.conversationReport.deleteMany({ where: { conversation: { orgId } } });
-  await prisma.marketMessage.deleteMany({ where: { conversation: { orgId } } });
-  await prisma.marketConversation.deleteMany({ where: { orgId } });
-  await prisma.listingReport.deleteMany({ where: { listing: { orgId } } });
-  await prisma.marketplaceListing.deleteMany({ where: { orgId } });
-  await prisma.marketplaceBlock.deleteMany({ where: { orgId } });
-  await prisma.amenityBooking.deleteMany({ where: { orgId } });
-  await prisma.amenity.deleteMany({ where: { orgId } });
-  await prisma.ballot.deleteMany({ where: { vote: { orgId } } });
-  await prisma.voteProxy.deleteMany({ where: { orgId } });
-  await prisma.boardVote.deleteMany({ where: { orgId } });
-  await prisma.meetingRsvp.deleteMany({ where: { meeting: { orgId } } });
-  await prisma.boardMeeting.deleteMany({ where: { orgId } });
-  await prisma.document.deleteMany({ where: { orgId } });
-  await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
-  await prisma.journalEntry.deleteMany({ where: { orgId } });
-  await prisma.payment.deleteMany({ where: { invoice: { property: { orgId } } } });
-  await prisma.waterAllocationRun.deleteMany({ where: { orgId } });
-  await prisma.meterReading.deleteMany({ where: { orgId } });
-  await prisma.waterMeter.deleteMany({ where: { orgId } });
-  await prisma.billPayment.deleteMany({ where: { bill: { orgId } } });
-  await prisma.bill.deleteMany({ where: { orgId } });
-  await prisma.vendor.deleteMany({ where: { orgId } });
-  await prisma.invoice.deleteMany({ where: { property: { orgId } } });
-  await prisma.gatePassScan.deleteMany({ where: { orgId } });
-  await prisma.gatePass.deleteMany({ where: { property: { orgId } } });
-  await prisma.ownershipTransfer.deleteMany({ where: { orgId } });
-  await prisma.auditEvent.deleteMany({ where: { orgId } });
-  await prisma.announcement.deleteMany({ where: { orgId } });
-  await prisma.homeowner.deleteMany({ where: { property: { orgId } } });
-  await prisma.property.deleteMany({ where: { orgId } });
-  await prisma.ratePlan.deleteMany({ where: { orgId } });
-  await prisma.account.deleteMany({ where: { orgId } });
-  await prisma.notification.deleteMany({ where: { user: { orgId } } });
-  await prisma.dataRequest.deleteMany({ where: { orgId } });
-  await prisma.impersonationEvent.deleteMany({ where: { targetUser: { orgId } } });
-  await prisma.user.deleteMany({ where: { orgId } });
-  await prisma.organization.delete({ where: { id: orgId } });
+  await deleteOrgCascade(prisma, org.id);
 }
 
 let seq = 0;

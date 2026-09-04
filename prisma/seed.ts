@@ -16,6 +16,7 @@ import { generateGatePassCode } from "../lib/gatepass";
 import { zonedInstant, zonedParts } from "../lib/amenity";
 import { generateOverdueNotifications } from "../lib/notifications";
 import { applyLateFees } from "../lib/late-fees";
+import { deleteOrgCascade } from "../lib/org-teardown";
 import {
   ensureMarketplaceBucket,
   uploadListingPhotos,
@@ -206,63 +207,7 @@ async function resetDemoOrg() {
   await clearOrgPaymentQr(orgId);
   await clearOrgViolationPhotos(orgId);
   await clearOrgMaintenancePhotos(orgId);
-  await prisma.document.deleteMany({ where: { orgId } });
-  await prisma.conversationReport.deleteMany({
-    where: { conversation: { orgId } },
-  });
-  await prisma.marketMessage.deleteMany({
-    where: { conversation: { orgId } },
-  });
-  await prisma.marketConversation.deleteMany({ where: { orgId } });
-  await prisma.listingReport.deleteMany({ where: { listing: { orgId } } });
-  await prisma.marketplaceListing.deleteMany({ where: { orgId } });
-  await prisma.marketplaceBlock.deleteMany({ where: { orgId } });
-  await prisma.amenityBooking.deleteMany({ where: { orgId } });
-  await prisma.amenity.deleteMany({ where: { orgId } });
-  await prisma.journalLine.deleteMany({ where: { entry: { orgId } } });
-  await prisma.journalEntry.deleteMany({ where: { orgId } });
-  await prisma.creditApplication.deleteMany({ where: { orgId } });
-  await prisma.paymentAllocation.deleteMany({
-    where: { payment: { invoice: { property: { orgId } } } },
-  });
-  await prisma.payment.deleteMany({
-    where: { invoice: { property: { orgId } } },
-  });
-  await prisma.waterAllocationRun.deleteMany({ where: { orgId } });
-  await prisma.meterReading.deleteMany({ where: { orgId } });
-  await prisma.waterMeter.deleteMany({ where: { orgId } });
-  await prisma.invoice.deleteMany({ where: { property: { orgId } } });
-  await prisma.gatePassScan.deleteMany({ where: { orgId } });
-  await prisma.gatePass.deleteMany({ where: { property: { orgId } } });
-  await prisma.refund.deleteMany({ where: { orgId } });
-  await prisma.fineNotice.deleteMany({ where: { orgId } });
-  await prisma.violation.deleteMany({ where: { orgId } });
-  await prisma.maintenanceComment.deleteMany({
-    where: { request: { orgId } },
-  });
-  await prisma.maintenanceRequest.deleteMany({ where: { orgId } });
-  await prisma.ballot.deleteMany({ where: { vote: { orgId } } });
-  await prisma.voteProxy.deleteMany({ where: { orgId } });
-  await prisma.boardVote.deleteMany({ where: { orgId } });
-  await prisma.meetingRsvp.deleteMany({ where: { meeting: { orgId } } });
-  await prisma.boardMeeting.deleteMany({ where: { orgId } });
-  await prisma.billPayment.deleteMany({ where: { bill: { orgId } } });
-  await prisma.bill.deleteMany({ where: { orgId } });
-  await prisma.vendor.deleteMany({ where: { orgId } });
-  await prisma.ownershipTransfer.deleteMany({ where: { orgId } });
-  await prisma.auditEvent.deleteMany({ where: { orgId } });
-  await prisma.announcement.deleteMany({ where: { orgId } });
-  await prisma.homeowner.deleteMany({ where: { property: { orgId } } });
-  await prisma.property.deleteMany({ where: { orgId } });
-  await prisma.ratePlan.deleteMany({ where: { orgId } });
-  await prisma.account.deleteMany({ where: { orgId } });
-  await prisma.notification.deleteMany({ where: { user: { orgId } } });
-  await prisma.dataRequest.deleteMany({ where: { orgId } });
-  await prisma.impersonationEvent.deleteMany({
-    where: { targetUser: { orgId } },
-  });
-  await prisma.user.deleteMany({ where: { orgId } });
-  await prisma.organization.delete({ where: { id: orgId } });
+  await deleteOrgCascade(prisma, orgId);
 }
 
 async function main() {

@@ -151,10 +151,14 @@ npm run typecheck   # tsc --noEmit
 - **Unit** (`test/unit/`) — pure helpers: permissions, CSV import, statement math
   (`assembleStatement`), late-fee policy, gate-pass validation, amenity time rules,
   formatting, notification preferences. No database; always runs.
-- **Integration** (`test/integration/`) — the double-entry ledger invariants, late-fee
-  sweep dedupe, and move-out close-out against a real Postgres. Each suite is
+- **Integration** (`test/integration/`, 16 files / 47 tests) — the double-entry ledger
+  invariants, billing / allocation / refund flows, reports, voting, water. Each suite is
   `describe.skipIf(!process.env.DATABASE_URL_TEST)`, so it no-ops unless you point
   `DATABASE_URL_TEST` at a throwaway database (`npm run test:integration`).
+  - No local Postgres? `npm run test:integration:probe` runs the whole suite against a
+    disposable `ci_probe_*` **schema** on the Supabase project in `.env` (Prisma binds the
+    client to `?schema=`, so `public` is never touched) and drops it after. Pass a filter:
+    `npm run test:integration:probe votes`.
 
 CI (`.github/workflows/ci.yml`) runs three jobs on every push / PR and blocks on all of
 them: **check** (typecheck + lint + unit tests), **integration** (a `postgres:16` service
