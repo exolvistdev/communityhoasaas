@@ -10,6 +10,7 @@ type Candidate = {
   name: string;
   bio: string | null;
   withdrawn: boolean;
+  ineligible: boolean;
   votes: number;
 };
 
@@ -77,6 +78,11 @@ export function CandidateManager({
                       }
                     >
                       {c.name}
+                      {c.ineligible && !c.withdrawn && (
+                        <span className="ml-2 text-xs font-medium text-warning-fg">
+                          behind on dues
+                        </span>
+                      )}
                     </div>
                     {c.bio && (
                       <div className="text-xs text-fg-subtle">{c.bio}</div>

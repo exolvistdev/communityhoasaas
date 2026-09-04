@@ -171,7 +171,12 @@ export default async function PortalElectionsPage() {
                     View result
                   </a>
                 ) : (
-                  <span className="text-xs text-fg-subtle">Result pending</span>
+                  <Link
+                    href="/portal/board"
+                    className="text-brand-accent hover:underline"
+                  >
+                    See the board
+                  </Link>
                 )}
               </li>
             ))}

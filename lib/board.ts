@@ -96,6 +96,24 @@ export async function assignTrusteePosition(
   return { ok: true as const, name: trustee.name };
 }
 
+/** Undo a term that was ended early — clears `endedAt`, swapping any officer holder. */
+export async function reactivateTrustee(orgId: string, trusteeId: string) {
+  const trustee = await prisma.trustee.findFirst({
+    where: { id: trusteeId, orgId },
+  });
+  if (!trustee) return { ok: false as const, error: "Trustee not found", name: "" };
+  if (!trustee.endedAt) return { ok: true as const, name: trustee.name };
+
+  await prisma.$transaction(async (tx) => {
+    await clearOfficer(tx, orgId, trustee.position, trusteeId);
+    await tx.trustee.update({
+      where: { id: trusteeId },
+      data: { endedAt: null },
+    });
+  });
+  return { ok: true as const, name: trustee.name };
+}
+
 /** Create a trustee row (from an appointment), swapping any officer holder. */
 export async function seatTrustee(input: {
   orgId: string;

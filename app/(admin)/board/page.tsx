@@ -1,14 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { boardRoster } from "@/lib/board";
-import { TRUSTEE_POSITION_LABEL } from "@/lib/election";
 import { BoardManager } from "./BoardManager";
+import { PastTrustees } from "./PastTrustees";
 import { AppointForm } from "./AppointForm";
 
 export const metadata = { title: "Board of Trustees · HOA SaaS" };
-
-const fmt = (d: Date) =>
-  d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
 
 export default async function BoardPage() {
   const { org } = await requirePermission("election:manage");
@@ -57,24 +54,7 @@ export default async function BoardPage() {
       {past.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Past trustees</h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {past.map((t) => (
-                  <tr key={t.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 text-fg">{t.name}</td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      {TRUSTEE_POSITION_LABEL[t.position]}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-fg-subtle">
-                      {fmt(t.termStart)} – {fmt(t.termEnd)}
-                      {t.endedAt ? ` · ended ${fmt(t.endedAt)}` : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PastTrustees trustees={past} />
         </section>
       )}
 

@@ -7,7 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
-import { assignTrusteePosition, seatTrustee } from "@/lib/board";
+import {
+  assignTrusteePosition,
+  seatTrustee,
+  reactivateTrustee as reactivateTrusteeLib,
+} from "@/lib/board";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -126,6 +130,24 @@ export async function endTrusteeTerm(trusteeId: string): Promise<Result> {
     data: { endedAt: new Date() },
   });
   await logAudit({ action: "trustee.end", target: trustee.name });
+  revalidate();
+  return { ok: true };
+}
+
+/** Undo a term that was ended early. */
+export async function reactivateTrusteeAction(trusteeId: string): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const { org } = await getCurrentOrgContext();
+  const res = await reactivateTrusteeLib(org.id, trusteeId);
+  if (!res.ok) return { ok: false, error: res.error };
+
+  await logAudit({
+    action: "trustee.update",
+    target: res.name,
+    detail: "reactivated",
+  });
   revalidate();
   return { ok: true };
 }

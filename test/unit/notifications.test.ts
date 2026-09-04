@@ -50,6 +50,18 @@ describe("prefFor", () => {
     const u = user({ notificationPrefs: { billing: { email: false, inApp: false } } });
     expect(prefFor(u, "PAYMENT_CONFIRMED")).toEqual({ email: false, inApp: false });
   });
+
+  it("board elections are muted by the governance category, not announcements", () => {
+    expect(NOTIFICATION_CATALOG.BOARD_ELECTION.category).toBe("governance");
+    const u = user({
+      notificationPrefs: {
+        governance: { email: false, inApp: false },
+        announcements: { email: true, inApp: true },
+      },
+    });
+    expect(prefFor(u, "BOARD_ELECTION")).toEqual({ email: false, inApp: false });
+    expect(prefFor(u, "BOARD_VOTE")).toEqual({ email: false, inApp: false });
+  });
 });
 
 describe("esc", () => {

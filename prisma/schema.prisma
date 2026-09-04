@@ -245,6 +245,7 @@ enum NotificationType {
   MAINTENANCE_UPDATE
   BOARD_MEETING
   BOARD_VOTE
+  BOARD_ELECTION
 }
 
 model Notification {

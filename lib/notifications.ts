@@ -7,6 +7,7 @@ import { sendEmail, emailShell } from "@/lib/email";
 export type NotificationCategory =
   | "billing"
   | "announcements"
+  | "governance"
   | "amenities"
   | "maintenance"
   | "marketplace";
@@ -18,6 +19,11 @@ export const CATEGORIES: {
 }[] = [
   { key: "billing", label: "Billing", hint: "Dues, payments, overdue notices" },
   { key: "announcements", label: "Announcements", hint: "New HOA announcements" },
+  {
+    key: "governance",
+    label: "Board & governance",
+    hint: "Meetings, votes and elections",
+  },
   { key: "amenities", label: "Amenities", hint: "Booking requests and decisions" },
   { key: "maintenance", label: "Maintenance", hint: "Updates on your repair requests" },
   { key: "marketplace", label: "Marketplace", hint: "Messages and moderation" },
@@ -47,8 +53,9 @@ export const NOTIFICATION_CATALOG: Record<NotificationType, CatalogEntry> = {
   MARKETPLACE_LISTING_MODERATED: { category: "marketplace", defaultEmail: true, defaultInApp: true },
   MARKETPLACE_CONVERSATION_REPORTED: { category: "marketplace", defaultEmail: true, defaultInApp: true },
   MAINTENANCE_UPDATE: { category: "maintenance", defaultEmail: true, defaultInApp: true },
-  BOARD_MEETING: { category: "announcements", defaultEmail: true, defaultInApp: true },
-  BOARD_VOTE: { category: "announcements", defaultEmail: true, defaultInApp: true },
+  BOARD_MEETING: { category: "governance", defaultEmail: true, defaultInApp: true },
+  BOARD_VOTE: { category: "governance", defaultEmail: true, defaultInApp: true },
+  BOARD_ELECTION: { category: "governance", defaultEmail: true, defaultInApp: true },
 };
 
 export type ChannelPrefs = { email: boolean; inApp: boolean };
@@ -58,6 +65,7 @@ export function defaultPrefs(): NotificationPrefs {
   return {
     billing: { email: true, inApp: true },
     announcements: { email: true, inApp: true },
+    governance: { email: true, inApp: true },
     amenities: { email: true, inApp: true },
     maintenance: { email: true, inApp: true },
     marketplace: { email: true, inApp: true },

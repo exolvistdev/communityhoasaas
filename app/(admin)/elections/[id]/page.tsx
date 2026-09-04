@@ -78,6 +78,7 @@ export default async function ElectionDetailPage({
     candidates,
     ballots,
     tally,
+    candidateEligible,
     eligibleUnits,
     suspendedUnits,
     cast,
@@ -98,10 +99,13 @@ export default async function ElectionDetailPage({
       suspended: !(standing.get(h.property.id)?.inGoodStanding ?? true),
     }));
 
-  const suspendedCandidates = candidates.filter((c) => {
-    const h = homeowners.find((x) => x.id === c.homeownerId);
-    return h && !(standing.get(h.property.id)?.inGoodStanding ?? true);
-  });
+  // candidates whose own unit isn't in good standing (and who haven't withdrawn)
+  const ineligibleIds = new Set(
+    candidates
+      .filter((c) => !c.withdrawn && !candidateEligible[c.id])
+      .map((c) => c.id)
+  );
+  const suspendedCandidates = candidates.filter((c) => ineligibleIds.has(c.id));
 
   return (
     <div className="space-y-6">
@@ -156,6 +160,7 @@ export default async function ElectionDetailPage({
           name: c.name,
           bio: c.bio,
           withdrawn: c.withdrawn,
+          ineligible: ineligibleIds.has(c.id),
           votes: tally.rows.find((r) => r.candidateId === c.id)?.votes ?? 0,
         }))}
         pool={candidatePool}
@@ -165,20 +170,29 @@ export default async function ElectionDetailPage({
         <p className="rounded-md bg-warning-subtle px-3 py-2 text-xs text-warning-fg">
           {suspendedCandidates.map((c) => c.name).join(", ")} —{" "}
           {suspendedCandidates.length === 1 ? "this unit is" : "these units are"}{" "}
-          behind on dues and not in good standing to run.
+          behind on dues and can&apos;t be elected. Their votes aren&apos;t counted
+          toward a seat; the next candidate takes it.
         </p>
       )}
 
       {/* tally */}
       <section className="rounded-lg border border-border bg-surface p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-fg">
             {election.status === "CLOSED" ? "Result" : "Live tally"}
           </h2>
-          <span className="text-xs text-fg-subtle">
-            {cast}/{eligibleUnits} units cast · {turnoutPct}% turnout
-            {suspendedUnits > 0 && ` · ${suspendedUnits} suspended`}
-          </span>
+          <div className="flex items-center gap-3 text-xs text-fg-subtle">
+            <span>
+              {cast}/{eligibleUnits} units cast · {turnoutPct}% turnout
+              {suspendedUnits > 0 && ` · ${suspendedUnits} suspended`}
+            </span>
+            <a
+              href={`/elections/${election.id}/export`}
+              className="text-brand-accent hover:underline"
+            >
+              Download tally (CSV)
+            </a>
+          </div>
         </div>
 
         <ul className="mt-3 space-y-1.5">
@@ -189,6 +203,7 @@ export default async function ElectionDetailPage({
               max={tally.rows[0]?.votes ?? 1}
               winner={tally.winners.includes(r.candidateId)}
               tied={tally.tieAtCutoff.includes(r.candidateId)}
+              ineligible={ineligibleIds.has(r.candidateId)}
               rank={i + 1}
               seats={election.seats}
             />
@@ -197,6 +212,14 @@ export default async function ElectionDetailPage({
             <li className="text-sm text-fg-muted">No candidates.</li>
           )}
         </ul>
+
+        {election.finalizedAt && (
+          <p className="mt-3 text-sm">
+            <a href="/board" className="text-brand-accent hover:underline">
+              Winners seated on the board →
+            </a>
+          </p>
+        )}
 
         <p className="mt-3 text-sm">
           <span className="text-fg-muted">
@@ -285,6 +308,7 @@ function TallyBar({
   max,
   winner,
   tied,
+  ineligible,
   rank,
   seats,
 }: {
@@ -292,6 +316,7 @@ function TallyBar({
   max: number;
   winner: boolean;
   tied: boolean;
+  ineligible: boolean;
   rank: number;
   seats: number;
 }) {
@@ -301,13 +326,18 @@ function TallyBar({
       <div className="flex items-center justify-between text-sm">
         <span className={row.withdrawn ? "text-fg-subtle line-through" : "text-fg"}>
           {row.name}
+          {ineligible && (
+            <span className="ml-2 text-xs font-medium text-warning-fg no-underline">
+              behind on dues
+            </span>
+          )}
           {winner && (
             <span className="ml-2 text-xs font-medium text-success-fg">✓ seat</span>
           )}
           {tied && (
             <span className="ml-2 text-xs font-medium text-warning-fg">tie</span>
           )}
-          {rank === seats && !winner && !tied && (
+          {rank === seats && !winner && !tied && !ineligible && (
             <span className="ml-2 text-xs text-fg-subtle">cut-off</span>
           )}
         </span>

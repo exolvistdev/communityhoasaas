@@ -12,7 +12,16 @@ export async function electionSummary(electionId: string) {
   const election = await prisma.election.findUniqueOrThrow({
     where: { id: electionId },
     include: {
-      candidates: { orderBy: { name: "asc" } },
+      candidates: {
+        orderBy: { name: "asc" },
+        include: {
+          homeowner: {
+            select: {
+              property: { select: { id: true, unitNumber: true } },
+            },
+          },
+        },
+      },
       ballots: {
         include: {
           property: { select: { unitNumber: true } },
@@ -35,11 +44,26 @@ export async function electionSummary(electionId: string) {
   );
   const votes = countedBallots.flatMap((b) => b.votes);
 
+  // RA 9904: a candidate whose own unit isn't in good standing can't be voted
+  // for. Free-text candidates (no linked homeowner) are staff-vouched → eligible.
+  const candidateEligible: Record<string, boolean> = {};
+  for (const c of election.candidates) {
+    const pid = c.homeowner?.property?.id ?? null;
+    candidateEligible[c.id] = pid
+      ? standing.get(pid)?.inGoodStanding ?? true
+      : true;
+  }
+  const suspendedCandidates = election.candidates.filter(
+    (c) => !c.withdrawn && !candidateEligible[c.id]
+  ).length;
+
   const tally: ElectionTally = tallyElection(
     election.candidates.map((c) => ({
       id: c.id,
       name: c.name,
-      withdrawn: c.withdrawn,
+      // an ineligible candidate is treated like a withdrawal — off the winner
+      // list, and the next in-good-standing candidate takes the seat
+      withdrawn: c.withdrawn || !candidateEligible[c.id],
     })),
     votes,
     election.seats
@@ -61,6 +85,8 @@ export async function electionSummary(electionId: string) {
     candidates: election.candidates,
     ballots: election.ballots,
     tally,
+    candidateEligible,
+    suspendedCandidates,
     eligibleUnits,
     suspendedUnits,
     cast,
@@ -232,7 +258,7 @@ export async function finalizeElection(input: {
   if (residents.length)
     await deliver({
       users: residents,
-      type: "BOARD_VOTE",
+      type: "BOARD_ELECTION",
       title: `New board elected — ${election.title}`,
       body: `The results are in. The new Board of Trustees serves until ${termEnd.toLocaleDateString(
         "en-PH",

@@ -10,6 +10,7 @@ import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect } from "@/lib/notifications";
 import { uploadDocument } from "@/lib/documents";
 import { finalizeElection } from "@/lib/elections";
+import { unitInGoodStanding } from "@/lib/good-standing";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -34,9 +35,12 @@ async function notifyResidents(orgId: string, opts: { title: string; body: strin
     select: recipientSelect,
   });
   if (!users.length) return;
-  await deliver({ users, type: "BOARD_VOTE", href: "/portal/elections", ...opts }).catch(
-    () => {}
-  );
+  await deliver({
+    users,
+    type: "BOARD_ELECTION",
+    href: "/portal/elections",
+    ...opts,
+  }).catch(() => {});
 }
 
 /* ─────────────────────────── create / edit ──────────────────────── */
@@ -176,7 +180,7 @@ export async function addCandidate(
         id: d.homeownerId,
         property: { orgId: org.id, archivedAt: null },
       },
-      select: { id: true, fullName: true },
+      select: { id: true, fullName: true, propertyId: true },
     });
     if (!h) return { ok: false, error: "That member isn't on record." };
     homeownerId = h.id;
@@ -185,6 +189,12 @@ export async function addCandidate(
       where: { electionId, homeownerId },
     });
     if (dupe) return { ok: false, error: "That member is already a candidate." };
+    if (!(await unitInGoodStanding(org.id, h.propertyId)))
+      return {
+        ok: false,
+        error:
+          "That member is behind on dues and can't run — settle the balance first.",
+      };
   }
   if (!name) return { ok: false, error: "Pick a member or type the candidate's name." };
 

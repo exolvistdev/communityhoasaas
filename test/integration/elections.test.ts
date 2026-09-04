@@ -173,3 +173,96 @@ describe.skipIf(!hasTestDb)("board elections", () => {
     expect(again.ok).toBe(false);
   });
 });
+
+const SUB2 = "test-elections-elig";
+
+describe.skipIf(!hasTestDb)("candidate eligibility (RA 9904)", () => {
+  let orgId: string;
+  let electionId: string;
+  const cand: Record<string, string> = {}; // "A" | "B" | "C" -> candidateId
+  const prop: Record<string, string> = {};
+
+  beforeAll(async () => {
+    await resetTestOrg(SUB2);
+    orgId = (
+      await createTestOrg({
+        name: "Eligibility HOA",
+        subdomain: SUB2,
+        electionArrearsMonths: 3,
+      })
+    ).id;
+
+    for (const key of ["A", "B", "C", "D"]) {
+      const p = await createTestProperty(orgId, {
+        unitNumber: `U-${key}`,
+        homeownerName: `Owner ${key}`,
+      });
+      prop[key] = p.id;
+    }
+
+    electionId = (
+      await prisma.election.create({
+        data: {
+          orgId,
+          title: "Eligibility election",
+          description: "x",
+          seats: 2,
+          status: "OPEN",
+          opensAt: new Date("2026-01-01T00:00:00Z"),
+          closesAt: new Date("2026-03-01T00:00:00Z"),
+          quorumPct: 25,
+          termMonths: 12,
+        },
+      })
+    ).id;
+
+    for (const key of ["A", "B", "C"]) {
+      const h = await prisma.homeowner.findFirstOrThrow({
+        where: { propertyId: prop[key] },
+      });
+      cand[key] = (
+        await prisma.electionCandidate.create({
+          data: { electionId, homeownerId: h.id, name: `Owner ${key}` },
+        })
+      ).id;
+    }
+
+    // C=4, A=3, B=1 → clean winners [A, C]
+    const cast = async (propertyId: string, ids: string[]) => {
+      const b = await prisma.electionBallot.create({
+        data: { electionId, propertyId },
+      });
+      for (const candidateId of ids)
+        await prisma.electionVote.create({ data: { ballotId: b.id, candidateId } });
+    };
+    await cast(prop.A, [cand.C, cand.A]);
+    await cast(prop.B, [cand.C, cand.A]);
+    await cast(prop.C, [cand.C, cand.B]);
+    await cast(prop.D, [cand.C, cand.A]);
+  });
+
+  afterAll(async () => {
+    await resetTestOrg(SUB2);
+    await prisma.$disconnect();
+  });
+
+  it("seats the runner-up when a leading candidate's unit falls delinquent", async () => {
+    const before = await electionSummary(electionId);
+    expect(before.tally.winners.sort()).toEqual([cand.A, cand.C].sort());
+    expect(before.suspendedCandidates).toBe(0);
+
+    // Owner A's unit goes 3 dues invoices past due
+    for (let m = 1; m <= 3; m++)
+      await issueInvoice(prop.A, {
+        amount: 1500,
+        period: `2025-0${m}`,
+        dueDate: new Date(`2025-0${m}-05T00:00:00Z`),
+      });
+
+    const after = await electionSummary(electionId);
+    expect(after.suspendedCandidates).toBe(1);
+    expect(after.candidateEligible[cand.A]).toBe(false);
+    // A is off the winner list; B (the runner-up) takes the seat next to C
+    expect(after.tally.winners.sort()).toEqual([cand.B, cand.C].sort());
+  });
+});

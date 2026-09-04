@@ -4,6 +4,7 @@ import {
   boardRoster,
   assignTrusteePosition,
   seatTrustee,
+  reactivateTrustee,
 } from "@/lib/board";
 import { hasTestDb, resetTestOrg, createTestOrg } from "../fixtures";
 
@@ -88,5 +89,28 @@ describe.skipIf(!hasTestDb)("trustee roster", () => {
     expect(
       await prisma.trustee.count({ where: { orgId, position: "TREASURER", endedAt: null } })
     ).toBe(1);
+  });
+
+  it("reactivateTrustee restores an early-ended term and clears a conflicting officer", async () => {
+    await prisma.trustee.deleteMany({ where: { orgId } });
+    const sitting = await mk("Sitting Sam", { position: "SECRETARY" });
+    const ended = await mk("Returning Rita", {
+      position: "SECRETARY",
+      endedAt: new Date(),
+    });
+
+    const res = await reactivateTrustee(orgId, ended.id);
+    expect(res.ok).toBe(true);
+
+    const back = await prisma.trustee.findUniqueOrThrow({ where: { id: ended.id } });
+    expect(back.endedAt).toBeNull();
+    expect(back.position).toBe("SECRETARY");
+    // the officer who held the seat meanwhile is bumped to MEMBER
+    expect(
+      (await prisma.trustee.findUniqueOrThrow({ where: { id: sitting.id } })).position
+    ).toBe("MEMBER");
+
+    const { current } = await boardRoster(orgId);
+    expect(current.map((t) => t.id).sort()).toEqual([ended.id, sitting.id].sort());
   });
 });
