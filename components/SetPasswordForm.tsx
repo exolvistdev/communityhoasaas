@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Field, Input, FormError } from "@/components/ui/field";
+import { PasswordChecklist } from "@/components/PasswordChecklist";
+import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password";
 
 type Phase = "checking" | "ready" | "no-session" | "done";
 
@@ -47,8 +49,8 @@ export function SetPasswordForm({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (password.length < 8) {
-      setError("Use at least 8 characters");
+    if (!isStrongPassword(password)) {
+      setError(PASSWORD_REQUIREMENTS_MESSAGE);
       return;
     }
     setBusy(true);
@@ -86,12 +88,13 @@ export function SetPasswordForm({
               required
               autoFocus
             />
+            <PasswordChecklist password={password} />
           </Field>
           {error && <FormError>{error}</FormError>}
           <Button
             type="submit"
             loading={busy}
-            disabled={phase === "done"}
+            disabled={phase === "done" || !isStrongPassword(password)}
             className="w-full"
           >
             {ctaLabel}

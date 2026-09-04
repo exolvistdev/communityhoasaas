@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SEED_ACCOUNTS } from "@/lib/ledger";
+import { strongPasswordSchema } from "@/lib/password";
 
 const step1Schema = z.object({
   orgName: z.string().trim().min(2, "Enter your HOA's name"),
@@ -18,7 +19,7 @@ const step1Schema = z.object({
     ),
   fullName: z.string().trim().min(2, "Enter your full name"),
   email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(8, "Use at least 8 characters"),
+  password: strongPasswordSchema,
   waterSource: z.enum(["INTERNAL", "EXTERNAL_BULK", "EXTERNAL_DIRECT"], {
     errorMap: () => ({ message: "Choose how your subdivision gets water" }),
   }),

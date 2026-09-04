@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Stepper } from "@/components/Stepper";
 import { PropertyCsvImport } from "@/components/PropertyCsvImport";
+import { PasswordChecklist } from "@/components/PasswordChecklist";
 import { WATER_SOURCE_OPTIONS } from "@/lib/water";
+import { isStrongPassword } from "@/lib/password";
 import { createOrgAndAdmin } from "./actions";
 
 export function OnboardingWizard({ signedIn }: { signedIn: boolean }) {
@@ -31,6 +33,7 @@ function Step1({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [subdomain, setSubdomain] = useState("");
+  const [password, setPassword] = useState("");
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -94,7 +97,23 @@ function Step1({ onDone }: { onDone: () => void }) {
 
       <Field label="Your full name" name="fullName" placeholder="Maria Santos" error={fieldError === "fullName" ? error : undefined} />
       <Field label="Email" name="email" type="email" placeholder="you@example.com" error={fieldError === "email" ? error : undefined} />
-      <Field label="Password" name="password" type="password" placeholder="At least 8 characters" error={fieldError === "password" ? error : undefined} />
+
+      <div>
+        <label className="block text-sm font-medium text-fg">Password</label>
+        <input
+          name="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="At least 10 characters"
+          required
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+        />
+        <PasswordChecklist password={password} />
+        {fieldError === "password" && (
+          <p className="mt-1 text-xs text-danger-fg">{error}</p>
+        )}
+      </div>
 
       <hr className="border-border" />
 
@@ -138,10 +157,10 @@ function Step1({ onDone }: { onDone: () => void }) {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || !isStrongPassword(password)}
         className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
       >
-        {pending ? "Setting upâ€¦" : "Continue"}
+        {pending ? "Setting up…" : "Continue"}
       </button>
     </form>
   );
