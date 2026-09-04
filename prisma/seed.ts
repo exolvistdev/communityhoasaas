@@ -211,6 +211,12 @@ async function resetDemoOrg() {
 }
 
 async function main() {
+  // Hard stop: this drops and recreates the demo org. Never against production.
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    throw new Error(
+      "Refusing to seed: NODE_ENV=production / VERCEL is set. The seed wipes the demo org."
+    );
+  }
   await resetDemoOrg();
   const auth = await createDemoAuthUsers();
   await ensureMarketplaceBucket().catch((e) =>

@@ -166,11 +166,15 @@ them: **check** (typecheck + lint + unit tests), **integration** (a `postgres:16
 
 ## Deployment
 
-- **App**: Vercel (or any Node host). Set all `.env` vars in the host.
-- **DB / Auth**: Supabase. Run `npx prisma migrate deploy` against the production
-  database on each release.
-- Set the Supabase Auth **Site URL** / redirect allow-list to the deployed
-  domain so invite links resolve.
+**App** on Vercel, **Postgres + Auth + Storage** on Supabase. Full runbook —
+connection strings, the env-var table, storage-bucket provisioning, Supabase Auth
+URLs, cron wiring, migrations, and the secret-rotation procedure — is in
+[`DEPLOYMENT.md`](DEPLOYMENT.md). Pre-launch checklist: [`GO-LIVE.md`](GO-LIVE.md).
+Row-level-security is app-layer today; the design to add Postgres RLS is in
+[`docs/rls-design.md`](docs/rls-design.md).
+
+- **App health**: `GET /api/health` → `{ ok, db, time }` (200 / 503).
+- `npm run db:seed` refuses to run when `NODE_ENV=production` or `VERCEL` is set.
 
 ## Scripts
 
@@ -179,10 +183,12 @@ them: **check** (typecheck + lint + unit tests), **integration** (a `postgres:16
 | `npm run dev` | dev server |
 | `npm run build` / `npm start` | production build / serve |
 | `npm test` / `npm run test:unit` / `npm run test:integration` | vitest suites |
+| `npm run test:integration:probe [filter]` | integration suite against a disposable Supabase schema — no Docker |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:migrate` | `prisma migrate dev` (authoring) |
-| `npm run db:seed` | reseed the demo HOA |
+| `npm run db:seed` | reseed the demo HOA (blocked in production) |
 | `npm run db:studio` | Prisma Studio |
+| `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/provision-storage.ts` | create the 5 Supabase Storage buckets (idempotent — run once per environment) |
 | `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/notify-overdue.ts` | overdue-invoice notification sweep (daily cron, or `GET /api/cron/overdue`) |
 | `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/apply-late-fees.ts` | late-fee sweep — adds a late-fee invoice to overdue dues (daily cron, or `GET /api/cron/late-fees`) |
 | `node --env-file=.env node_modules/tsx/dist/cli.mjs scripts/water-reminders.ts` | water-reading reminder — nudges staff of metered HOAs behind on readings/billing (daily cron, or `GET /api/cron/water-reminder`) |
