@@ -51,22 +51,35 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
 
-          <p className="text-center text-sm text-slate-500">
-            New HOA?{" "}
+          <div className="flex items-center justify-center gap-3 text-xs text-slate-500">
+            <span className="whitespace-nowrap">
+              New HOA?{" "}
+              <Link
+                href="/onboarding"
+                className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+              >
+                Set one up
+              </Link>
+            </span>
+            <span aria-hidden="true" className="text-slate-300">
+              •
+            </span>
             <Link
-              href="/onboarding"
-              className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+              href="/forgot-password"
+              className="whitespace-nowrap font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
             >
-              Set one up
+              Forgot password?
             </Link>
-            <span className="mx-1.5 text-slate-300">·</span>
+            <span aria-hidden="true" className="text-slate-300">
+              •
+            </span>
             <Link
               href="/privacy"
               className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
             >
               Privacy
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
