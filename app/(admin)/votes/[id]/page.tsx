@@ -50,8 +50,11 @@ export default async function VoteDetailPage({
   });
   if (!exists) notFound();
 
-  const [{ vote, ballots, eligibleUnits, tally, quorumOK, outcome }, proxies, meetings] =
-    await Promise.all([
+  const [
+    { vote, ballots, eligibleUnits, suspendedUnits, tally, quorumOK, outcome },
+    proxies,
+    meetings,
+  ] = await Promise.all([
       voteSummary(params.id),
       prisma.voteProxy.findMany({
         where: { orgId: org.id, revokedAt: null },
@@ -127,6 +130,12 @@ export default async function VoteDetailPage({
             value={`${tally.total} / ${eligibleUnits}`}
           />
         </div>
+        {suspendedUnits > 0 && (
+          <p className="mt-2 text-xs text-warning-fg">
+            {suspendedUnits} unit{suspendedUnits === 1 ? "" : "s"} suspended for
+            delinquency — not counted toward quorum or the tally.
+          </p>
+        )}
         <p className="mt-3 text-sm">
           <span className="text-fg-muted">
             Quorum {quorumOK ? "met" : "not met"} ·{" "}
@@ -176,6 +185,7 @@ export default async function VoteDetailPage({
                     <td className="px-4 py-2 text-xs text-fg-subtle">
                       {b.castBy?.fullName ?? "—"}
                       {b.viaProxy ? " · via proxy" : ""}
+                      {b.suspended ? " · suspended (not counted)" : ""}
                     </td>
                   </tr>
                 ))}

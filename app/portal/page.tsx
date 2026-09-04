@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CalendarClock,
   Vote,
+  Landmark,
   Droplet,
   FileText,
   Gavel,
@@ -60,6 +61,7 @@ export default async function PortalHome() {
     violationCount,
     upcomingMeetings,
     openVotes,
+    openElections,
     waterMeter,
   ] = await Promise.all([
     buildStatement(property.id, parseStatementRange({})),
@@ -115,6 +117,14 @@ export default async function PortalHome() {
       },
     }),
     prisma.boardVote.count({
+      where: {
+        orgId: property.orgId,
+        status: "OPEN",
+        opensAt: { lte: now },
+        closesAt: { gte: now },
+      },
+    }),
+    prisma.election.count({
       where: {
         orgId: property.orgId,
         status: "OPEN",
@@ -298,6 +308,14 @@ export default async function PortalHome() {
             icon={Vote}
             label="Votes"
             sub={`${openVotes} open`}
+          />
+        )}
+        {openElections > 0 && (
+          <Tile
+            href="/portal/elections"
+            icon={Landmark}
+            label="Elections"
+            sub={`${openElections} open`}
           />
         )}
         {waterMetered(org.waterSource) && waterMeter?.readings[0] && (

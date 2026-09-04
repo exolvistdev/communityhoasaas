@@ -8,6 +8,7 @@ import {
   resolutionOutcome,
   voteTally,
 } from "@/lib/vote";
+import { orgUnitStanding } from "@/lib/good-standing";
 import { VotesManager } from "./VotesManager";
 
 export const metadata = { title: "Votes · HOA SaaS" };
@@ -24,16 +25,16 @@ const fmt = (d: Date) =>
 export default async function VotesPage() {
   const { org } = await requirePermission("vote:manage");
 
-  const [votes, eligibleUnits, meetings] = await Promise.all([
+  const [votes, standing, meetings] = await Promise.all([
     prisma.boardVote.findMany({
       where: { orgId: org.id },
       include: {
-        ballots: { select: { choice: true } },
+        ballots: { select: { choice: true, propertyId: true } },
         resultDocument: { select: { id: true } },
       },
       orderBy: { opensAt: "desc" },
     }),
-    prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
+    orgUnitStanding(org.id),
     prisma.boardMeeting.findMany({
       where: { orgId: org.id, status: { not: "CANCELLED" } },
       select: { id: true, title: true },
@@ -42,9 +43,21 @@ export default async function VotesPage() {
     }),
   ]);
 
-  const open = votes.filter((v) => v.status === "OPEN");
-  const draft = votes.filter((v) => v.status === "DRAFT");
-  const past = votes.filter((v) => v.status === "CLOSED" || v.status === "CANCELLED");
+  const eligibleUnits = [...standing.values()].filter((s) => s.inGoodStanding).length;
+
+  // only ballots from units in good standing count toward the inline tallies
+  const counted = votes.map((v) => ({
+    ...v,
+    ballots: v.ballots.filter(
+      (b) => standing.get(b.propertyId)?.inGoodStanding ?? false
+    ),
+  }));
+
+  const open = counted.filter((v) => v.status === "OPEN");
+  const draft = counted.filter((v) => v.status === "DRAFT");
+  const past = counted.filter(
+    (v) => v.status === "CLOSED" || v.status === "CANCELLED"
+  );
 
   return (
     <div className="space-y-6">

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { voteIsOpen, THRESHOLD_LABEL } from "@/lib/vote";
 import { controllableUnits } from "@/lib/votes";
+import { orgUnitStanding } from "@/lib/good-standing";
 import { BallotForm } from "./BallotForm";
 import { ProxyManager } from "./ProxyManager";
 
@@ -21,7 +22,7 @@ const fmt = (d: Date) =>
 export default async function PortalVotesPage() {
   const { user, org } = await getHomeownerContext();
 
-  const [votes, control, proxies] = await Promise.all([
+  const [votes, control, standing, proxies] = await Promise.all([
     prisma.boardVote.findMany({
       where: { orgId: org.id, status: { in: ["OPEN", "CLOSED"] } },
       include: {
@@ -39,6 +40,7 @@ export default async function PortalVotesPage() {
       orderBy: { opensAt: "desc" },
     }),
     controllableUnits(user.id, org.id),
+    orgUnitStanding(org.id),
     prisma.voteProxy.findMany({
       where: {
         orgId: org.id,
@@ -52,14 +54,23 @@ export default async function PortalVotesPage() {
     }),
   ]);
 
+  const withStanding = <T extends { id: string }>(u: T) => ({
+    ...u,
+    monthsBehind: standing.get(u.id)?.monthsBehind ?? 0,
+    suspended: !(standing.get(u.id)?.inGoodStanding ?? true),
+  });
   const units = [
-    ...control.own.map((p) => ({ ...p, kind: "own" as const, label: "your unit" })),
-    ...control.proxy.map((p) => ({
-      id: p.propertyId,
-      unitNumber: p.unitNumber,
-      kind: "proxy" as const,
-      label: `proxy${p.note ? ` — ${p.note}` : ""}`,
-    })),
+    ...control.own.map((p) =>
+      withStanding({ ...p, kind: "own" as const, label: "your unit" })
+    ),
+    ...control.proxy.map((p) =>
+      withStanding({
+        id: p.propertyId,
+        unitNumber: p.unitNumber,
+        kind: "proxy" as const,
+        label: `proxy${p.note ? ` — ${p.note}` : ""}`,
+      })
+    ),
   ];
 
   const open = votes.filter((v) => voteIsOpen(v));
@@ -98,17 +109,33 @@ export default async function PortalVotesPage() {
                   Your account isn&apos;t linked to a unit, so you can&apos;t vote.
                 </p>
               ) : (
-                units.map((u) => (
-                  <BallotForm
-                    key={u.id}
-                    voteId={v.id}
-                    propertyId={u.id}
-                    unitLabel={`${u.unitNumber} — ${u.label}`}
-                    current={
-                      v.ballots.find((b) => b.propertyId === u.id)?.choice ?? null
-                    }
-                  />
-                ))
+                units.map((u) =>
+                  u.suspended ? (
+                    <div
+                      key={u.id}
+                      className="border-t border-border pt-3 text-sm"
+                    >
+                      <div className="mb-1 text-xs font-medium text-fg-muted">
+                        {u.unitNumber} — {u.label}
+                      </div>
+                      <p className="text-fg-subtle">
+                        This unit is {u.monthsBehind} month
+                        {u.monthsBehind === 1 ? "" : "s"} behind on dues — settle the
+                        balance to vote.
+                      </p>
+                    </div>
+                  ) : (
+                    <BallotForm
+                      key={u.id}
+                      voteId={v.id}
+                      propertyId={u.id}
+                      unitLabel={`${u.unitNumber} — ${u.label}`}
+                      current={
+                        v.ballots.find((b) => b.propertyId === u.id)?.choice ?? null
+                      }
+                    />
+                  )
+                )
               )}
             </div>
           ))}

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { voteIsOpen } from "@/lib/vote";
 import { controllableUnits } from "@/lib/votes";
+import { unitInGoodStanding } from "@/lib/good-standing";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -39,6 +40,12 @@ export async function castBallot(voteId: string, input: unknown): Promise<Result
   const proxy = control.proxy.find((p) => p.propertyId === propertyId);
   if (!isOwn && !proxy)
     return { ok: false, error: "You can't cast a ballot for that unit." };
+
+  if (!(await unitInGoodStanding(org.id, propertyId)))
+    return {
+      ok: false,
+      error: "This unit is behind on dues and can't vote until the balance is settled.",
+    };
 
   await prisma.ballot.upsert({
     where: { voteId_propertyId: { voteId, propertyId } },

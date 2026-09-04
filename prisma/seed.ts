@@ -1564,6 +1564,62 @@ async function main() {
         },
       });
     }
+
+    // Blk 2 Lot 5 has fallen 4 months behind on dues — RA 9904 suspends its
+    // vote and disqualifies its candidacy until the balance is settled.
+    for (let k = 4; k <= 7; k++) {
+      const per = shiftPeriod(currentPeriod(), -k);
+      const [py, pm] = per.split("-").map(Number);
+      const inv = await prisma.invoice.create({
+        data: {
+          propertyId: voteLot5.id,
+          amount: 1500,
+          period: per,
+          dueDate: new Date(py, pm - 1, 15),
+          status: "SENT",
+          memo: `Monthly dues — ${per}`,
+        },
+      });
+      await postInvoiceIssued(inv.id);
+    }
+
+    // a currently-open by-election for one vacant seat
+    const byElection = await prisma.election.create({
+      data: {
+        orgId: org.id,
+        createdById: elenaUser.id,
+        title: "By-election — one vacant trustee seat",
+        description:
+          "A trustee resigned mid-term. Elect one replacement to serve the remainder of the term. Endorse one candidate.",
+        seats: 1,
+        status: "OPEN",
+        opensAt: ago(2),
+        closesAt: at(5, 17),
+        quorumPct: 30,
+        termMonths: 8,
+      },
+    });
+    const byCands = await Promise.all(
+      [
+        { p: lot3, bio: "Wants a written maintenance schedule for common areas." },
+        { p: voteLot5, bio: "Focus on gate-security staffing and the CCTV upgrade." },
+      ].map((c) =>
+        prisma.electionCandidate.create({
+          data: {
+            electionId: byElection.id,
+            homeownerId: owners[c.p.id].id,
+            name: owners[c.p.id].fullName,
+            bio: c.bio,
+          },
+        })
+      )
+    );
+    const b1 = await prisma.electionBallot.create({
+      data: { electionId: byElection.id, propertyId: voteLot1.id, castById: homeownerUser.id },
+    });
+    await prisma.electionVote.create({
+      data: { ballotId: b1.id, candidateId: byCands[0].id },
+    });
   }
 
   // ── Water sub-metering ──────────────────────────────────────────

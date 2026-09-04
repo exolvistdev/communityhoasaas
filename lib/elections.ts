@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { quorumMet } from "@/lib/vote";
-import { tallyElection, type ElectionTally } from "@/lib/election";
+import { electionIsOpen, tallyElection, type ElectionTally } from "@/lib/election";
 import { orgUnitStanding } from "@/lib/good-standing";
 import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect } from "@/lib/notifications";
@@ -68,6 +68,69 @@ export async function electionSummary(electionId: string) {
     turnoutPct,
     outcome,
   };
+}
+
+/**
+ * Write a unit's election ballot (create or replace). Caller is responsible for
+ * authorization + the good-standing check; this only validates the election is
+ * open, the picks are real candidates, and the count fits the seats.
+ */
+export async function recordElectionBallot(input: {
+  electionId: string;
+  propertyId: string;
+  candidateIds: string[];
+  castById?: string | null;
+  viaProxyId?: string | null;
+}): Promise<{ ok: true; picks: number } | { ok: false; error: string }> {
+  const election = await prisma.election.findUnique({
+    where: { id: input.electionId },
+    include: { candidates: { select: { id: true, withdrawn: true } } },
+  });
+  if (!election) return { ok: false, error: "Election not found" };
+  if (!electionIsOpen(election))
+    return { ok: false, error: "Voting is closed for this election." };
+
+  const valid = new Set(
+    election.candidates.filter((c) => !c.withdrawn).map((c) => c.id)
+  );
+  const picks = [...new Set(input.candidateIds)].filter((id) => valid.has(id));
+  if (picks.length > election.seats)
+    return {
+      ok: false,
+      error: `Pick at most ${election.seats} candidate${
+        election.seats === 1 ? "" : "s"
+      }.`,
+    };
+
+  await prisma.$transaction(async (tx) => {
+    const ballot = await tx.electionBallot.upsert({
+      where: {
+        electionId_propertyId: {
+          electionId: input.electionId,
+          propertyId: input.propertyId,
+        },
+      },
+      create: {
+        electionId: input.electionId,
+        propertyId: input.propertyId,
+        castById: input.castById ?? null,
+        viaProxyId: input.viaProxyId ?? null,
+        abstain: picks.length === 0,
+      },
+      update: {
+        castById: input.castById ?? null,
+        viaProxyId: input.viaProxyId ?? null,
+        abstain: picks.length === 0,
+      },
+    });
+    await tx.electionVote.deleteMany({ where: { ballotId: ballot.id } });
+    if (picks.length)
+      await tx.electionVote.createMany({
+        data: picks.map((candidateId) => ({ ballotId: ballot.id, candidateId })),
+      });
+  });
+
+  return { ok: true, picks: picks.length };
 }
 
 type FinalizeResult =
