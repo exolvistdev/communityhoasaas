@@ -45,6 +45,11 @@ export async function deleteOrgCascade(db: PrismaClient, orgId: string) {
   await db.boardVote.deleteMany({ where: { orgId } });
   await db.meetingRsvp.deleteMany({ where: { meeting: { orgId } } });
   await db.boardMeeting.deleteMany({ where: { orgId } });
+  await db.electionVote.deleteMany({ where: { ballot: { election: { orgId } } } });
+  await db.electionBallot.deleteMany({ where: { election: { orgId } } });
+  await db.electionCandidate.deleteMany({ where: { election: { orgId } } });
+  await db.trustee.deleteMany({ where: { orgId } });
+  await db.election.deleteMany({ where: { orgId } });
   await db.billPayment.deleteMany({ where: { bill: { orgId } } });
   await db.bill.deleteMany({ where: { orgId } });
   await db.vendor.deleteMany({ where: { orgId } });

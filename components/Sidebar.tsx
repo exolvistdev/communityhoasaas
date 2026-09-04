@@ -22,6 +22,7 @@ import {
   CalendarClock,
   Vote,
   Users,
+  Landmark,
   ScrollText,
   ShieldQuestion,
   Gavel,
@@ -91,6 +92,18 @@ const GROUPS: Group[] = [
         label: "Votes",
         icon: Vote,
         show: (r) => can(r, "vote:manage"),
+      },
+      {
+        href: "/elections",
+        label: "Elections",
+        icon: Landmark,
+        show: (r) => can(r, "election:manage"),
+      },
+      {
+        href: "/board",
+        label: "Board",
+        icon: Users,
+        show: (r) => can(r, "election:manage"),
       },
       {
         href: "/maintenance",

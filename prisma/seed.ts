@@ -1469,6 +1469,103 @@ async function main() {
     console.log("  (seed vote result skipped:", (e as Error).message, ")");
   }
 
+  // ── Board of Trustees election (RA 9904) ───────────────────────
+  {
+    const lot3 = await prisma.property.findFirstOrThrow({
+      where: { orgId: org.id, unitNumber: "Blk 1 Lot 3" },
+    });
+    const owners = Object.fromEntries(
+      await Promise.all(
+        [voteLot1, voteLot2, lot3, voteLot5].map(async (p) => [
+          p.id,
+          await prisma.homeowner.findFirstOrThrow({
+            where: { propertyId: p.id, isPrimary: true },
+          }),
+        ])
+      )
+    ) as Record<string, { id: string; fullName: string }>;
+
+    const election = await prisma.election.create({
+      data: {
+        orgId: org.id,
+        createdById: elenaUser.id,
+        title: "2026 Board of Trustees Election",
+        description:
+          "Elect three trustees to the Board for a one-year term. Each unit's ballot may endorse up to three candidates; the three with the most votes are seated.",
+        seats: 3,
+        status: "CLOSED",
+        opensAt: ago(25),
+        closesAt: ago(12),
+        quorumPct: 30,
+        termMonths: 12,
+        finalizedAt: ago(11),
+      },
+    });
+
+    const candidates = await Promise.all(
+      [
+        { p: voteLot1, bio: "Incumbent chair. Ran the perimeter-fence project." },
+        { p: voteLot2, bio: "Treasurer nominee — CPA, wants monthly financials posted." },
+        { p: lot3, bio: "New homeowner, focus on the playground and green space." },
+        { p: voteLot5, bio: "Long-time resident, security committee." },
+      ].map((c) =>
+        prisma.electionCandidate.create({
+          data: {
+            electionId: election.id,
+            homeownerId: owners[c.p.id].id,
+            name: owners[c.p.id].fullName,
+            bio: c.bio,
+          },
+        })
+      )
+    );
+
+    // ballots — top 3 (candidates[0..2]) win
+    const ballotPicks: [typeof voteLot1, number[]][] = [
+      [voteLot1, [0, 1, 2]],
+      [voteLot2, [0, 1, 3]],
+      [lot3, [1, 2]],
+      [voteLot5, [0, 2]],
+    ];
+    for (const [p, picks] of ballotPicks) {
+      const b = await prisma.electionBallot.create({
+        data: { electionId: election.id, propertyId: p.id },
+      });
+      for (const i of picks)
+        await prisma.electionVote.create({
+          data: { ballotId: b.id, candidateId: candidates[i].id },
+        });
+    }
+
+    // seat the three winners (candidates 0, 1, 2)
+    const termStart = ago(12);
+    const termEnd = new Date(termStart);
+    termEnd.setMonth(termEnd.getMonth() + 12);
+    for (const [idx, position] of [
+      [0, "CHAIRPERSON"],
+      [1, "TREASURER"],
+      [2, "MEMBER"],
+    ] as const) {
+      const c = candidates[idx];
+      const owner = await prisma.homeowner.findUniqueOrThrow({
+        where: { id: c.homeownerId! },
+        select: { userId: true },
+      });
+      await prisma.trustee.create({
+        data: {
+          orgId: org.id,
+          electionId: election.id,
+          homeownerId: c.homeownerId,
+          userId: owner.userId,
+          name: c.name,
+          position,
+          termStart,
+          termEnd,
+        },
+      });
+    }
+  }
+
   // ── Water sub-metering ──────────────────────────────────────────
   await prisma.organization.update({
     where: { id: org.id },

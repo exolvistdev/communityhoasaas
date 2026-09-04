@@ -5,6 +5,7 @@ import { paymentQrUrl } from "@/lib/payment-qr";
 import { OrgSettingsForm } from "./OrgSettingsForm";
 import { PaymentSettingsForm } from "./PaymentSettingsForm";
 import { LateFeeSettingsForm } from "./LateFeeSettingsForm";
+import { ElectionSettingsForm } from "./ElectionSettingsForm";
 import { TypeRatesForm } from "./TypeRatesForm";
 import { RatePlansManager } from "./RatePlansManager";
 import { WaterSettingsForm } from "./WaterSettingsForm";
@@ -140,6 +141,21 @@ export default async function SettingsPage() {
             lateFeeGraceDays: org.lateFeeGraceDays,
             lateFeeMaxOccurrences: org.lateFeeMaxOccurrences,
           }}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">
+            Voting &amp; elections
+          </h2>
+          <p className="text-xs text-fg-muted">
+            RA 9904 lets a delinquent member be denied the right to vote or run for
+            the board.
+          </p>
+        </div>
+        <ElectionSettingsForm
+          electionArrearsMonths={org.electionArrearsMonths}
         />
       </section>
 

@@ -31,6 +31,7 @@ export default async function DashboardPage() {
   const canMaintenance = can(user.role, "maintenance:manage");
   const canMeetings = can(user.role, "meeting:manage");
   const canVotes = can(user.role, "vote:manage");
+  const canElections = can(user.role, "election:manage");
   const canBilling = can(user.role, "billing:write");
   const isAdmin = user.role === "ADMIN";
 
@@ -48,6 +49,7 @@ export default async function DashboardPage() {
     openMaintenance,
     meetingsNeedingMinutes,
     votesNeedingAttention,
+    electionsNeedingAttention,
     unbilledWaterReadings,
   ] = await Promise.all([
     prisma.property.count({ where: { orgId: org.id, archivedAt: null } }),
@@ -145,6 +147,20 @@ export default async function DashboardPage() {
           },
         })
       : Promise.resolve(0),
+    canElections
+      ? prisma.election.count({
+          where: {
+            orgId: org.id,
+            OR: [
+              {
+                status: "OPEN",
+                closesAt: { lt: new Date(now.getTime() + 3 * 86_400_000) },
+              },
+              { status: "CLOSED", finalizedAt: null },
+            ],
+          },
+        })
+      : Promise.resolve(0),
     canBilling && org.waterBillingEnabled && waterMetered(org.waterSource)
       ? prisma.meterReading.count({
           where: {
@@ -237,6 +253,14 @@ export default async function DashboardPage() {
           text: `${votesNeedingAttention} vote${
             votesNeedingAttention === 1 ? "" : "s"
           } closing soon or awaiting a result`,
+        }
+      : null,
+    canElections && electionsNeedingAttention > 0
+      ? {
+          href: "/elections",
+          text: `${electionsNeedingAttention} election${
+            electionsNeedingAttention === 1 ? "" : "s"
+          } closing soon or awaiting finalize`,
         }
       : null,
     canBilling && unbilledWaterReadings > 0

@@ -108,11 +108,17 @@ model Organization {
   waterMeters         WaterMeter[]
   meterReadings       MeterReading[]
   waterAllocationRuns WaterAllocationRun[]
+  elections           Election[]
+  trustees            Trustee[]
 
   waterLossPolicy      WaterLossPolicy @default(DISTRIBUTE)
   waterAdminFeeFlat    Decimal?  @db.Decimal(12, 2) // optional flat ₱/unit admin fee (EXTERNAL_BULK)
   waterUtilityVendorId String?
   waterUtilityVendor   Vendor?   @relation("WaterUtilityVendor", fields: [waterUtilityVendorId], references: [id], onDelete: SetNull)
+
+  // A unit this many monthly dues invoices past due can't vote or run for the
+  // board (RA 9904). 0 disables the rule.
+  electionArrearsMonths Int @default(3)
 
   @@map("organizations")
 }
@@ -211,6 +217,9 @@ model User {
   proxiesGrantedByMe    VoteProxy[]           @relation("ProxyGrantedBy")
   readingsEntered       MeterReading[]        @relation("ReadingEnteredBy")
   waterRunsCreated      WaterAllocationRun[]  @relation("WaterRunCreatedBy")
+  electionsCreated      Election[]            @relation("ElectionCreatedBy")
+  electionBallotsCast   ElectionBallot[]      @relation("ElectionBallotCastBy")
+  trusteePositions      Trustee[]             @relation("TrusteeUser")
 
   @@index([orgId])
   @@map("users")
@@ -305,6 +314,7 @@ model Property {
   maintenanceRequests MaintenanceRequest[]
   ballots    Ballot[]
   proxiesGranted VoteProxy[]
+  electionBallots ElectionBallot[]
   waterMeters WaterMeter[] // one active UNIT meter; retired ones kept for history
 
   @@unique([orgId, unitNumber])
@@ -361,6 +371,9 @@ model Homeowner {
   phone      String?
   isPrimary  Boolean  @default(true)
   createdAt  DateTime @default(now())
+
+  candidacies      ElectionCandidate[]
+  trusteePositions Trustee[]           @relation("TrusteeHomeowner")
 
   @@index([propertyId])
   @@index([userId])
@@ -770,6 +783,7 @@ model BoardMeeting {
 
   rsvps             MeetingRsvp[]
   votes             BoardVote[]
+  elections         Election[]
 
   @@index([orgId, scheduledAt])
   @@map("board_meetings")
@@ -877,11 +891,136 @@ model VoteProxy {
   revokedAt         DateTime?
 
   ballots           Ballot[]
+  electionBallots   ElectionBallot[]
 
   @@index([orgId])
   @@index([grantorPropertyId])
   @@index([holderUserId])
   @@map("vote_proxies")
+}
+
+// ─────────────────────────────────────────────
+// Board of Trustees elections (RA 9904)
+// ─────────────────────────────────────────────
+
+enum ElectionStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum TrusteePosition {
+  CHAIRPERSON
+  VICE_CHAIRPERSON
+  SECRETARY
+  TREASURER
+  MEMBER
+}
+
+// A multi-seat board election. Each unit's ballot approves up to `seats`
+// candidates; the top `seats` by vote count win.
+model Election {
+  id               String   @id @default(uuid())
+  orgId            String
+  org              Organization @relation(fields: [orgId], references: [id])
+  meetingId        String?
+  meeting          BoardMeeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  title            String
+  description      String
+  seats            Int          // open seats (an odd number, typically)
+  status           ElectionStatus @default(DRAFT)
+  opensAt          DateTime
+  closesAt         DateTime
+  quorumPct        Int
+  termMonths       Int      @default(12) // trustee term length
+  resultDocumentId String?
+  resultDocument   Document? @relation(fields: [resultDocumentId], references: [id], onDelete: SetNull)
+  finalizedAt      DateTime? // when winners became Trustee rows
+  createdById      String?
+  createdBy        User?    @relation("ElectionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+
+  candidates       ElectionCandidate[]
+  ballots          ElectionBallot[]
+  trustees         Trustee[]
+
+  @@index([orgId, opensAt])
+  @@map("elections")
+}
+
+model ElectionCandidate {
+  id          String   @id @default(uuid())
+  electionId  String
+  election    Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  homeownerId String?  // linked member — enables the good-standing check
+  homeowner   Homeowner? @relation(fields: [homeownerId], references: [id], onDelete: SetNull)
+  name        String   // snapshot / free-text
+  bio         String?
+  withdrawn   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  votes       ElectionVote[]
+
+  @@index([electionId])
+  @@map("election_candidates")
+}
+
+// One unit's ballot in an election. `abstain` = a ballot cast that selected no one.
+model ElectionBallot {
+  id          String   @id @default(uuid())
+  electionId  String
+  election    Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  castById    String?
+  castBy      User?    @relation("ElectionBallotCastBy", fields: [castById], references: [id], onDelete: SetNull)
+  viaProxyId  String?
+  viaProxy    VoteProxy? @relation(fields: [viaProxyId], references: [id], onDelete: SetNull)
+  abstain     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  votes       ElectionVote[]
+
+  @@unique([electionId, propertyId])
+  @@index([electionId])
+  @@map("election_ballots")
+}
+
+model ElectionVote {
+  id          String   @id @default(uuid())
+  ballotId    String
+  ballot      ElectionBallot @relation(fields: [ballotId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   ElectionCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([ballotId, candidateId])
+  @@index([candidateId])
+  @@map("election_votes")
+}
+
+// A seat on the Board of Trustees. Created from an election's winners on
+// finalize, or added directly (an appointment). Active while endedAt is null.
+model Trustee {
+  id          String   @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  electionId  String?
+  election    Election? @relation(fields: [electionId], references: [id], onDelete: SetNull)
+  userId      String?
+  user        User?    @relation("TrusteeUser", fields: [userId], references: [id], onDelete: SetNull)
+  homeownerId String?
+  homeowner   Homeowner? @relation("TrusteeHomeowner", fields: [homeownerId], references: [id], onDelete: SetNull)
+  name        String   // snapshot
+  position    TrusteePosition @default(MEMBER)
+  termStart   DateTime
+  termEnd     DateTime
+  endedAt     DateTime? // resigned / removed before termEnd
+  createdAt   DateTime @default(now())
+
+  @@index([orgId, termEnd])
+  @@map("trustees")
 }
 
 // ─────────────────────────────────────────────
@@ -1339,6 +1478,7 @@ model Document {
 
   meetingMinutes BoardMeeting[]
   voteResults    BoardVote[]
+  electionResults Election[]
 
   @@index([orgId, category])
   @@index([orgId, createdAt])

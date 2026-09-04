@@ -21,6 +21,8 @@ const PROTECTED = [
   "/maintenance-files",
   "/meetings",
   "/votes",
+  "/elections",
+  "/board",
   "/team",
   "/audit",
   "/data-requests",

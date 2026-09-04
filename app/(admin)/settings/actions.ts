@@ -209,6 +209,40 @@ export async function updateLateFeeSettings(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
+/* ───────────────────────────── elections ─────────────────────────── */
+
+const electionSchema = z.object({
+  electionArrearsMonths: z.coerce
+    .number()
+    .int("Whole months only")
+    .min(0)
+    .max(24, "24 months at most"),
+});
+
+export async function updateElectionSettings(input: unknown): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const parsed = electionSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org } = await getCurrentOrgContext();
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { electionArrearsMonths: parsed.data.electionArrearsMonths },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/votes");
+  revalidatePath("/elections");
+  await logAudit({
+    action: "settings.elections_update",
+    detail: `${parsed.data.electionArrearsMonths} months`,
+  });
+  return { ok: true };
+}
+
 /* ─────────────────── default rates by property type ──────────────── */
 
 const optionalRate = z.preprocess(
