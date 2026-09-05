@@ -101,7 +101,7 @@ export default async function BillDetailPage({
       {bill.payments.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Payments</h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {bill.payments.map((p) => (

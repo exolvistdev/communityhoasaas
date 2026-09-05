@@ -89,7 +89,7 @@ export default async function BillsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Summary label="Outstanding" value={peso(totalOutstanding)} tone={totalOutstanding > 0 ? "warning" : "neutral"} />
         <Summary label="Overdue" value={String(overdue)} tone={overdue > 0 ? "danger" : "neutral"} />
         <Summary label="Due within 7 days" value={String(dueSoon)} />
@@ -109,7 +109,7 @@ export default async function BillsPage({
           {filter === "open" ? "No open bills. 🎉" : "No bills recorded yet."}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>

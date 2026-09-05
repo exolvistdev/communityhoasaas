@@ -66,7 +66,7 @@ export function CandidateManager({
       </h2>
 
       {candidates.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
             <tbody>
               {candidates.map((c) => (

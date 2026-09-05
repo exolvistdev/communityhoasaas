@@ -74,7 +74,7 @@ function Section({
   return (
     <section className="space-y-2">
       <h2 className="text-sm font-semibold text-fg">{title}</h2>
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
           <tbody>
             {meetings.map((m) => {

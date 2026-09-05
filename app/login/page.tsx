@@ -7,7 +7,7 @@ export const metadata = { title: "Sign in · HOA SaaS" };
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-dvh lg:grid-cols-2">
       {/* Left hero */}
       <div className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-12 text-slate-200 lg:flex lg:flex-col lg:justify-between">
         <div className="flex items-center gap-2.5">
@@ -34,7 +34,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right form */}
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50/50 p-8">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-slate-50/50 p-8">
         <div className="w-full max-w-md space-y-6">
           <div className="flex flex-col items-center text-center">
             <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/25">

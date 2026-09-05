@@ -37,7 +37,7 @@ export default async function VisitorPassPage({
 
   if (!pass) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-6 text-center">
+      <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center px-6 text-center">
         <h1 className="text-lg font-semibold text-gray-900">
           This pass link isn&apos;t valid
         </h1>
@@ -53,7 +53,7 @@ export default async function VisitorPassPage({
   const svg = await qrSvg(`${siteOrigin()}/pass/${code}`);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 py-10">
+    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
         <div className="text-xs uppercase tracking-wide text-gray-400">
           {pass.property.org.name}

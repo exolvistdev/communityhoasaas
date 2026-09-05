@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { signIn } from "./actions";
 
 const inputClass =
-  "h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600";
+  "h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600";
 
 export function LoginForm() {
   const router = useRouter();

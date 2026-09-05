@@ -77,7 +77,7 @@ export default async function AmenityBookingsPage() {
             Nothing to review. 🎉
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {pending.map((b) => (
@@ -121,7 +121,7 @@ export default async function AmenityBookingsPage() {
           <p className="text-xs text-fg-subtle">
             The requested date has passed. Reject to clear them.
           </p>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {staleRequests.map((b) => (
@@ -151,7 +151,7 @@ export default async function AmenityBookingsPage() {
           <h2 className="text-sm font-semibold text-fg">
             Upcoming ({upcoming.length})
           </h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {upcoming.map((b) => (
@@ -179,7 +179,7 @@ export default async function AmenityBookingsPage() {
       {recent.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Recently decided</h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {recent.map((b) => {

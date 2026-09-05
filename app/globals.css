@@ -77,6 +77,12 @@
     color-scheme: dark;
   }
 
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-bg text-fg antialiased;
   }
@@ -114,4 +120,17 @@
   border-radius: 9999px;
   border: 3px solid transparent;
   background-clip: content-box;
+}
+
+/* Below 16px, iOS Safari force-zooms the viewport on input focus. This has
+   to win over any Tailwind text-sm/text-xs utility already on the element,
+   so it's !important and lives outside @layer (Tailwind utilities always
+   beat @layer base). Mobile-only — desktop keeps its compact table/form
+   density untouched. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }

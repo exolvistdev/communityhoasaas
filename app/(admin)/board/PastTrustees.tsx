@@ -31,7 +31,7 @@ export function PastTrustees({ trustees }: { trustees: TrusteeRow[] }) {
 
   return (
     <div className="space-y-2">
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
           <tbody>
             {trustees.map((t) => {

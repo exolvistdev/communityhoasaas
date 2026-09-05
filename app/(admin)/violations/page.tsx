@@ -90,7 +90,7 @@ export default async function ViolationsPage() {
           No violations logged. 🎉
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>

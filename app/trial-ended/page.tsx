@@ -19,7 +19,7 @@ export default async function TrialEndedPage() {
   if (!ctx?.org || !isOrgLocked(ctx.org)) redirect("/");
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-bg px-6 py-12 text-center">
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-bg px-6 py-12 text-center">
       <div className="max-w-sm space-y-4">
         <h1 className="text-xl font-semibold text-fg">Your trial has ended</h1>
         <p className="text-sm text-fg-muted">

@@ -21,7 +21,7 @@ export default async function OnboardingPage() {
   const resumeAtImport = Boolean(ctx?.authUser);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-12">
+    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-6 py-12">
       <OnboardingWizard signedIn={resumeAtImport} />
     </main>
   );

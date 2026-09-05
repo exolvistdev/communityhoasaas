@@ -70,7 +70,7 @@ export default async function ReconciliationPage() {
           Nothing to reconcile. 🎉
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>
@@ -128,7 +128,7 @@ export default async function ReconciliationPage() {
           <h2 className="mb-2 text-sm font-semibold text-fg">
             Recently processed
           </h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {recent.map((p) => (

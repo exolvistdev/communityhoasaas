@@ -324,7 +324,7 @@ export function BulkWaterManager({
             Properties page first, then meter them here.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-fg-subtle">
@@ -450,7 +450,7 @@ export function BulkWaterManager({
           unit. Their use is subtracted from system loss and funded by the HOA.
         </p>
         {commonRows.length > 0 && (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {commonRows.map((r) => (
@@ -636,7 +636,7 @@ export function BulkWaterManager({
                   </p>
                 )}
 
-                <div className="overflow-hidden rounded-md border border-border">
+                <div className="overflow-x-auto rounded-md border border-border">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border text-left text-fg-subtle">
@@ -685,7 +685,7 @@ export function BulkWaterManager({
       {data.runs.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Past runs</h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-border text-left text-fg-subtle">

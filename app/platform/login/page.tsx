@@ -5,7 +5,7 @@ export const metadata = { title: "Platform sign in" };
 
 export default function PlatformLoginPage() {
   return (
-    <div className="force-dark flex min-h-screen items-center justify-center bg-bg px-6 text-fg">
+    <div className="force-dark flex min-h-dvh items-center justify-center bg-bg px-6 text-fg">
       <div className="w-full max-w-sm">
         <span className="mb-2 inline-block rounded-md bg-surface-2 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-fg-muted">
           Platform

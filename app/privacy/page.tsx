@@ -4,7 +4,7 @@ export const metadata = { title: "Privacy Policy · HOA SaaS" };
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="mx-auto min-h-screen max-w-2xl bg-bg px-6 py-12 text-fg">
+    <main className="mx-auto min-h-dvh max-w-2xl bg-bg px-6 py-12 text-fg">
       <h1 className="text-2xl font-semibold">Privacy Policy</h1>
       <p className="mt-2 text-sm text-fg-muted">
         How your homeowners&apos; association handles your personal data, under

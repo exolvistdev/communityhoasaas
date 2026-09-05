@@ -124,7 +124,7 @@ export default async function AmenityDetailPage({
             Next ›
           </Link>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-1.5">
+        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
           {hours.map((h) => {
             const state = cellState(h);
             return (

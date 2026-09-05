@@ -20,7 +20,7 @@ export default async function AdminLayout({
   const daysLeft = trialDaysLeft(org);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
       )}
@@ -37,7 +37,7 @@ export default async function AdminLayout({
           notifications={notifications}
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6 lg:p-8">
+          <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 p-4 pb-[env(safe-area-inset-bottom)] sm:p-6 lg:p-8">
             {children}
           </main>
         </div>

@@ -275,7 +275,7 @@ export default async function ElectionDetailPage({
             No ballots cast yet.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {ballots.map((b) => (

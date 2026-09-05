@@ -39,7 +39,7 @@ export default async function PlatformDirectoryPage() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
           <thead className="bg-surface-2 text-left text-fg-muted">
             <tr>
@@ -94,7 +94,7 @@ export default async function PlatformDirectoryPage() {
         {recentImpersonations.length === 0 ? (
           <p className="text-sm text-fg-subtle">None yet.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {recentImpersonations.map((e) => (

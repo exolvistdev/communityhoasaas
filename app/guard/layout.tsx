@@ -19,7 +19,7 @@ export default async function GuardLayout({
   const daysLeft = trialDaysLeft(org);
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-dvh bg-bg">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
       )}

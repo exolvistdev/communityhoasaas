@@ -45,7 +45,7 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
       {error && <p className="text-sm text-danger-fg">{error}</p>}
       {notice && <p className="text-sm text-success-fg">{notice}</p>}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
           <thead className="bg-surface-2 text-left text-fg-muted">
             <tr>

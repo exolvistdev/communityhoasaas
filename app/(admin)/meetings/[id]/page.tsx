@@ -124,7 +124,7 @@ export default async function MeetingDetailPage({
             No RSVPs yet.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
             <table className="w-full text-sm">
               <tbody>
                 {meeting.rsvps.map((r) => (

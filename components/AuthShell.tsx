@@ -13,7 +13,7 @@ export function AuthShell({
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="relative hidden overflow-hidden bg-brand bg-gradient-to-br from-brand-hi to-brand p-10 text-brand-fg lg:flex lg:flex-col lg:justify-between">
         <Wordmark
           label="HOA Manager"

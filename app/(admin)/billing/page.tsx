@@ -82,7 +82,7 @@ export default async function BillingPage({
         </Link>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Summary label="Total billed" value={peso(totalBilled)} />
         <Summary label="Collected" value={peso(totalCollected)} tone="success" />
         <Summary
@@ -107,7 +107,7 @@ export default async function BillingPage({
           for {periodLabel(period)}.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-left text-fg-muted">
               <tr>

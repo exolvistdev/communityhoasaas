@@ -1,4 +1,5 @@
 import "./globals.css";
+import type { Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Providers } from "./providers";
 
@@ -11,6 +12,12 @@ const inter = Inter({
 export const metadata = {
   title: "HOA SaaS",
   description: "HOA management platform for Philippine subdivisions",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

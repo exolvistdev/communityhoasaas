@@ -80,7 +80,7 @@ async function TrialBalance({ orgId }: { orgId: string }) {
 
   return (
     <div className="space-y-2">
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
           <thead className="bg-surface-2 text-left text-fg-muted">
             <tr>
@@ -271,7 +271,7 @@ async function Journal({
             return (
               <div
                 key={e.id}
-                className="overflow-hidden rounded-lg border border-border bg-surface"
+                className="overflow-x-auto rounded-lg border border-border bg-surface"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 bg-surface-2 px-4 py-2 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
@@ -345,7 +345,7 @@ async function ChartOfAccounts({ orgId }: { orgId: string }) {
   });
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
       <table className="w-full text-sm">
         <thead className="bg-surface-2 text-left text-fg-muted">
           <tr>
