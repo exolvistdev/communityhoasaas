@@ -80,7 +80,8 @@
   html,
   body {
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: hidden; /* fallback for browsers without `clip` */
+    overflow-x: clip; /* no scroll-container promotion — keeps position: sticky working */
   }
 
   body {

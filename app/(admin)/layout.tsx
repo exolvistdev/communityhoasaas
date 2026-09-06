@@ -27,7 +27,7 @@ export default async function AdminLayout({
       {daysLeft !== null && daysLeft <= 7 && (
         <TrialBanner daysLeft={daysLeft} orgName={org.name} />
       )}
-      <div className="flex flex-1">
+      <div className="flex flex-1 flex-col lg:flex-row">
         <Sidebar
           orgName={org.name}
           role={user.role}

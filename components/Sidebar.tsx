@@ -299,7 +299,7 @@ export function Sidebar({
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-900 bg-slate-950 px-4 pt-[env(safe-area-inset-top)] text-slate-300 lg:hidden">
+      <div className="sticky top-0 z-30 flex h-14 w-full items-center gap-3 border-b border-slate-900 bg-slate-950 px-4 pt-[env(safe-area-inset-top)] text-slate-300 lg:hidden">
         <button
           onClick={() => setOpen(true)}
           className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-100"
