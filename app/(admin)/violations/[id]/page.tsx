@@ -146,7 +146,7 @@ export default async function ViolationDetailPage({
                 href={`/violation-photos/${violation.id}?i=${i}`}
                 target="_blank"
                 rel="noreferrer"
-                className="block h-28 w-28 overflow-x-auto rounded-lg border border-border bg-surface-2"
+                className="block h-28 w-28 overflow-hidden rounded-lg border border-border bg-surface-2"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

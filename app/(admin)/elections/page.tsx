@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/rbac";
 import { ELECTION_STATUS_BADGE } from "@/lib/election";
 import { orgUnitStanding } from "@/lib/good-standing";
 import { quorumMet } from "@/lib/vote";
+import { PageHeader } from "@/components/PageHeader";
 import { ElectionsManager } from "./ElectionsManager";
 
 export const metadata = { title: "Elections · HOA SaaS" };
@@ -48,16 +49,11 @@ export default async function ElectionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Elections</h1>
-          <p className="text-sm text-fg-muted">
-            Elect the Board of Trustees. One ballot per unit; delinquent units are
-            suspended.
-          </p>
-        </div>
-        <ElectionsManager meetings={meetings} />
-      </div>
+      <PageHeader
+        title="Elections"
+        description="Elect the Board of Trustees. One ballot per unit; delinquent units are suspended."
+        action={<ElectionsManager meetings={meetings} />}
+      />
 
       <Section title="Open" rows={open} eligibleUnits={eligibleUnits} fmt={fmt} />
       <Section title="Drafts" rows={draft} eligibleUnits={eligibleUnits} fmt={fmt} />

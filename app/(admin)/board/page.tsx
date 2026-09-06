@@ -4,6 +4,7 @@ import { boardRoster } from "@/lib/board";
 import { BoardManager } from "./BoardManager";
 import { PastTrustees } from "./PastTrustees";
 import { AppointForm } from "./AppointForm";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Board of Trustees · HOA SaaS" };
 
@@ -30,13 +31,10 @@ export default async function BoardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-fg">Board of Trustees</h1>
-        <p className="text-sm text-fg-muted">
-          The seated board and its officers. Elected trustees come from finalizing
-          an election; you can also appoint one.
-        </p>
-      </div>
+      <PageHeader
+        title="Board of Trustees"
+        description="The seated board and its officers. Elected trustees come from finalizing an election; you can also appoint one."
+      />
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-fg">

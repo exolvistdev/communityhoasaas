@@ -5,6 +5,7 @@ import { peso } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { toTypeRateDefaults } from "@/lib/rate";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
+import { PageHeader } from "@/components/PageHeader";
 import { AddPropertyForm } from "./AddPropertyForm";
 
 export const metadata = { title: "Properties · HOA SaaS" };
@@ -45,30 +46,34 @@ export default async function PropertiesPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-fg">
-          Properties{" "}
-          <span className="text-fg-subtle">({properties.length})</span>
-        </h1>
-        {canWrite && (
-          <div className="flex items-center gap-2">
-            <Link
-              href="/properties/import"
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
-            >
-              Import CSV
-            </Link>
-            <AddPropertyForm
-              ratePlans={ratePlans.map((r) => ({
-                id: r.id,
-                name: r.name,
-                monthlyRate: Number(r.monthlyRate),
-              }))}
-              typeDefaults={toTypeRateDefaults(org)}
-            />
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title={
+          <>
+            Properties{" "}
+            <span className="text-fg-subtle">({properties.length})</span>
+          </>
+        }
+        action={
+          canWrite ? (
+            <>
+              <Link
+                href="/properties/import"
+                className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+              >
+                Import CSV
+              </Link>
+              <AddPropertyForm
+                ratePlans={ratePlans.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  monthlyRate: Number(r.monthlyRate),
+                }))}
+                typeDefaults={toTypeRateDefaults(org)}
+              />
+            </>
+          ) : undefined
+        }
+      />
 
       {archivedCount > 0 && (
         <div className="text-sm">

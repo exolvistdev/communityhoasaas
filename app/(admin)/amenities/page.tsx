@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
+import { PageHeader } from "@/components/PageHeader";
 import { AmenitiesManager, type AmenityRow } from "./AmenitiesManager";
 
 export const metadata = { title: "Amenities · HOA SaaS" };
@@ -49,20 +50,22 @@ export default async function AmenitiesPage() {
 
   return (
     <div className="max-w-3xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-fg">Amenities</h1>
-        <Link
-          href="/amenities/bookings"
-          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-fg hover:bg-surface-2"
-        >
-          Booking requests
-          {pendingCount > 0 && (
-            <span className="ml-1.5 rounded-full bg-warning-subtle px-1.5 text-xs font-medium text-warning-fg">
-              {pendingCount}
-            </span>
-          )}
-        </Link>
-      </div>
+      <PageHeader
+        title="Amenities"
+        action={
+          <Link
+            href="/amenities/bookings"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-fg hover:bg-surface-2"
+          >
+            Booking requests
+            {pendingCount > 0 && (
+              <span className="ml-1.5 rounded-full bg-warning-subtle px-1.5 text-xs font-medium text-warning-fg">
+                {pendingCount}
+              </span>
+            )}
+          </Link>
+        }
+      />
 
       {rows.length === 0 && (
         <p className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-fg-muted">

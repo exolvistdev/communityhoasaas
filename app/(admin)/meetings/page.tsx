@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { MEETING_STATUS_BADGE, rsvpTally, meetingIsPast } from "@/lib/meeting";
+import { PageHeader } from "@/components/PageHeader";
 import { MeetingsManager } from "./MeetingsManager";
 
 export const metadata = { title: "Board meetings · HOA SaaS" };
@@ -37,15 +38,11 @@ export default async function MeetingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Board meetings</h1>
-          <p className="text-sm text-fg-muted">
-            Schedule meetings, collect RSVPs, and publish the minutes.
-          </p>
-        </div>
-        <MeetingsManager />
-      </div>
+      <PageHeader
+        title="Board meetings"
+        description="Schedule meetings, collect RSVPs, and publish the minutes."
+        action={<MeetingsManager />}
+      />
 
       <Section title="Upcoming" meetings={upcoming} fmt={fmt} />
       <Section title="Past & cancelled" meetings={past} fmt={fmt} />

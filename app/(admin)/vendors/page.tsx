@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { peso } from "@/lib/format";
+import { PageHeader } from "@/components/PageHeader";
 import { VendorsManager } from "./VendorsManager";
 
 export const metadata = { title: "Vendors · HOA SaaS" };
@@ -33,20 +34,18 @@ export default async function VendorsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Vendors</h1>
-          <p className="text-sm text-fg-muted">
-            Suppliers and service providers you record bills against.
-          </p>
-        </div>
-        <Link
-          href="/bills"
-          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
-        >
-          Bills →
-        </Link>
-      </div>
+      <PageHeader
+        title="Vendors"
+        description="Suppliers and service providers you record bills against."
+        action={
+          <Link
+            href="/bills"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+          >
+            Bills →
+          </Link>
+        }
+      />
 
       <VendorsManager
         vendors={rows.map(({ v, owed, openBills }) => ({

@@ -3,6 +3,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { can } from "@/lib/permissions";
 import { peso, periodLabel } from "@/lib/format";
 import { ReconciliationActions } from "./ReconciliationActions";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Reconciliation · HOA SaaS" };
 
@@ -57,13 +58,10 @@ export default async function ReconciliationPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-fg">Reconciliation</h1>
-        <p className="text-sm text-fg-muted">
-          Payments homeowners submitted from the portal, awaiting your
-          confirmation.
-        </p>
-      </div>
+      <PageHeader
+        title="Reconciliation"
+        description="Payments homeowners submitted from the portal, awaiting your confirmation."
+      />
 
       {pending.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">

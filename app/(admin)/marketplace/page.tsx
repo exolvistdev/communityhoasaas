@@ -6,6 +6,7 @@ import {
   LISTING_STATUS_BADGE,
   priceLabel,
 } from "@/lib/marketplace";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Marketplace · HOA SaaS" };
 
@@ -62,20 +63,22 @@ export default async function AdminMarketplacePage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-fg">Marketplace</h1>
-        <Link
-          href="/marketplace/conversations"
-          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-fg hover:bg-surface-2"
-        >
-          Reported conversations
-          {openConvoReports > 0 && (
-            <span className="ml-1.5 rounded-full bg-danger-subtle px-1.5 text-xs font-medium text-danger-fg">
-              {openConvoReports}
-            </span>
-          )}
-        </Link>
-      </div>
+      <PageHeader
+        title="Marketplace"
+        action={
+          <Link
+            href="/marketplace/conversations"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-fg hover:bg-surface-2"
+          >
+            Reported conversations
+            {openConvoReports > 0 && (
+              <span className="ml-1.5 rounded-full bg-danger-subtle px-1.5 text-xs font-medium text-danger-fg">
+                {openConvoReports}
+              </span>
+            )}
+          </Link>
+        }
+      />
 
       <div className="flex gap-2">
         <Pill href="/marketplace" active={filter === "all"}>

@@ -122,14 +122,14 @@ export function WaterManager({
 
       {/* readings entry */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-sm font-semibold text-fg">
             Readings — {periodLabel(period)}
           </h2>
           <button
             onClick={onSaveReadings}
             disabled={pending}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
+            className="w-full rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 sm:w-auto"
           >
             {pending ? "Saving…" : "Save readings"}
           </button>

@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/rbac";
 import { relativeTime } from "@/lib/format";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataRequestActions } from "./DataRequestActions";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Privacy requests · HOA SaaS" };
 
@@ -42,14 +43,10 @@ export default async function DataRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-fg">Privacy requests</h1>
-        <p className="text-sm text-fg-muted">
-          Account-deletion requests from residents (RA 10173). Handle the
-          deletion via the resident&apos;s unit close-out, or the Team page, then
-          mark the request done.
-        </p>
-      </div>
+      <PageHeader
+        title="Privacy requests"
+        description="Account-deletion requests from residents (RA 10173). Handle the deletion via the resident's unit close-out, or the Team page, then mark the request done."
+      />
 
       {pending.length === 0 ? (
         <EmptyState

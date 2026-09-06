@@ -6,6 +6,7 @@ import {
   MAINTENANCE_STATUS_BADGE,
   MAINTENANCE_OPEN_STATUSES,
 } from "@/lib/maintenance";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Maintenance · HOA SaaS" };
 
@@ -44,15 +45,15 @@ export default async function MaintenancePage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold text-fg">
-          Maintenance{" "}
-          <span className="text-fg-subtle">({openCount} open)</span>
-        </h1>
-        <p className="text-sm text-fg-muted">
-          Repair requests from residents and common-area work orders.
-        </p>
-      </div>
+      <PageHeader
+        title={
+          <>
+            Maintenance{" "}
+            <span className="text-fg-subtle">({openCount} open)</span>
+          </>
+        }
+        description="Repair requests from residents and common-area work orders."
+      />
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">

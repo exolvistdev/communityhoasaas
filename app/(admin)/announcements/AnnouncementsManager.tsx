@@ -8,6 +8,7 @@ import {
   setAnnouncementPublished,
   updateAnnouncement,
 } from "./actions";
+import { PageHeader } from "@/components/PageHeader";
 
 type Item = {
   id: string;
@@ -46,20 +47,22 @@ export function AnnouncementsManager({ items }: { items: Item[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-fg">Announcements</h1>
-        {!creating && (
-          <button
-            onClick={() => {
-              setCreating(true);
-              setEditingId(null);
-            }}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
-          >
-            New announcement
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Announcements"
+        action={
+          !creating ? (
+            <button
+              onClick={() => {
+                setCreating(true);
+                setEditingId(null);
+              }}
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
+            >
+              New announcement
+            </button>
+          ) : undefined
+        }
+      />
 
       {error && <p className="text-sm text-danger-fg">{error}</p>}
 

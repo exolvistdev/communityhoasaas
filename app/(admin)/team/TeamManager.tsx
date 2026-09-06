@@ -10,6 +10,7 @@ import {
   sendResetLink,
   updateMemberRole,
 } from "./actions";
+import { PageHeader } from "@/components/PageHeader";
 
 type Member = {
   id: string;
@@ -68,20 +69,22 @@ export function TeamManager({
 
   return (
     <div className="max-w-3xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-fg">Team</h1>
-        {!adding && (
-          <button
-            onClick={() => {
-              setAdding(true);
-              setLink(null);
-            }}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
-          >
-            Invite member
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Team"
+        action={
+          !adding ? (
+            <button
+              onClick={() => {
+                setAdding(true);
+                setLink(null);
+              }}
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
+            >
+              Invite member
+            </button>
+          ) : undefined
+        }
+      />
 
       {error && <p className="text-sm text-danger-fg">{error}</p>}
       {link && (

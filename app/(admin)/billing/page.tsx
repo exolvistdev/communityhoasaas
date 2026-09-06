@@ -8,6 +8,7 @@ import { InvoiceStatusBadge } from "@/components/StatusBadge";
 import { GenerateInvoicesButton } from "./GenerateInvoicesButton";
 import { RecordPaymentButton } from "./RecordPaymentButton";
 import { StatementsButton } from "./StatementsButton";
+import { PageHeader } from "@/components/PageHeader";
 import { VoidInvoiceButton } from "./VoidInvoiceButton";
 
 export const metadata = { title: "Billing · HOA SaaS" };
@@ -59,18 +60,16 @@ export default async function BillingPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Billing</h1>
-          <p className="text-sm text-fg-muted">
-            Current period: {periodLabel(period)}
-          </p>
-        </div>
-        <div className="flex items-start gap-2 text-right">
-          <StatementsButton />
-          {canWrite && <GenerateInvoicesButton period={period} />}
-        </div>
-      </div>
+      <PageHeader
+        title="Billing"
+        description={`Current period: ${periodLabel(period)}`}
+        action={
+          <>
+            <StatementsButton />
+            {canWrite && <GenerateInvoicesButton period={period} />}
+          </>
+        }
+      />
 
       {pendingCount > 0 && (
         <Link

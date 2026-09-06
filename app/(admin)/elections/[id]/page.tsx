@@ -177,12 +177,12 @@ export default async function ElectionDetailPage({
 
       {/* tally */}
       <section className="rounded-lg border border-border bg-surface p-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <h2 className="text-sm font-semibold text-fg">
             {election.status === "CLOSED" ? "Result" : "Live tally"}
           </h2>
-          <div className="flex items-center gap-3 text-xs text-fg-subtle">
-            <span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
+            <span className="min-w-0">
               {cast}/{eligibleUnits} units cast · {turnoutPct}% turnout
               {suspendedUnits > 0 && ` · ${suspendedUnits} suspended`}
             </span>
@@ -323,8 +323,12 @@ function TallyBar({
   const pct = max > 0 ? Math.round((row.votes / max) * 100) : 0;
   return (
     <li>
-      <div className="flex items-center justify-between text-sm">
-        <span className={row.withdrawn ? "text-fg-subtle line-through" : "text-fg"}>
+      <div className="flex items-start justify-between gap-2 text-sm">
+        <span
+          className={`min-w-0 ${
+            row.withdrawn ? "text-fg-subtle line-through" : "text-fg"
+          }`}
+        >
           {row.name}
           {ineligible && (
             <span className="ml-2 text-xs font-medium text-warning-fg no-underline">
@@ -341,7 +345,7 @@ function TallyBar({
             <span className="ml-2 text-xs text-fg-subtle">cut-off</span>
           )}
         </span>
-        <span className="tabular-nums text-fg-muted">{row.votes}</span>
+        <span className="shrink-0 tabular-nums text-fg-muted">{row.votes}</span>
       </div>
       <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
         <div

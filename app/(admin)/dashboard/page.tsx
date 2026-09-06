@@ -12,6 +12,7 @@ import { can } from "@/lib/permissions";
 import { MetricCard } from "@/components/MetricCard";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
 import { buttonClass } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { SectionHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, Thead, Th, Tbody, Tr, Td } from "@/components/ui/table";
@@ -281,17 +282,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-fg">Dashboard</h1>
-          <p className="text-sm text-fg-muted">
-            {org.name} at a glance
-          </p>
-        </div>
-        <Link href="/properties" className={buttonClass({ variant: "secondary" })}>
-          Add property
-        </Link>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description={`${org.name} at a glance`}
+        action={
+          <Link
+            href="/properties"
+            className={buttonClass({ variant: "secondary" })}
+          >
+            Add property
+          </Link>
+        }
+      />
 
       {alerts.length > 0 && (
         <div className="space-y-2">

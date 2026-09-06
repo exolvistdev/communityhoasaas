@@ -178,7 +178,8 @@ export function EntryForm({ accounts }: { accounts: Account[] }) {
 
       {mode === "advanced" && (
         <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_6rem_6rem_1.5rem] gap-2 text-xs font-medium text-fg-subtle">
+          <div className="space-y-2 overflow-x-auto">
+          <div className="grid min-w-[26rem] grid-cols-[1fr_6rem_6rem_1.5rem] gap-2 text-xs font-medium text-fg-subtle">
             <span>Account</span>
             <span className="text-right">Debit</span>
             <span className="text-right">Credit</span>
@@ -187,7 +188,7 @@ export function EntryForm({ accounts }: { accounts: Account[] }) {
           {rows.map((r, i) => (
             <div
               key={i}
-              className="grid grid-cols-[1fr_6rem_6rem_1.5rem] items-center gap-2"
+              className="grid min-w-[26rem] grid-cols-[1fr_6rem_6rem_1.5rem] items-center gap-2"
             >
               <select
                 value={r.code}
@@ -253,6 +254,7 @@ export function EntryForm({ accounts }: { accounts: Account[] }) {
               </button>
             </div>
           ))}
+          </div>
           <div className="flex items-center justify-between">
             <button
               type="button"

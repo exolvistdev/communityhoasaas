@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { peso } from "@/lib/format";
 import { billStatus, BILL_STATUS_BADGE, effectiveBillStatus } from "@/lib/bill";
+import { PageHeader } from "@/components/PageHeader";
 import { AddBillForm } from "./AddBillForm";
 
 export const metadata = { title: "Bills · HOA SaaS" };
@@ -70,24 +71,21 @@ export default async function BillsPage({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Bills</h1>
-          <p className="text-sm text-fg-muted">
-            Vendor invoices — recording one books the expense and an account
-            payable.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/vendors"
-            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
-          >
-            Vendors
-          </Link>
-          <AddBillForm vendors={vendors} expenseAccounts={expenseAccounts} />
-        </div>
-      </div>
+      <PageHeader
+        title="Bills"
+        description="Vendor invoices — recording one books the expense and an account payable."
+        action={
+          <>
+            <Link
+              href="/vendors"
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+            >
+              Vendors
+            </Link>
+            <AddBillForm vendors={vendors} expenseAccounts={expenseAccounts} />
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Summary label="Outstanding" value={peso(totalOutstanding)} tone={totalOutstanding > 0 ? "warning" : "neutral"} />

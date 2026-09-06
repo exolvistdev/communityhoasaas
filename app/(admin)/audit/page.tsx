@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Audit log · HOA SaaS" };
 
@@ -122,12 +123,10 @@ export default async function AuditPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold text-fg">Audit log</h1>
-        <p className="text-sm text-fg-muted">
-          Who did what, most recent first.
-        </p>
-      </div>
+      <PageHeader
+        title="Audit log"
+        description="Who did what, most recent first."
+      />
 
       {events.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">

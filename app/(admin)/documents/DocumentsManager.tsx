@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Lock, Upload, Download } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/PageHeader";
 import {
   uploadDocumentAction,
   updateDocumentAction,
@@ -76,26 +77,23 @@ export function DocumentsManager({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Documents</h1>
-          <p className="text-sm text-fg-muted">
-            Bylaws, minutes, financials and forms. Homeowners see everything
-            except items marked staff-only.
-          </p>
-        </div>
-        {canWrite && !uploading && (
-          <button
-            onClick={() => {
-              setUploading(true);
-              setEditingId(null);
-            }}
-            className="flex shrink-0 items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
-          >
-            <Upload className="h-4 w-4" /> Upload document
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Documents"
+        description="Bylaws, minutes, financials and forms. Homeowners see everything except items marked staff-only."
+        action={
+          canWrite && !uploading ? (
+            <button
+              onClick={() => {
+                setUploading(true);
+                setEditingId(null);
+              }}
+              className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
+            >
+              <Upload className="h-4 w-4" /> Upload document
+            </button>
+          ) : undefined
+        }
+      />
 
       {error && <p className="text-sm text-danger-fg">{error}</p>}
 

@@ -66,7 +66,7 @@ export function NotificationPreferences({
 
       <div className="overflow-hidden rounded-md border border-border">
         <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 border-b border-border bg-surface-2 px-3 py-2 text-xs font-medium text-fg-subtle">
-          <span>Category</span>
+          <span className="min-w-0">Category</span>
           <span className="w-12 text-center">Email</span>
           <span className="w-12 text-center">In-app</span>
         </div>
@@ -75,7 +75,7 @@ export function NotificationPreferences({
             key={c.key}
             className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 border-b border-border px-3 py-2.5 last:border-0"
           >
-            <span className="text-sm text-fg">
+            <span className="min-w-0 text-sm text-fg">
               {c.label}
               <span className="mt-0.5 block text-xs text-fg-subtle">
                 {c.hint}

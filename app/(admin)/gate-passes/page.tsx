@@ -6,6 +6,7 @@ import { can } from "@/lib/permissions";
 import { GatePassStatusBadge } from "@/components/StatusBadge";
 import { CreateGatePassForm } from "./CreateGatePassForm";
 import { RevokeGatePassButton } from "./RevokeGatePassButton";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Gate passes · HOA SaaS" };
 
@@ -52,12 +53,14 @@ export default async function GatePassesPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold text-fg">Gate passes</h1>
-        {view === "passes" && canWrite && (
-          <CreateGatePassFormLoader orgId={org.id} />
-        )}
-      </div>
+      <PageHeader
+        title="Gate passes"
+        action={
+          view === "passes" && canWrite ? (
+            <CreateGatePassFormLoader orgId={org.id} />
+          ) : undefined
+        }
+      />
 
       <div className="flex gap-2">
         <Pill href="/gate-passes" active={view === "passes"}>

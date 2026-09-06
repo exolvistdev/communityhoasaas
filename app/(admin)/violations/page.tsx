@@ -6,6 +6,7 @@ import {
   VIOLATION_CATEGORY_LABEL,
   VIOLATION_STATUS_BADGE,
 } from "@/lib/violation";
+import { PageHeader } from "@/components/PageHeader";
 import { LogViolationForm } from "./LogViolationForm";
 
 export const metadata = { title: "Violations · HOA SaaS" };
@@ -69,21 +70,16 @@ export default async function ViolationsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">
+      <PageHeader
+        title={
+          <>
             Violations{" "}
-            <span className="text-fg-subtle">
-              ({openCount} open)
-            </span>
-          </h1>
-          <p className="text-sm text-fg-muted">
-            Log a rule violation, track it to resolution, and serve a fine if
-            needed.
-          </p>
-        </div>
-        <LogViolationForm properties={properties} />
-      </div>
+            <span className="text-fg-subtle">({openCount} open)</span>
+          </>
+        }
+        description="Log a rule violation, track it to resolution, and serve a fine if needed."
+        action={<LogViolationForm properties={properties} />}
+      />
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">

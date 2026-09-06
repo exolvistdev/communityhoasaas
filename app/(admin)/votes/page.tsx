@@ -9,6 +9,7 @@ import {
   voteTally,
 } from "@/lib/vote";
 import { orgUnitStanding } from "@/lib/good-standing";
+import { PageHeader } from "@/components/PageHeader";
 import { VotesManager } from "./VotesManager";
 
 export const metadata = { title: "Votes · HOA SaaS" };
@@ -61,15 +62,11 @@ export default async function VotesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Votes</h1>
-          <p className="text-sm text-fg-muted">
-            Put a motion to the members, track quorum, and publish the result.
-          </p>
-        </div>
-        <VotesManager meetings={meetings} />
-      </div>
+      <PageHeader
+        title="Votes"
+        description="Put a motion to the members, track quorum, and publish the result."
+        action={<VotesManager meetings={meetings} />}
+      />
 
       <Section title="Open" votes={open} eligibleUnits={eligibleUnits} fmt={fmt} />
       <Section title="Drafts" votes={draft} eligibleUnits={eligibleUnits} fmt={fmt} />
