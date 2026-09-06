@@ -86,9 +86,9 @@ export default async function MarketplacePage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-fg">Marketplace</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="min-w-0 text-lg font-semibold text-fg">Marketplace</h1>
+        <div className="flex shrink-0 gap-2">
           <Link
             href="/portal/market/mine"
             className="rounded-md px-2 py-1 text-xs text-fg-muted hover:bg-surface-2"

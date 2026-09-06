@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { peso } from "@/lib/format";
 import { AMENITY_BOOKING_STATUS_BADGE, fmtSlot, fmtDateTime } from "@/lib/amenity";
 import { displayUnit, unitLinkSelect } from "@/lib/homeowner";
 import { BookingDecision, StaffCancelButton } from "../BookingActions";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Booking requests · HOA SaaS" };
 
@@ -56,17 +56,10 @@ export default async function AmenityBookingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/amenities"
-          className="text-sm text-fg-muted hover:text-fg"
-        >
-          ← Amenities
-        </Link>
-        <h1 className="mt-1 text-lg font-semibold text-fg">
-          Booking requests
-        </h1>
-      </div>
+      <PageHeader
+        title="Booking requests"
+        backLink={{ href: "/amenities", label: "Amenities" }}
+      />
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-fg">

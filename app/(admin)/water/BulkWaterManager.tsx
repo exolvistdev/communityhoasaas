@@ -668,7 +668,7 @@ export function BulkWaterManager({
                 <button
                   onClick={onBill}
                   disabled={pending}
-                  className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
+                  className="w-full rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 sm:w-auto"
                 >
                   Bill the period
                 </button>

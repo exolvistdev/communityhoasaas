@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
+import { PageHeader } from "@/components/PageHeader";
+import { NavPill, NavPills } from "@/components/ui/nav-pill";
 
 export const metadata = { title: "Reported conversations · HOA SaaS" };
 
@@ -41,26 +43,19 @@ export default async function ReportedConversationsPage({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Link
-          href="/marketplace"
-          className="text-sm text-fg-muted hover:text-fg"
-        >
-          ← Marketplace
-        </Link>
-        <h1 className="mt-1 text-lg font-semibold text-fg">
-          Reported conversations
-        </h1>
-      </div>
+      <PageHeader
+        title="Reported conversations"
+        backLink={{ href: "/marketplace", label: "Marketplace" }}
+      />
 
-      <div className="flex gap-2">
-        <Pill href="/marketplace/conversations" active={!showAll}>
+      <NavPills>
+        <NavPill href="/marketplace/conversations" active={!showAll}>
           Open
-        </Pill>
-        <Pill href="/marketplace/conversations?f=all" active={showAll}>
+        </NavPill>
+        <NavPill href="/marketplace/conversations?f=all" active={showAll}>
           All
-        </Pill>
-      </div>
+        </NavPill>
+      </NavPills>
 
       {reports.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
@@ -115,28 +110,5 @@ export default async function ReportedConversationsPage({
         </div>
       )}
     </div>
-  );
-}
-
-function Pill({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1 text-sm ${
-        active
-          ? "bg-brand text-white"
-          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }

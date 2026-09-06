@@ -41,14 +41,14 @@ export function VendorsManager({ vendors }: { vendors: Vendor[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex sm:justify-end">
         {!adding && (
           <button
             onClick={() => {
               setAdding(true);
               setEditingId(null);
             }}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
+            className="w-full rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 sm:w-auto"
           >
             Add vendor
           </button>

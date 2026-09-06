@@ -51,8 +51,8 @@ export function CreateGatePassForm({
   }
 
   if (!open) {
-    return (
-      <div className={compact ? "" : "flex items-center gap-3"}>
+    const content = (
+      <>
         <button
           onClick={() => {
             setOpen(true);
@@ -68,8 +68,12 @@ export function CreateGatePassForm({
             <span className="font-mono font-semibold">{createdCode}</span>
           </span>
         )}
-      </div>
+      </>
     );
+    // compact = inline next to a section <h2>; otherwise this is the page
+    // header action, where PageHeader stacks the bare <button> full-width on
+    // mobile — so return the fragment directly, not wrapped in a <div>.
+    return compact ? <div>{content}</div> : content;
   }
 
   return (

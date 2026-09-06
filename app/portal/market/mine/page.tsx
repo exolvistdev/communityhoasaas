@@ -24,7 +24,7 @@ export default async function MyListingsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/portal/market"
           className="text-sm text-fg-muted hover:text-fg"
@@ -33,7 +33,7 @@ export default async function MyListingsPage() {
         </Link>
         <Link
           href="/portal/market/new"
-          className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:brightness-110"
+          className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:brightness-110"
         >
           Sell something
         </Link>

@@ -5,6 +5,8 @@ import { can } from "@/lib/permissions";
 import { trialBalance } from "@/lib/ledger";
 import { parseStatementRange } from "@/lib/soa";
 import { peso } from "@/lib/format";
+import { PageHeader } from "@/components/PageHeader";
+import { NavPill, NavPills } from "@/components/ui/nav-pill";
 import { ReverseEntryButton } from "./ReverseEntryButton";
 
 export const metadata = { title: "Ledger · HOA SaaS" };
@@ -38,27 +40,31 @@ export default async function LedgerPage({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-fg">Ledger</h1>
+      <PageHeader
+        title="Ledger"
+        action={
+          canWrite ? (
+            <Link
+              href="/ledger/entry"
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+            >
+              + Record entry
+            </Link>
+          ) : undefined
+        }
+      />
 
-      <div className="flex gap-2">
-        <Tab href="/ledger" active={view === "trial-balance"}>
+      <NavPills>
+        <NavPill href="/ledger" active={view === "trial-balance"}>
           Trial balance
-        </Tab>
-        <Tab href="/ledger?view=journal" active={view === "journal"}>
+        </NavPill>
+        <NavPill href="/ledger?view=journal" active={view === "journal"}>
           Journal
-        </Tab>
-        <Tab href="/ledger?view=accounts" active={view === "accounts"}>
+        </NavPill>
+        <NavPill href="/ledger?view=accounts" active={view === "accounts"}>
           Chart of accounts
-        </Tab>
-        {canWrite && (
-          <Link
-            href="/ledger/entry"
-            className="ml-auto rounded-full border border-border bg-surface px-3 py-1 text-sm text-fg-muted hover:bg-surface-2"
-          >
-            + Record entry
-          </Link>
-        )}
-      </div>
+        </NavPill>
+      </NavPills>
 
       {view === "trial-balance" && <TrialBalance orgId={org.id} />}
       {view === "journal" && (
@@ -374,25 +380,3 @@ async function ChartOfAccounts({ orgId }: { orgId: string }) {
 
 /* ──────────────────────────────── ui ─────────────────────────────── */
 
-function Tab({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1 text-sm ${
-        active
-          ? "bg-brand text-white"
-          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}

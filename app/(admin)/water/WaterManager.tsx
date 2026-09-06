@@ -265,7 +265,7 @@ export function WaterManager({
       </section>
 
       {/* bill the period */}
-      <section className="flex items-center justify-between rounded-lg border border-border bg-surface p-4">
+      <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm">
           <div className="font-medium text-fg">Bill {periodLabel(period)}</div>
           <div className="text-xs text-fg-muted">
@@ -282,7 +282,7 @@ export function WaterManager({
             run(() => billPeriod(period));
           }}
           disabled={pending || preview.count === 0}
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
+          className="w-full rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 sm:w-auto"
         >
           Generate invoices
         </button>

@@ -304,8 +304,8 @@ export default async function DashboardPage() {
               className="flex items-center gap-2.5 rounded-lg border border-warning/30 bg-warning-subtle px-4 py-2.5 text-sm font-medium text-warning-fg transition-colors hover:border-warning/50"
             >
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span className="flex-1">{a.text}</span>
-              <ArrowUpRight className="h-4 w-4" />
+              <span className="min-w-0 flex-1">{a.text}</span>
+              <ArrowUpRight className="h-4 w-4 shrink-0" />
             </Link>
           ))}
         </div>

@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/rbac";
 import { peso } from "@/lib/format";
 import { billStatus, BILL_STATUS_BADGE, effectiveBillStatus } from "@/lib/bill";
 import { PageHeader } from "@/components/PageHeader";
+import { NavPill, NavPills } from "@/components/ui/nav-pill";
 import { AddBillForm } from "./AddBillForm";
 
 export const metadata = { title: "Bills · HOA SaaS" };
@@ -93,14 +94,14 @@ export default async function BillsPage({
         <Summary label="Due within 7 days" value={String(dueSoon)} />
       </div>
 
-      <div className="flex gap-2">
-        <Pill href="/bills" active={filter === "open"}>
+      <NavPills>
+        <NavPill href="/bills" active={filter === "open"}>
           Open ({filter === "open" ? rows.length : "…"})
-        </Pill>
-        <Pill href="/bills?filter=all" active={filter === "all"}>
+        </NavPill>
+        <NavPill href="/bills?filter=all" active={filter === "all"}>
           All
-        </Pill>
-      </div>
+        </NavPill>
+      </NavPills>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
@@ -178,28 +179,5 @@ function Summary({
       <div className="text-sm text-fg-muted">{label}</div>
       <div className={`mt-1 text-xl font-semibold ${t}`}>{value}</div>
     </div>
-  );
-}
-
-function Pill({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1 text-sm ${
-        active
-          ? "bg-brand text-white"
-          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }

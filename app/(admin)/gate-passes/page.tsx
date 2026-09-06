@@ -11,6 +11,7 @@ import {
   ResponsiveTable,
   type ResponsiveColumn,
 } from "@/components/ui/responsive-table";
+import { NavPill, NavPills } from "@/components/ui/nav-pill";
 
 export const metadata = { title: "Gate passes · HOA SaaS" };
 
@@ -66,14 +67,14 @@ export default async function GatePassesPage({
         }
       />
 
-      <div className="flex gap-2">
-        <Pill href="/gate-passes" active={view === "passes"}>
+      <NavPills>
+        <NavPill href="/gate-passes" active={view === "passes"}>
           Passes
-        </Pill>
-        <Pill href="/gate-passes?view=activity" active={view === "activity"}>
+        </NavPill>
+        <NavPill href="/gate-passes?view=activity" active={view === "activity"}>
           Activity
-        </Pill>
-      </div>
+        </NavPill>
+      </NavPills>
 
       {view === "passes" ? (
         <PassesList orgId={org.id} filter={filter} canWrite={canWrite} />
@@ -191,17 +192,17 @@ async function PassesList({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <Pill href="/gate-passes" active={filter === "all"}>
+      <NavPills>
+        <NavPill href="/gate-passes" active={filter === "all"}>
           All ({counts.all})
-        </Pill>
-        <Pill href="/gate-passes?filter=active" active={filter === "active"}>
+        </NavPill>
+        <NavPill href="/gate-passes?filter=active" active={filter === "active"}>
           Active ({counts.active})
-        </Pill>
-        <Pill href="/gate-passes?filter=inactive" active={filter === "inactive"}>
+        </NavPill>
+        <NavPill href="/gate-passes?filter=inactive" active={filter === "inactive"}>
           Expired / revoked ({counts.inactive})
-        </Pill>
-      </div>
+        </NavPill>
+      </NavPills>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
@@ -289,25 +290,3 @@ async function ActivityLog({ orgId }: { orgId: string }) {
   );
 }
 
-function Pill({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1 text-sm ${
-        active
-          ? "bg-brand text-white"
-          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}

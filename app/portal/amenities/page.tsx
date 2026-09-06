@@ -55,9 +55,11 @@ export default async function PortalAmenitiesPage({
                 className="block rounded-lg border border-border bg-surface p-4 hover:border-border"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-fg">{a.name}</span>
+                  <span className="min-w-0 truncate font-medium text-fg">
+                    {a.name}
+                  </span>
                   {Number(a.fee) > 0 && (
-                    <span className="text-sm text-fg-muted">
+                    <span className="shrink-0 text-sm text-fg-muted">
                       {peso(Number(a.fee), { cents: false })}
                     </span>
                   )}

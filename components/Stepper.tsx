@@ -6,7 +6,7 @@ export function Stepper({
   current: number; // 1-based
 }) {
   return (
-    <ol className="flex items-center gap-3 text-sm">
+    <ol className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
       {steps.map((label, i) => {
         const n = i + 1;
         const done = n < current;

@@ -35,11 +35,11 @@ export function MetricCard({
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="text-sm text-fg-muted">{label}</div>
+        <div className="min-w-0 text-sm text-fg-muted">{label}</div>
         {Icon && (
           <span
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-lg",
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
               chipTone[tone]
             )}
           >
@@ -51,8 +51,9 @@ export function MetricCard({
         <div className="mt-2 h-7 w-24 animate-pulse rounded bg-surface-2" />
       ) : (
         <div
+          title={String(value)}
           className={cn(
-            "mt-1 text-2xl font-semibold tabnums",
+            "mt-1 truncate text-xl font-semibold tabnums sm:text-2xl",
             valueTone[tone]
           )}
         >

@@ -12,6 +12,7 @@ import { WaterSettingsForm } from "./WaterSettingsForm";
 import { WaterBulkSettingsForm } from "./WaterBulkSettingsForm";
 import { WaterSourceForm } from "./WaterSourceForm";
 import { waterConfig } from "@/lib/water-billing";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Settings · HOA SaaS" };
 
@@ -69,7 +70,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-8">
-      <h1 className="text-lg font-semibold text-fg">Settings</h1>
+      <PageHeader title="Settings" />
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-fg">Organization</h2>

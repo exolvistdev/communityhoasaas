@@ -39,12 +39,12 @@ export function PortalTabBar({
               key={t.href}
               href={t.href}
               className={cn(
-                "relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] transition-colors",
+                "relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 text-[11px] transition-colors",
                 active ? "text-brand-accent" : "text-fg-subtle hover:text-fg"
               )}
             >
-              <t.icon className="h-5 w-5" />
-              {t.label}
+              <t.icon className="h-5 w-5 shrink-0" />
+              <span className="max-w-full truncate">{t.label}</span>
               {badge > 0 && (
                 <span className="absolute right-[calc(50%-1.15rem)] top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold text-brand-fg">
                   {badge}

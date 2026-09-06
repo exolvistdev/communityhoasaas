@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/rbac";
 import { buildCloseoutPreview } from "@/lib/closeout";
 import { peso } from "@/lib/format";
 import { CloseoutWizard } from "./CloseoutWizard";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Close out unit · HOA SaaS" };
 
@@ -38,16 +39,14 @@ export default async function CloseoutPage({
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      {backLink}
-      <div>
-        <h1 className="text-lg font-semibold text-fg">
-          Close out {preview.property.unitNumber}
-        </h1>
-        <p className="text-sm text-fg-muted">
-          Hand the unit to a new owner, or mark it vacated. Settle the balance,
-          swap the residents, and revoke logins that are no longer needed.
-        </p>
-      </div>
+      <PageHeader
+        title={`Close out ${preview.property.unitNumber}`}
+        description="Hand the unit to a new owner, or mark it vacated. Settle the balance, swap the residents, and revoke logins that are no longer needed."
+        backLink={{
+          href: `/properties/${params.id}`,
+          label: preview.property.unitNumber,
+        }}
+      />
 
       <div className="rounded-lg border border-border bg-surface p-4 text-sm">
         <div className="flex items-center justify-between">

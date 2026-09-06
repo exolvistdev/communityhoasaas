@@ -1,18 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { PropertyCsvImport } from "@/components/PropertyCsvImport";
+import { PageHeader } from "@/components/PageHeader";
 import type { TypeRateDefaults } from "@/lib/rate";
 
 export function ImportClient({ typeDefaults }: { typeDefaults: TypeRateDefaults }) {
   const router = useRouter();
   return (
     <div className="max-w-xl space-y-4">
-      <Link href="/properties" className="text-sm text-fg-muted hover:text-fg">
-        ← Properties
-      </Link>
-      <h1 className="text-lg font-semibold text-fg">Import properties</h1>
+      <PageHeader
+        title="Import properties"
+        backLink={{ href: "/properties", label: "Properties" }}
+      />
       <PropertyCsvImport
         completeLabel="Back to properties"
         typeDefaults={typeDefaults}

@@ -67,11 +67,11 @@ export default async function PortalViolationsPage() {
                 className="space-y-2 rounded-lg border border-border bg-surface p-4"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <div className="font-medium text-fg">
                       {VIOLATION_CATEGORY_LABEL[v.category]}
                     </div>
-                    <div className="text-xs text-fg-muted">
+                    <div className="break-words text-xs text-fg-muted">
                       Occurred {fmtDate(v.occurredAt)}
                       {v.cureByDate ? ` · resolve by ${fmtDate(v.cureByDate)}` : ""}
                     </div>

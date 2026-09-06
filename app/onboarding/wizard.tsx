@@ -82,10 +82,10 @@ function Step1({ onDone }: { onDone: () => void }) {
               setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
             }
             placeholder="sample-hoa"
-            className="w-full rounded-l-md px-3 py-2 text-sm outline-none"
+            className="w-full min-w-0 rounded-l-md px-3 py-2 text-sm outline-none"
             required
           />
-          <span className="flex items-center rounded-r-md bg-surface-2 px-3 text-sm text-fg-subtle">
+          <span className="flex shrink-0 items-center rounded-r-md bg-surface-2 px-3 text-sm text-fg-subtle">
             .hoasaas.ph
           </span>
         </div>

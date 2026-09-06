@@ -90,7 +90,9 @@ export default async function ListingDetailPage({
 
       <div>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-lg font-semibold text-fg">{listing.title}</h1>
+          <h1 className="min-w-0 break-words text-lg font-semibold text-fg">
+            {listing.title}
+          </h1>
           {expired ? (
             <span className="shrink-0 rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
               Expired

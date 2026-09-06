@@ -7,6 +7,7 @@ import {
   priceLabel,
 } from "@/lib/marketplace";
 import { PageHeader } from "@/components/PageHeader";
+import { NavPill, NavPills } from "@/components/ui/nav-pill";
 
 export const metadata = { title: "Marketplace · HOA SaaS" };
 
@@ -80,17 +81,17 @@ export default async function AdminMarketplacePage({
         }
       />
 
-      <div className="flex gap-2">
-        <Pill href="/marketplace" active={filter === "all"}>
+      <NavPills>
+        <NavPill href="/marketplace" active={filter === "all"}>
           All
-        </Pill>
-        <Pill href="/marketplace?f=reported" active={filter === "reported"}>
+        </NavPill>
+        <NavPill href="/marketplace?f=reported" active={filter === "reported"}>
           Reported ({openReports})
-        </Pill>
-        <Pill href="/marketplace?f=removed" active={filter === "removed"}>
+        </NavPill>
+        <NavPill href="/marketplace?f=removed" active={filter === "removed"}>
           Removed
-        </Pill>
-      </div>
+        </NavPill>
+      </NavPills>
 
       {rows.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
@@ -158,28 +159,5 @@ export default async function AdminMarketplacePage({
         </div>
       )}
     </div>
-  );
-}
-
-function Pill({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1 text-sm ${
-        active
-          ? "bg-brand text-white"
-          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }

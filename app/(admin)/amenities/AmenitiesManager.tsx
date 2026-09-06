@@ -143,7 +143,7 @@ export function AmenitiesManager({ amenities }: { amenities: AmenityRow[] }) {
             setAdding(true);
             setEditingId(null);
           }}
-          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+          className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2 sm:w-auto"
         >
           Add amenity
         </button>

@@ -12,6 +12,7 @@ import {
 } from "@/lib/water-billing";
 import { WaterManager } from "./WaterManager";
 import { BulkWaterManager } from "./BulkWaterManager";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Water billing · HOA SaaS" };
 
@@ -24,13 +25,12 @@ export default async function WaterPage() {
     const data = await bulkWaterData(org.id, period);
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-lg font-semibold text-fg">Water billing</h1>
-          <p className="text-sm text-fg-muted">
-            Enter the master-meter and sub-meter readings for{" "}
-            {periodLabel(period)}, then split the utility bill.
-          </p>
-        </div>
+        <PageHeader
+          title="Water billing"
+          description={`Enter the master-meter and sub-meter readings for ${periodLabel(
+            period
+          )}, then split the utility bill.`}
+        />
         {!data.vendor ? (
           <p className="rounded-lg border border-dashed border-border bg-surface p-6 text-sm text-fg-muted">
             Choose your water utility as a vendor in{" "}
@@ -64,13 +64,12 @@ export default async function WaterPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-fg">Water billing</h1>
-        <p className="text-sm text-fg-muted">
-          Enter each meter&apos;s reading for {periodLabel(period)}, then bill the
-          period.
-        </p>
-      </div>
+      <PageHeader
+        title="Water billing"
+        description={`Enter each meter's reading for ${periodLabel(
+          period
+        )}, then bill the period.`}
+      />
 
       {!cfg.enabled ? (
         <p className="rounded-lg border border-dashed border-border bg-surface p-6 text-sm text-fg-muted">

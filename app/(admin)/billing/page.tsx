@@ -9,6 +9,7 @@ import { GenerateInvoicesButton } from "./GenerateInvoicesButton";
 import { RecordPaymentButton } from "./RecordPaymentButton";
 import { StatementsButton } from "./StatementsButton";
 import { PageHeader } from "@/components/PageHeader";
+import { NavPill, NavPills } from "@/components/ui/nav-pill";
 import { VoidInvoiceButton } from "./VoidInvoiceButton";
 
 export const metadata = { title: "Billing · HOA SaaS" };
@@ -91,14 +92,14 @@ export default async function BillingPage({
         />
       </div>
 
-      <div className="flex gap-2">
-        <FilterPill href="/billing" active={filter === "all"}>
+      <NavPills>
+        <NavPill href="/billing" active={filter === "all"}>
           All ({rows.length})
-        </FilterPill>
-        <FilterPill href="/billing?filter=overdue" active={filter === "overdue"}>
+        </NavPill>
+        <NavPill href="/billing?filter=overdue" active={filter === "overdue"}>
           Overdue ({rows.filter((r) => r.display === "OVERDUE").length})
-        </FilterPill>
-      </div>
+        </NavPill>
+      </NavPills>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
@@ -207,28 +208,5 @@ function Summary({
       <div className="text-sm text-fg-muted">{label}</div>
       <div className={`mt-1 text-xl font-semibold ${t}`}>{value}</div>
     </div>
-  );
-}
-
-function FilterPill({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1 text-sm ${
-        active
-          ? "bg-brand text-white"
-          : "border border-border bg-surface text-fg-muted hover:bg-surface-2"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { priceLabel } from "@/lib/marketplace";
 import { ConversationModeration } from "../ConversationModeration";
+import { PageHeader } from "@/components/PageHeader";
 
 export const metadata = { title: "Conversation · HOA SaaS" };
 
@@ -41,28 +42,26 @@ export default async function AdminConversationPage({
 
   return (
     <div className="max-w-2xl space-y-5">
-      <div>
-        <Link
-          href="/marketplace/conversations"
-          className="text-sm text-fg-muted hover:text-fg"
-        >
-          ← Reported conversations
-        </Link>
-        <h1 className="mt-1 text-lg font-semibold text-fg">
-          {convo.buyer.fullName} ↔ {convo.seller.fullName}
-        </h1>
-        <p className="text-sm text-fg-muted">
-          re:{" "}
-          <Link
-            href={`/marketplace/${convo.listing.id}`}
-            className="hover:underline"
-          >
-            {convo.listing.title}
-          </Link>{" "}
-          · {priceLabel(Number(convo.listing.price))}
-          {convo.closedAt ? " · closed" : ""}
-        </p>
-      </div>
+      <PageHeader
+        title={`${convo.buyer.fullName} ↔ ${convo.seller.fullName}`}
+        backLink={{
+          href: "/marketplace/conversations",
+          label: "Reported conversations",
+        }}
+        description={
+          <>
+            re:{" "}
+            <Link
+              href={`/marketplace/${convo.listing.id}`}
+              className="hover:underline"
+            >
+              {convo.listing.title}
+            </Link>{" "}
+            · {priceLabel(Number(convo.listing.price))}
+            {convo.closedAt ? " · closed" : ""}
+          </>
+        }
+      />
 
       <div>
         <h2 className="mb-2 text-sm font-semibold text-fg">

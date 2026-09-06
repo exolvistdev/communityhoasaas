@@ -148,7 +148,7 @@ export function ResponsiveTable<T>({
                       <dt className="text-xs text-fg-subtle">
                         {col.cardLabel ?? col.header}
                       </dt>
-                      <dd className="text-sm text-fg">{value}</dd>
+                      <dd className="break-words text-sm text-fg">{value}</dd>
                     </div>
                   ))}
                 </dl>

@@ -34,7 +34,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right form */}
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-slate-50/50 p-8">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-slate-50/50 p-6 sm:p-8">
         <div className="w-full max-w-md space-y-6">
           <div className="flex flex-col items-center text-center">
             <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/25">
@@ -51,8 +51,8 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
 
-          <div className="flex items-center justify-center gap-3 text-xs text-slate-500">
-            <span className="whitespace-nowrap">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-slate-500">
+            <span>
               New HOA?{" "}
               <Link
                 href="/onboarding"

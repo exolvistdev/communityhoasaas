@@ -361,19 +361,19 @@ export default async function PortalHome() {
           <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
             {payments.map((p) => (
               <li key={p.id} className="px-4 py-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <div className="text-fg">
                       {p.invoice.period
                         ? periodLabel(p.invoice.period)
                         : "Payment"}
                     </div>
-                    <div className="text-xs text-fg-subtle">
+                    <div className="break-words text-xs text-fg-subtle">
                       {METHOD_LABEL[p.method]} · {shortDate(p.paidAt)}
                       {p.reference ? ` · ${p.reference}` : ""}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="shrink-0 text-right">
                     <div className="font-medium text-fg">
                       {peso(Number(p.amount))}
                     </div>

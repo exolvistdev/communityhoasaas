@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
+import { PageHeader } from "@/components/PageHeader";
 import { EntryForm } from "./EntryForm";
 
 export const metadata = { title: "Record entry · HOA SaaS" };
@@ -16,19 +16,11 @@ export default async function RecordEntryPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <Link
-        href="/ledger?view=journal"
-        className="text-sm text-fg-muted hover:text-fg"
-      >
-        ← Ledger
-      </Link>
-      <div>
-        <h1 className="text-lg font-semibold text-fg">Record a journal entry</h1>
-        <p className="text-sm text-fg-muted">
-          For expenses, other income, opening balances and corrections. Dues
-          invoices and payments post themselves — don&apos;t enter those here.
-        </p>
-      </div>
+      <PageHeader
+        title="Record a journal entry"
+        description="For expenses, other income, opening balances and corrections. Dues invoices and payments post themselves — don't enter those here."
+        backLink={{ href: "/ledger?view=journal", label: "Ledger" }}
+      />
       <EntryForm accounts={accounts} />
     </div>
   );
