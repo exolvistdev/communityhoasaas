@@ -5,6 +5,10 @@ import { ELECTION_STATUS_BADGE } from "@/lib/election";
 import { orgUnitStanding } from "@/lib/good-standing";
 import { quorumMet } from "@/lib/vote";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { ElectionsManager } from "./ElectionsManager";
 
 export const metadata = { title: "Elections · HOA SaaS" };
@@ -98,65 +102,95 @@ function Section({
   fmt: (d: Date) => string;
 }) {
   if (rows.length === 0) return null;
+
+  const columns: ResponsiveColumn<Row>[] = [
+    {
+      key: "election",
+      header: "Election",
+      card: "title",
+      cardLabel: "Election",
+      cell: (e) => (
+        <>
+          <Link
+            href={`/elections/${e.id}`}
+            className="font-medium text-fg hover:underline"
+          >
+            {e.title}
+          </Link>
+          <div className="text-xs text-fg-subtle">
+            {fmt(e.opensAt)} – {fmt(e.closesAt)}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "meta",
+      header: "Seats & votes",
+      card: "full",
+      className: "text-xs text-fg-muted",
+      cell: (e) =>
+        `${e.seats} seat${e.seats === 1 ? "" : "s"} · ${e._count.candidates} candidate${
+          e._count.candidates === 1 ? "" : "s"
+        } · ${e._count.ballots}/${eligibleUnits} cast`,
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (e) => {
+        const badge = ELECTION_STATUS_BADGE[e.status];
+        return (
+          <span
+            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+          >
+            {badge.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "progress",
+      header: "Progress",
+      align: "right",
+      className: "text-xs",
+      cell: (e) => {
+        const quorumOK = quorumMet(
+          e._count.ballots,
+          eligibleUnits,
+          e.quorumPct
+        );
+        const note =
+          e.status === "OPEN" ? (
+            <span className="text-fg-subtle">
+              {quorumOK ? "Quorum met" : "No quorum yet"}
+            </span>
+          ) : e.status === "CLOSED" ? (
+            <span className="text-fg-muted">
+              {e.finalizedAt ? "Finalized" : "Awaiting finalize"}
+            </span>
+          ) : null;
+        if (!note && !e.resultDocument) return null;
+        return (
+          <>
+            {note}
+            {e.resultDocument && (
+              <span className="ml-2 text-success-fg">Result published</span>
+            )}
+          </>
+        );
+      },
+    },
+  ];
+
   return (
     <section className="space-y-2">
       <h2 className="text-sm font-semibold text-fg">{title}</h2>
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <tbody>
-            {rows.map((e) => {
-              const badge = ELECTION_STATUS_BADGE[e.status];
-              const quorumOK = quorumMet(
-                e._count.ballots,
-                eligibleUnits,
-                e.quorumPct
-              );
-              return (
-                <tr key={e.id} className="border-t border-border first:border-t-0">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/elections/${e.id}`}
-                      className="font-medium text-fg hover:underline"
-                    >
-                      {e.title}
-                    </Link>
-                    <div className="text-xs text-fg-subtle">
-                      {fmt(e.opensAt)} – {fmt(e.closesAt)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-fg-muted">
-                    {e.seats} seat{e.seats === 1 ? "" : "s"} ·{" "}
-                    {e._count.candidates} candidate
-                    {e._count.candidates === 1 ? "" : "s"} ·{" "}
-                    {e._count.ballots}/{eligibleUnits} cast
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                    >
-                      {badge.label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-xs">
-                    {e.status === "OPEN" ? (
-                      <span className="text-fg-subtle">
-                        {quorumOK ? "Quorum met" : "No quorum yet"}
-                      </span>
-                    ) : e.status === "CLOSED" ? (
-                      <span className="text-fg-muted">
-                        {e.finalizedAt ? "Finalized" : "Awaiting finalize"}
-                      </span>
-                    ) : null}
-                    {e.resultDocument && (
-                      <span className="ml-2 text-success-fg">Result published</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable
+        rows={rows}
+        rowKey={(e) => e.id}
+        columns={columns}
+        hideHeader
+      />
     </section>
   );
 }

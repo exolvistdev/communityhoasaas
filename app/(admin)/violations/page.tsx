@@ -7,6 +7,10 @@ import {
   VIOLATION_STATUS_BADGE,
 } from "@/lib/violation";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { LogViolationForm } from "./LogViolationForm";
 
 export const metadata = { title: "Violations · HOA SaaS" };
@@ -68,6 +72,69 @@ export default async function ViolationsPage() {
     (r) => r.v.status === "OPEN" || r.v.status === "APPEALED"
   ).length;
 
+  const columns: ResponsiveColumn<(typeof rows)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "font-medium text-fg",
+      cell: ({ v }) => v.property.unitNumber,
+    },
+    {
+      key: "category",
+      header: "Category",
+      className: "text-fg-muted",
+      cell: ({ v }) => VIOLATION_CATEGORY_LABEL[v.category],
+    },
+    {
+      key: "occurred",
+      header: "Occurred",
+      className: "text-fg-muted",
+      cell: ({ v }) => fmtDate(v.occurredAt),
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: ({ v }) => {
+        const badge = VIOLATION_STATUS_BADGE[v.status];
+        return (
+          <span
+            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+          >
+            {badge.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "fines",
+      header: "Fines outstanding",
+      align: "right",
+      className: "tabnums text-fg-muted",
+      cell: ({ outstanding, fineCount }) =>
+        fineCount === 0
+          ? "—"
+          : outstanding > 0.005
+          ? peso(outstanding)
+          : "Paid",
+    },
+    {
+      key: "open",
+      header: "",
+      align: "right",
+      card: "action",
+      cell: ({ v }) => (
+        <Link
+          href={`/violations/${v.id}`}
+          className="text-sm text-fg-muted underline underline-offset-2 hover:text-fg"
+        >
+          Open
+        </Link>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -81,68 +148,16 @@ export default async function ViolationsPage() {
         action={<LogViolationForm properties={properties} />}
       />
 
-      {rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
-          No violations logged. 🎉
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Unit</th>
-                <th className="px-4 py-2.5 font-medium">Category</th>
-                <th className="px-4 py-2.5 font-medium">Occurred</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-                <th className="px-4 py-2.5 text-right font-medium">
-                  Fines outstanding
-                </th>
-                <th className="px-4 py-2.5"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ v, outstanding, fineCount }) => {
-                const badge = VIOLATION_STATUS_BADGE[v.status];
-                return (
-                  <tr key={v.id} className="border-t border-border">
-                    <td className="px-4 py-2.5 font-medium text-fg">
-                      {v.property.unitNumber}
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {VIOLATION_CATEGORY_LABEL[v.category]}
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {fmtDate(v.occurredAt)}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                      >
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-fg-muted">
-                      {fineCount === 0
-                        ? "—"
-                        : outstanding > 0.005
-                        ? peso(outstanding)
-                        : "Paid"}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <Link
-                        href={`/violations/${v.id}`}
-                        className="text-sm text-fg-muted underline underline-offset-2 hover:text-fg"
-                      >
-                        Open
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ResponsiveTable
+        rows={rows}
+        rowKey={({ v }) => v.id}
+        columns={columns}
+        empty={
+          <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
+            No violations logged. 🎉
+          </div>
+        }
+      />
     </div>
   );
 }

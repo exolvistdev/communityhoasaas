@@ -6,6 +6,7 @@ import { can } from "@/lib/permissions";
 import { toTypeRateDefaults } from "@/lib/rate";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
 import { PageHeader } from "@/components/PageHeader";
+import { ResponsiveTable, type ResponsiveColumn } from "@/components/ui/responsive-table";
 import { AddPropertyForm } from "./AddPropertyForm";
 
 export const metadata = { title: "Properties · HOA SaaS" };
@@ -43,6 +44,85 @@ export default async function PropertiesPage({
       where: { orgId: org.id, archivedAt: { not: null } },
     }),
   ]);
+
+  const columns: ResponsiveColumn<(typeof properties)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "font-medium",
+      cell: (p) => (
+        <>
+          <Link
+            href={`/properties/${p.id}`}
+            className="text-fg hover:underline"
+          >
+            {p.unitNumber}
+          </Link>
+          {p.archivedAt && (
+            <span className="ml-2 rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted">
+              Archived
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "type",
+      header: "Type",
+      className: "text-fg-muted",
+      cell: (p) => TYPE_LABEL[p.type],
+    },
+    {
+      key: "homeowner",
+      header: "Homeowner",
+      className: "text-fg-muted",
+      cell: (p) => p.homeowners.map((h) => h.fullName).join(", ") || "—",
+    },
+    {
+      key: "plan",
+      header: "Plan",
+      className: "text-fg-muted",
+      cell: (p) =>
+        p.ratePlan ? (
+          p.ratePlan.name
+        ) : (
+          <span className="text-fg-subtle">Custom</span>
+        ),
+    },
+    {
+      key: "rate",
+      header: "Monthly rate",
+      align: "right",
+      className: "tabnums",
+      cell: (p) => peso(Number(p.monthlyRate)),
+    },
+    {
+      key: "invoice",
+      header: "Latest invoice",
+      card: "status",
+      cell: (p) =>
+        p.invoices[0] ? (
+          <InvoiceStatusBadge status={p.invoices[0].status} />
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
+    {
+      key: "statement",
+      header: "Statement",
+      align: "right",
+      card: "action",
+      cell: (p) => (
+        <Link
+          href={`/statements/${p.id}`}
+          className="text-sm text-fg-muted underline underline-offset-2 hover:text-fg"
+        >
+          View
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -92,90 +172,23 @@ export default async function PropertiesPage({
         </div>
       )}
 
-      {properties.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center">
-          <p className="text-sm text-fg-muted">
-            No properties yet. Add one above, or{" "}
-            <Link href="/properties/import" className="text-fg underline">
-              import a CSV
-            </Link>
-            .
-          </p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Unit</th>
-                <th className="px-4 py-2.5 font-medium">Type</th>
-                <th className="px-4 py-2.5 font-medium">Homeowner</th>
-                <th className="px-4 py-2.5 font-medium">Plan</th>
-                <th className="px-4 py-2.5 text-right font-medium">
-                  Monthly rate
-                </th>
-                <th className="px-4 py-2.5 font-medium">Latest invoice</th>
-                <th className="px-4 py-2.5 text-right font-medium">Statement</th>
-              </tr>
-            </thead>
-            <tbody>
-              {properties.map((p) => (
-                <tr
-                  key={p.id}
-                  className={`border-t border-border ${
-                    p.archivedAt ? "text-fg-subtle" : ""
-                  }`}
-                >
-                  <td className="px-4 py-2.5 font-medium">
-                    <Link
-                      href={`/properties/${p.id}`}
-                      className="text-fg hover:underline"
-                    >
-                      {p.unitNumber}
-                    </Link>
-                    {p.archivedAt && (
-                      <span className="ml-2 rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted">
-                        Archived
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {TYPE_LABEL[p.type]}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {p.homeowners.map((h) => h.fullName).join(", ") || "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {p.ratePlan ? (
-                      p.ratePlan.name
-                    ) : (
-                      <span className="text-fg-subtle">Custom</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {peso(Number(p.monthlyRate))}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {p.invoices[0] ? (
-                      <InvoiceStatusBadge status={p.invoices[0].status} />
-                    ) : (
-                      <span className="text-fg-subtle">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <Link
-                      href={`/statements/${p.id}`}
-                      className="text-sm text-fg-muted underline underline-offset-2 hover:text-fg"
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ResponsiveTable
+        rows={properties}
+        rowKey={(p) => p.id}
+        rowClassName={(p) => (p.archivedAt ? "text-fg-subtle" : undefined)}
+        columns={columns}
+        empty={
+          <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center">
+            <p className="text-sm text-fg-muted">
+              No properties yet. Add one above, or{" "}
+              <Link href="/properties/import" className="text-fg underline">
+                import a CSV
+              </Link>
+              .
+            </p>
+          </div>
+        }
+      />
     </div>
   );
 }

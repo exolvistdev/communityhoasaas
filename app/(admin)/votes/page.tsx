@@ -10,6 +10,10 @@ import {
 } from "@/lib/vote";
 import { orgUnitStanding } from "@/lib/good-standing";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { VotesManager } from "./VotesManager";
 
 export const metadata = { title: "Votes · HOA SaaS" };
@@ -108,59 +112,93 @@ function Section({
   fmt: (d: Date) => string;
 }) {
   if (votes.length === 0) return null;
+
+  const columns: ResponsiveColumn<(typeof votes)[number]>[] = [
+    {
+      key: "vote",
+      header: "Vote",
+      card: "title",
+      cardLabel: "Vote",
+      cell: (v) => (
+        <>
+          <Link
+            href={`/votes/${v.id}`}
+            className="font-medium text-fg hover:underline"
+          >
+            {v.title}
+          </Link>
+          <div className="text-xs text-fg-subtle">
+            {fmt(v.opensAt)} – {fmt(v.closesAt)}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "meta",
+      header: "Turnout",
+      card: "full",
+      className: "text-xs text-fg-muted",
+      cell: (v) => {
+        const t = voteTally(v.ballots);
+        return `${t.total}/${eligibleUnits} cast · ${v.quorumPct}% quorum${
+          t.total > 0 ? ` · ${t.yes} for / ${t.no} against` : ""
+        }`;
+      },
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (v) => {
+        const badge = VOTE_STATUS_BADGE[v.status];
+        return (
+          <span
+            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+          >
+            {badge.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "result",
+      header: "Result",
+      align: "right",
+      className: "text-xs",
+      cell: (v) => {
+        const t = voteTally(v.ballots);
+        const quorumOK = quorumMet(t.total, eligibleUnits, v.quorumPct);
+        const outcome = resolutionOutcome(t, v.threshold, quorumOK);
+        const note =
+          v.status === "CLOSED" ? (
+            <span className="text-fg-muted">{OUTCOME_LABEL[outcome]}</span>
+          ) : v.status === "OPEN" ? (
+            <span className="text-fg-subtle">
+              {quorumOK ? "Quorum met" : "No quorum yet"}
+            </span>
+          ) : null;
+        if (!note && !v.resultDocument) return null;
+        return (
+          <>
+            {note}
+            {v.resultDocument && (
+              <span className="ml-2 text-success-fg">Result published</span>
+            )}
+          </>
+        );
+      },
+    },
+  ];
+
   return (
     <section className="space-y-2">
       <h2 className="text-sm font-semibold text-fg">{title}</h2>
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <tbody>
-            {votes.map((v) => {
-              const t = voteTally(v.ballots);
-              const quorumOK = quorumMet(t.total, eligibleUnits, v.quorumPct);
-              const outcome = resolutionOutcome(t, v.threshold, quorumOK);
-              const badge = VOTE_STATUS_BADGE[v.status];
-              return (
-                <tr key={v.id} className="border-t border-border first:border-t-0">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/votes/${v.id}`}
-                      className="font-medium text-fg hover:underline"
-                    >
-                      {v.title}
-                    </Link>
-                    <div className="text-xs text-fg-subtle">
-                      {fmt(v.opensAt)} – {fmt(v.closesAt)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-fg-muted">
-                    {t.total}/{eligibleUnits} cast · {v.quorumPct}% quorum
-                    {t.total > 0 && ` · ${t.yes} for / ${t.no} against`}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                    >
-                      {badge.label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-xs">
-                    {v.status === "CLOSED" ? (
-                      <span className="text-fg-muted">{OUTCOME_LABEL[outcome]}</span>
-                    ) : v.status === "OPEN" ? (
-                      <span className="text-fg-subtle">
-                        {quorumOK ? "Quorum met" : "No quorum yet"}
-                      </span>
-                    ) : null}
-                    {v.resultDocument && (
-                      <span className="ml-2 text-success-fg">Result published</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable
+        rows={votes}
+        rowKey={(v) => v.id}
+        columns={columns}
+        hideHeader
+      />
     </section>
   );
 }

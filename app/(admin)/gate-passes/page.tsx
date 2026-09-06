@@ -7,6 +7,10 @@ import { GatePassStatusBadge } from "@/components/StatusBadge";
 import { CreateGatePassForm } from "./CreateGatePassForm";
 import { RevokeGatePassButton } from "./RevokeGatePassButton";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export const metadata = { title: "Gate passes · HOA SaaS" };
 
@@ -121,6 +125,70 @@ async function PassesList({
       ? rows.filter((r) => !r.active)
       : rows;
 
+  const columns: ResponsiveColumn<(typeof rows)[number]>[] = [
+    {
+      key: "code",
+      header: "Code",
+      card: "title",
+      className: "font-mono font-medium",
+      cell: ({ p }) => (
+        <Link
+          href={`/pass/${p.code}`}
+          target="_blank"
+          className="font-mono text-fg underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+        >
+          {p.code}
+        </Link>
+      ),
+    },
+    {
+      key: "visitor",
+      header: "Visitor",
+      cell: ({ p }) => p.visitorName,
+    },
+    {
+      key: "property",
+      header: "Property",
+      className: "text-fg-muted",
+      cell: ({ p }) => (
+        <Link href={`/properties/${p.property.id}`} className="hover:underline">
+          {p.property.unitNumber}
+        </Link>
+      ),
+    },
+    {
+      key: "valid",
+      header: "Valid",
+      card: "full",
+      className: "text-fg-muted",
+      cell: ({ p }) => `${fmt(p.validFrom)} – ${fmt(p.validUntil)}`,
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      className: "whitespace-nowrap",
+      cell: ({ p, display }) => (
+        <>
+          <GatePassStatusBadge status={display} />
+          {p.usedAt && usedTag(p.usedAt)}
+        </>
+      ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      card: "action",
+      cell: ({ p, active }) =>
+        canWrite && active ? (
+          <RevokeGatePassButton id={p.id} />
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -140,68 +208,16 @@ async function PassesList({
           No gate passes yet. Create one for a visitor and share the code.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Code</th>
-                <th className="px-4 py-2.5 font-medium">Visitor</th>
-                <th className="px-4 py-2.5 font-medium">Property</th>
-                <th className="px-4 py-2.5 font-medium">Valid</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-                <th className="px-4 py-2.5 text-right font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map(({ p, display, active }) => (
-                <tr key={p.id} className="border-t border-border">
-                  <td className="px-4 py-2.5 font-mono font-medium">
-                    <Link
-                      href={`/pass/${p.code}`}
-                      target="_blank"
-                      className="text-fg underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
-                    >
-                      {p.code}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2.5">{p.visitorName}</td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    <Link
-                      href={`/properties/${p.property.id}`}
-                      className="hover:underline"
-                    >
-                      {p.property.unitNumber}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {fmt(p.validFrom)} – {fmt(p.validUntil)}
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">
-                    <GatePassStatusBadge status={display} />
-                    {p.usedAt && usedTag(p.usedAt)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {canWrite && active ? (
-                      <RevokeGatePassButton id={p.id} />
-                    ) : (
-                      <span className="text-fg-subtle">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {visible.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-fg-subtle"
-                  >
-                    Nothing here.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          rows={visible}
+          rowKey={({ p }) => p.id}
+          columns={columns}
+          empty={
+            <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-fg-subtle">
+              Nothing here.
+            </div>
+          }
+        />
       )}
     </div>
   );
