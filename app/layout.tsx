@@ -1,5 +1,5 @@
 import "./globals.css";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Providers } from "./providers";
 
@@ -9,9 +9,13 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata = {
-  title: "HOA SaaS",
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  ),
+  title: "HOA Manager",
   description: "HOA management platform for Philippine subdivisions",
+  openGraph: { siteName: "HOA Manager", type: "website" },
 };
 
 export const viewport: Viewport = {

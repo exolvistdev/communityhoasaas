@@ -39,6 +39,22 @@ model ImpersonationEvent {
   @@map("impersonation_events")
 }
 
+/// Demo / sales enquiry from the public marketing site (/contact). Not tied to
+/// any org or user — a prospect who hasn't signed up.
+model Lead {
+  id        String    @id @default(uuid())
+  name      String
+  email     String
+  hoaName   String
+  phone     String?
+  message   String?
+  createdAt DateTime  @default(now())
+  handledAt DateTime?
+
+  @@index([createdAt])
+  @@map("leads")
+}
+
 // ─────────────────────────────────────────────
 // Tenancy
 // ─────────────────────────────────────────────

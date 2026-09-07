@@ -13,7 +13,7 @@ const schema = readFileSync(join(ROOT, "prisma", "schema.prisma"), "utf8");
 const teardown = readFileSync(join(ROOT, "lib", "org-teardown.ts"), "utf8");
 
 // Models that are global, not tenant-scoped — legitimately absent from the cascade.
-const GLOBAL = new Set(["Organization", "PlatformAdmin"]);
+const GLOBAL = new Set(["Organization", "PlatformAdmin", "Lead"]);
 
 const models = [...schema.matchAll(/^model\s+([A-Za-z0-9_]+)\s*\{/gm)].map(
   (m) => m[1]
