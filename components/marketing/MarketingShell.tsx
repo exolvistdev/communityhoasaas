@@ -45,6 +45,9 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
         <div className="border-t border-border">
           <p className="mx-auto max-w-5xl px-5 py-4 text-xs text-fg-subtle">
             © {new Date().getFullYear()} HOA Manager · Built for the Philippines
+            <span className="mx-1.5">·</span>
+            Designed and built by{" "}
+            <span className="font-medium text-fg-muted">Exolvist</span>
           </p>
         </div>
       </footer>
