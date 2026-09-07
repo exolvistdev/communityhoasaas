@@ -325,14 +325,22 @@ export function BulkWaterManager({
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[42rem] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-fg-subtle">
-                  <th className="px-3 py-2 font-medium">Unit</th>
-                  <th className="px-3 py-2 text-right font-medium">Prior</th>
-                  <th className="px-3 py-2 text-right font-medium">This reading</th>
-                  <th className="px-3 py-2 text-right font-medium">Used</th>
-                  <th className="px-3 py-2" />
+                  <th className="min-w-[8rem] whitespace-nowrap px-3 py-2 font-medium">
+                    Unit
+                  </th>
+                  <th className="min-w-[4.5rem] whitespace-nowrap px-3 py-2 text-right font-medium">
+                    Prior
+                  </th>
+                  <th className="min-w-[11rem] whitespace-nowrap px-3 py-2 text-right font-medium">
+                    This reading
+                  </th>
+                  <th className="min-w-[4.5rem] whitespace-nowrap px-3 py-2 text-right font-medium">
+                    Used
+                  </th>
+                  <th className="min-w-[12rem] px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
@@ -341,7 +349,7 @@ export function BulkWaterManager({
                   return (
                   <Fragment key={r.id}>
                   <tr className="border-t border-border first:border-t-0">
-                    <td className="px-3 py-2 text-fg">
+                    <td className="whitespace-nowrap px-3 py-2 text-fg">
                       {r.unitNumber}
                       {r.serialNumber && (
                         <span className="ml-2 text-xs text-fg-subtle">
@@ -349,7 +357,7 @@ export function BulkWaterManager({
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-fg-muted">
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-fg-muted">
                       {r.prior}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -381,7 +389,7 @@ export function BulkWaterManager({
                         </label>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {est
                         ? "≈ avg"
                         : r.consumption == null
@@ -451,12 +459,14 @@ export function BulkWaterManager({
         </p>
         {commonRows.length > 0 && (
           <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[28rem] text-sm">
               <tbody>
                 {commonRows.map((r) => (
                   <tr key={r.id} className="border-t border-border first:border-t-0">
-                    <td className="px-3 py-2 text-fg">{r.label ?? r.unitNumber}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-fg-muted">
+                    <td className="whitespace-nowrap px-3 py-2 text-fg">
+                      {r.label ?? r.unitNumber}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-fg-muted">
                       prior {r.prior}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -471,7 +481,7 @@ export function BulkWaterManager({
                         className="w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand"
                       />
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {r.consumption == null
                         ? "—"
                         : formatConsumption(r.consumption)}
@@ -637,26 +647,36 @@ export function BulkWaterManager({
                 )}
 
                 <div className="overflow-x-auto rounded-md border border-border">
-                  <table className="w-full text-xs">
+                  <table className="w-full min-w-[26rem] text-xs">
                     <thead>
                       <tr className="border-b border-border text-left text-fg-subtle">
-                        <th className="px-3 py-1.5 font-medium">Unit</th>
-                        <th className="px-3 py-1.5 text-right font-medium">Used</th>
-                        <th className="px-3 py-1.5 text-right font-medium">Billed m³</th>
-                        <th className="px-3 py-1.5 text-right font-medium">Charge</th>
+                        <th className="min-w-[8rem] whitespace-nowrap px-3 py-1.5 font-medium">
+                          Unit
+                        </th>
+                        <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                          Used
+                        </th>
+                        <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                          Billed m³
+                        </th>
+                        <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                          Charge
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {preview.rows.map((row) => (
                         <tr key={row.unitId} className="border-t border-border">
-                          <td className="px-3 py-1.5 text-fg">{row.unitNumber}</td>
-                          <td className="px-3 py-1.5 text-right tabular-nums">
+                          <td className="whitespace-nowrap px-3 py-1.5 text-fg">
+                            {row.unitNumber}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
                             {row.consumption}
                           </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums">
+                          <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
                             {row.billedConsumption}
                           </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums">
+                          <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
                             {peso(row.amount)}
                           </td>
                         </tr>
@@ -686,34 +706,46 @@ export function BulkWaterManager({
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Past runs</h2>
           <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-xs">
+            <table className="w-full min-w-[34rem] text-xs">
               <thead>
                 <tr className="border-b border-border text-left text-fg-subtle">
-                  <th className="px-3 py-1.5 font-medium">Period</th>
-                  <th className="px-3 py-1.5 text-right font-medium">Bulk bill</th>
-                  <th className="px-3 py-1.5 text-right font-medium">Loss</th>
-                  <th className="px-3 py-1.5 text-right font-medium">₱/m³</th>
-                  <th className="px-3 py-1.5 text-right font-medium">Units</th>
-                  <th className="px-3 py-1.5 text-right font-medium">Bill</th>
+                  <th className="whitespace-nowrap px-3 py-1.5 font-medium">Period</th>
+                  <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                    Bulk bill
+                  </th>
+                  <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                    Loss
+                  </th>
+                  <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                    ₱/m³
+                  </th>
+                  <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                    Units
+                  </th>
+                  <th className="whitespace-nowrap px-3 py-1.5 text-right font-medium">
+                    Bill
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {data.runs.map((r) => (
                   <tr key={r.id} className="border-t border-border">
-                    <td className="px-3 py-1.5 text-fg">{periodLabel(r.period)}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-1.5 text-fg">
+                      {periodLabel(r.period)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
                       {peso(r.bulkAmount)}
                     </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
                       {formatConsumption(r.systemLoss)}
                     </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
                       ₱{r.effectiveRate.toFixed(2)}
                     </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
                       {r.unitsBilled}
                     </td>
-                    <td className="px-3 py-1.5 text-right text-fg-subtle">
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right text-fg-subtle">
                       {r.billStatus ?? "—"}
                     </td>
                   </tr>

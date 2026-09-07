@@ -141,15 +141,25 @@ export function WaterManager({
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[44rem] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-fg-subtle">
-                  <th className="px-3 py-2 font-medium">Unit</th>
-                  <th className="px-3 py-2 text-right font-medium">Prior</th>
-                  <th className="px-3 py-2 text-right font-medium">This reading</th>
-                  <th className="px-3 py-2 text-right font-medium">Used</th>
-                  <th className="px-3 py-2 text-right font-medium">Charge</th>
-                  <th className="px-3 py-2" />
+                  <th className="min-w-[8rem] whitespace-nowrap px-3 py-2 font-medium">
+                    Unit
+                  </th>
+                  <th className="min-w-[4.5rem] whitespace-nowrap px-3 py-2 text-right font-medium">
+                    Prior
+                  </th>
+                  <th className="min-w-[11rem] whitespace-nowrap px-3 py-2 text-right font-medium">
+                    This reading
+                  </th>
+                  <th className="min-w-[4.5rem] whitespace-nowrap px-3 py-2 text-right font-medium">
+                    Used
+                  </th>
+                  <th className="min-w-[6rem] whitespace-nowrap px-3 py-2 text-right font-medium">
+                    Charge
+                  </th>
+                  <th className="min-w-[9rem] px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
@@ -160,7 +170,7 @@ export function WaterManager({
                   return (
                   <Fragment key={r.id}>
                   <tr className="border-t border-border first:border-t-0">
-                    <td className="px-3 py-2 text-fg">
+                    <td className="whitespace-nowrap px-3 py-2 text-fg">
                       {r.unitNumber}
                       {r.serialNumber && (
                         <span className="ml-2 text-xs text-fg-subtle">
@@ -168,7 +178,7 @@ export function WaterManager({
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-fg-muted">
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-fg-muted">
                       {r.prior}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -182,7 +192,7 @@ export function WaterManager({
                         onChange={(e) =>
                           setInputs((cur) => ({ ...cur, [r.id]: e.target.value }))
                         }
-                        className="w-24 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand disabled:opacity-50"
+                        className="w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand disabled:opacity-50"
                       />
                       {!r.thisPeriodBilled && (
                         <label className="ml-2 inline-flex items-center gap-1 text-xs text-fg-subtle">
@@ -200,14 +210,14 @@ export function WaterManager({
                         </label>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {est
                         ? "≈ avg"
                         : r.consumption == null
                           ? "—"
                           : formatConsumption(r.consumption)}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {est || r.amount == null ? "—" : peso(r.amount)}
                     </td>
                     <td className="px-3 py-2 text-right text-xs">
@@ -293,12 +303,12 @@ export function WaterManager({
         <h2 className="text-sm font-semibold text-fg">Meters</h2>
         {meters.length > 0 && (
           <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[32rem] text-sm">
               <tbody>
                 {meters.map((m) => (
                   <Fragment key={m.id}>
                   <tr className="border-t border-border first:border-t-0">
-                    <td className="px-3 py-2 text-fg">
+                    <td className="whitespace-nowrap px-3 py-2 text-fg">
                       {m.unitNumber}
                       {m.archived && (
                         <span className="ml-2 text-xs text-fg-subtle">
@@ -306,10 +316,10 @@ export function WaterManager({
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-xs text-fg-muted">
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-fg-muted">
                       {m.serialNumber ? `#${m.serialNumber}` : "no serial"}
                     </td>
-                    <td className="px-3 py-2 text-right text-xs">
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
                       {m.latest
                         ? `last read ${periodLabel(m.latest.period)}`
                         : "never read"}
