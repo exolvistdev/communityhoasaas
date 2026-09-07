@@ -7,10 +7,13 @@ import { cn } from "@/lib/cn";
  * columns in a footer, everything else as labelled key/value pairs.
  *
  * The desktop/mobile switch is pure CSS, so this stays server-safe. Each
- * `cell` renders twice (table + card); keep them cheap and pure.
+ * `cell` renders twice (table + card); keep them cheap and pure. When printed,
+ * the table always shows and the card list is hidden, regardless of paper width.
  *
  * Genuinely tabular/financial grids (e.g. a trial balance) should NOT use this —
- * they belong on a plain `overflow-x-auto` wrapper so columns stay aligned.
+ * they belong on a plain `overflow-x-auto` wrapper so columns stay aligned. The
+ * one exception is a document/ledger that also wants a mobile card view: pass
+ * `plain` to drop the card-chrome (border box, surface fill) so it sits flush.
  */
 export type ResponsiveColumn<T> = {
   /** unique within a column set; used as the React key */
@@ -41,15 +44,18 @@ export function ResponsiveTable<T>({
   rowKey,
   rowClassName,
   hideHeader,
+  plain,
   empty,
   className,
 }: {
   columns: ResponsiveColumn<T>[];
   rows: T[];
-  rowKey: (row: T) => string;
+  rowKey: (row: T, index: number) => string;
   /** extra classes for the row `<tr>` and the mobile card (e.g. mute archived) */
   rowClassName?: (row: T) => string | undefined;
   hideHeader?: boolean;
+  /** drop the bordered-box / surface chrome — for a flush document/ledger */
+  plain?: boolean;
   empty?: React.ReactNode;
   className?: string;
 }) {
@@ -65,10 +71,17 @@ export function ResponsiveTable<T>({
   return (
     <div className={className}>
       {/* desktop */}
-      <div className="hidden overflow-x-auto rounded-lg border border-border bg-surface sm:block">
+      <div
+        className={cn(
+          "hidden overflow-x-auto sm:block print:block print:overflow-visible",
+          !plain && "rounded-lg border border-border bg-surface"
+        )}
+      >
         <table className="w-full text-sm">
           {!hideHeader && (
-            <thead className="bg-surface-2 text-left text-fg-muted">
+            <thead
+              className={cn("text-left text-fg-muted", !plain && "bg-surface-2")}
+            >
               <tr>
                 {columns.map((col) => (
                   <th
@@ -86,9 +99,9 @@ export function ResponsiveTable<T>({
             </thead>
           )}
           <tbody>
-            {rows.map((row) => (
+            {rows.map((row, index) => (
               <tr
-                key={rowKey(row)}
+                key={rowKey(row, index)}
                 className={cn("border-t border-border", rowClassName?.(row))}
               >
                 {columns.map((col) => (
@@ -110,10 +123,15 @@ export function ResponsiveTable<T>({
       </div>
 
       {/* mobile */}
-      <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface sm:hidden">
-        {rows.map((row) => (
+      <div
+        className={cn(
+          "divide-y divide-border sm:hidden print:hidden",
+          !plain && "overflow-hidden rounded-lg border border-border bg-surface"
+        )}
+      >
+        {rows.map((row, index) => (
           <div
-            key={rowKey(row)}
+            key={rowKey(row, index)}
             className={cn("space-y-3 p-4", rowClassName?.(row))}
           >
             <div className="flex items-start justify-between gap-3">

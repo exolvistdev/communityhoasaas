@@ -1,5 +1,6 @@
 import { peso } from "@/lib/format";
 import type { Statement } from "@/lib/soa";
+import { ResponsiveTable } from "@/components/ui/responsive-table";
 
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-PH", {
@@ -10,7 +11,7 @@ const fmtDate = (d: Date) =>
 
 export function StatementDocument({ statement: s }: { statement: Statement }) {
   return (
-    <article className="bg-white p-8 text-sm text-gray-900 print:p-0">
+    <article className="force-light bg-white p-8 text-sm text-gray-900 print:p-0">
       <header className="flex items-start justify-between border-b border-gray-300 pb-4">
         <div>
           <div className="text-base font-semibold">{s.orgName}</div>
@@ -39,61 +40,69 @@ export function StatementDocument({ statement: s }: { statement: Statement }) {
         </div>
       </div>
 
-      <table className="mt-6 w-full border-collapse">
-        <thead>
-          <tr className="border-b border-gray-300 text-left text-gray-500">
-            <th className="py-2 pr-4 font-medium">Date</th>
-            <th className="py-2 pr-4 font-medium">Description</th>
-            <th className="py-2 pr-4 text-right font-medium">Charges</th>
-            <th className="py-2 pr-4 text-right font-medium">Payments</th>
-            <th className="py-2 text-right font-medium">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-gray-100 text-gray-500">
-            <td className="py-2 pr-4" colSpan={4}>
-              Opening balance
-            </td>
-            <td className="py-2 text-right">{peso(s.openingBalance)}</td>
-          </tr>
-          {s.lines.map((l, i) => (
-            <tr key={i} className="border-b border-gray-100">
-              <td className="py-2 pr-4 whitespace-nowrap">{fmtDate(l.date)}</td>
-              <td className="py-2 pr-4">{l.description}</td>
-              <td className="py-2 pr-4 text-right">
-                {l.charge ? peso(l.charge) : ""}
-              </td>
-              <td className="py-2 pr-4 text-right">
-                {l.payment ? peso(l.payment) : ""}
-              </td>
-              <td className="py-2 text-right">{peso(l.balance)}</td>
-            </tr>
-          ))}
-          {s.lines.length === 0 && (
-            <tr>
-              <td className="py-4 text-gray-400" colSpan={5}>
-                No activity in this period.
-              </td>
-            </tr>
-          )}
-        </tbody>
-        <tfoot>
-          <tr className="border-t-2 border-gray-300 font-semibold">
-            <td className="py-2 pr-4" colSpan={4}>
-              Amount due
-            </td>
-            <td className="py-2 text-right">{peso(s.closingBalance)}</td>
-          </tr>
-          {s.creditBalance > 0.005 && (
-            <tr className="text-gray-500">
-              <td className="py-2 pr-4" colSpan={4}>
-                Credit on file (applied to future dues)
-              </td>
-              <td className="py-2 text-right">{peso(s.creditBalance)}</td>
-            </tr>
-          )}
-        </tfoot>
-      </table>
+      <section className="mt-6">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2 text-gray-500">
+          <span>Opening balance</span>
+          <span>{peso(s.openingBalance)}</span>
+        </div>
+
+        <ResponsiveTable
+          plain
+          rows={s.lines}
+          rowKey={(_l, i) => String(i)}
+          empty={
+            <div className="px-4 py-4 text-gray-400">
+              No activity in this period.
+            </div>
+          }
+          columns={[
+            {
+              key: "date",
+              header: "Date",
+              className: "whitespace-nowrap",
+              cell: (l) => fmtDate(l.date),
+            },
+            {
+              key: "description",
+              header: "Description",
+              card: "title",
+              cell: (l) => l.description,
+            },
+            {
+              key: "charges",
+              header: "Charges",
+              align: "right",
+              className: "whitespace-nowrap",
+              cell: (l) => (l.charge ? peso(l.charge) : ""),
+            },
+            {
+              key: "payments",
+              header: "Payments",
+              align: "right",
+              className: "whitespace-nowrap",
+              cell: (l) => (l.payment ? peso(l.payment) : ""),
+            },
+            {
+              key: "balance",
+              header: "Balance",
+              align: "right",
+              className: "whitespace-nowrap",
+              cell: (l) => peso(l.balance),
+            },
+          ]}
+        />
+
+        <div className="flex items-center justify-between border-t-2 border-gray-300 px-4 py-2 font-semibold">
+          <span>Amount due</span>
+          <span>{peso(s.closingBalance)}</span>
+        </div>
+        {s.creditBalance > 0.005 && (
+          <div className="flex items-center justify-between px-4 py-2 text-gray-500">
+            <span>Credit on file (applied to future dues)</span>
+            <span>{peso(s.creditBalance)}</span>
+          </div>
+        )}
+      </section>
 
       {s.refunds.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500">
