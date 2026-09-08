@@ -85,7 +85,7 @@ export function PeopleSection({
       {error && <p className="text-sm text-danger-fg">{error}</p>}
       {inviteLink && (
         <div className="rounded-md bg-success-subtle p-3 text-xs text-success-fg">
-          Portal invite created — send this link:
+          Portal invite emailed. You can also copy this link:
           <code className="mt-1 block break-all rounded bg-surface px-2 py-1 text-fg">
             {inviteLink}
           </code>

@@ -89,9 +89,10 @@ export function TeamManager({
       {error && <p className="text-sm text-danger-fg">{error}</p>}
       {link && (
         <div className="rounded-md bg-success-subtle p-3 text-sm text-success-fg">
-          <p className="font-medium">Link generated.</p>
+          <p className="font-medium">Invite sent.</p>
           <p className="mt-1 break-all">
-            Send them this link to set a password:
+            We&apos;ve emailed them a link to set a password. You can also copy
+            this one:
           </p>
           <code className="mt-1 block break-all rounded bg-surface px-2 py-1 text-xs text-fg">
             {link}

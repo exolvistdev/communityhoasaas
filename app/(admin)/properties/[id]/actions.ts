@@ -364,7 +364,9 @@ export async function inviteHomeowner(
     return { ok: false, error: "That email already has an account" };
   }
 
-  const invite = await generateInviteLink(person.email, person.fullName);
+  const invite = await generateInviteLink(person.email, person.fullName, {
+    orgName: org.name,
+  });
   if (!invite.ok) return invite;
 
   const user = await prisma.user.create({

@@ -8,6 +8,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateInviteLink, generateRecoveryLink } from "@/lib/invites";
+import { ROLE_LABEL } from "@/lib/roles";
 import { logAudit } from "@/lib/audit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
@@ -39,7 +40,10 @@ export async function inviteMember(
   if (existing)
     return { ok: false, error: "Someone with that email is already on the team" };
 
-  const invite = await generateInviteLink(email, fullName);
+  const invite = await generateInviteLink(email, fullName, {
+    orgName: org.name,
+    role: ROLE_LABEL[role],
+  });
   if (!invite.ok) return invite;
 
   await prisma.user.create({
@@ -192,8 +196,12 @@ export async function resendInvite(
   if (target.acceptedAt)
     return { ok: false, error: "They've already joined" };
 
-  const invite = await generateInviteLink(target.email, target.fullName);
+  const invite = await generateInviteLink(target.email, target.fullName, {
+    orgName: org.name,
+    role: ROLE_LABEL[target.role],
+  });
   if (!invite.ok) return invite;
+  await logAudit({ action: "team.invite_resent", target: target.fullName });
   return { ok: true, actionLink: invite.actionLink };
 }
 
