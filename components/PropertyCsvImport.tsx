@@ -19,11 +19,17 @@ export function PropertyCsvImport({
   onComplete,
   completeLabel = "Done",
   onBack,
+  onSkip,
+  skipLabel = "Skip for now",
   typeDefaults,
 }: {
   onComplete: () => void;
   completeLabel?: string;
   onBack?: () => void;
+  /** When set, shows a "skip this step" action — for onboarding, where an
+   *  import is optional and the HOA can add units by hand later. */
+  onSkip?: () => void;
+  skipLabel?: string;
   /** Org defaults used to fill in a missing rate column, per property type. */
   typeDefaults?: TypeRateDefaults;
 }) {
@@ -229,7 +235,7 @@ export function PropertyCsvImport({
         </p>
       )}
 
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
         {onBack ? (
           <button
             onClick={onBack}
@@ -240,19 +246,30 @@ export function PropertyCsvImport({
         ) : (
           <span />
         )}
-        <button
-          onClick={commit}
-          disabled={pending || !result?.valid.length}
-          className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
-        >
-          {pending
-            ? "Importing…"
-            : result?.valid.length
-            ? `Import ${result.valid.length} propert${
-                result.valid.length === 1 ? "y" : "ies"
-              }`
-            : "Import properties"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              disabled={pending}
+              className="rounded-md px-4 py-2 text-sm text-fg-muted hover:bg-surface-2 disabled:opacity-50"
+            >
+              {skipLabel}
+            </button>
+          )}
+          <button
+            onClick={commit}
+            disabled={pending || !result?.valid.length}
+            className="rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
+          >
+            {pending
+              ? "Importing…"
+              : result?.valid.length
+              ? `Import ${result.valid.length} propert${
+                  result.valid.length === 1 ? "y" : "ies"
+                }`
+              : "Import properties"}
+          </button>
+        </div>
       </div>
     </div>
   );

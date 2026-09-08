@@ -202,6 +202,10 @@ function Field({
 
 function Step2({ onBack }: { onBack: () => void }) {
   const router = useRouter();
+  const goToDashboard = () => {
+    router.push("/dashboard");
+    router.refresh();
+  };
   return (
     <div className="space-y-5">
       <div>
@@ -209,16 +213,16 @@ function Step2({ onBack }: { onBack: () => void }) {
           Import your property roll
         </h1>
         <p className="mt-1 text-sm text-fg-muted">
-          You can also add properties by hand later.
+          Optional. Upload a CSV now, or skip and add units by hand from the
+          dashboard later.
         </p>
       </div>
       <PropertyCsvImport
         onBack={onBack}
         completeLabel="Go to dashboard"
-        onComplete={() => {
-          router.push("/dashboard");
-          router.refresh();
-        }}
+        onComplete={goToDashboard}
+        onSkip={goToDashboard}
+        skipLabel="Skip for now"
       />
     </div>
   );
