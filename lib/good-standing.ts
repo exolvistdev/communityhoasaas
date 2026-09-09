@@ -10,10 +10,11 @@ export type UnitStanding = {
 };
 
 /**
- * Per-unit voting eligibility for an org, keyed by propertyId (RA 9904).
- * A unit is out of good standing once it's `org.electionArrearsMonths` monthly
- * dues invoices past due. Non-archived units with nothing past due are in good
- * standing; archived units are omitted.
+ * Per-unit voting eligibility for an org, keyed by propertyId. A unit is out of
+ * good standing once it's `org.electionArrearsMonths` monthly dues invoices past
+ * due. Non-archived units with nothing past due are in good standing; archived
+ * units are omitted. The delinquency-suspends-voting rule is RA 9904 for HOAs;
+ * condominium by-laws set the equivalent under RA 4726.
  */
 export async function orgUnitStanding(
   orgId: string,
