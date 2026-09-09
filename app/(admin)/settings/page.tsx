@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/rbac";
 import { PROPERTY_TYPES, TYPE_RATE_FIELD } from "@/lib/rate";
 import { paymentQrUrl } from "@/lib/payment-qr";
 import { OrgSettingsForm } from "./OrgSettingsForm";
+import { CommunityTypeForm } from "./CommunityTypeForm";
 import { PaymentSettingsForm } from "./PaymentSettingsForm";
 import { LateFeeSettingsForm } from "./LateFeeSettingsForm";
 import { ElectionSettingsForm } from "./ElectionSettingsForm";
@@ -89,6 +90,18 @@ export default async function SettingsPage() {
             value={`${user.fullName} (${user.email}) · ${user.role}`}
           />
         </dl>
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">Community type</h2>
+          <p className="text-xs text-fg-muted">
+            Whether this is a subdivision, village, townhouse complex,
+            condominium or mixed-use community. Sets the wording used across the
+            app and the resident portal.
+          </p>
+        </div>
+        <CommunityTypeForm current={org.communityType} />
       </section>
 
       <section className="space-y-3">

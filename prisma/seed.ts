@@ -251,6 +251,7 @@ async function main() {
     data: {
       name: "Sample Subdivision HOA",
       subdomain: "sample-hoa",
+      communityType: "SUBDIVISION",
       gcashNumber: "0917 555 0100",
       gcashName: "Sample Subdivision HOA Inc.",
       mayaNumber: "0917 555 0100",

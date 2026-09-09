@@ -64,11 +64,25 @@ enum OrgStatus {
   ACTIVE
 }
 
+// The kind of community this org runs. RA 9904 (subdivisions / villages /
+// townhouse complexes — "homeowners' association", "Board of Trustees") vs
+// RA 4726 (condominiums — "condominium corporation", "unit owners", "Board of
+// Directors"). Drives display vocabulary (lib/terms.ts) and, for CONDOMINIUM,
+// the default dues + vote-weighting modes chosen at onboarding.
+enum CommunityType {
+  SUBDIVISION
+  VILLAGE
+  TOWNHOUSE
+  CONDOMINIUM
+  MIXED
+}
+
 model Organization {
   id            String    @id @default(uuid())
   name          String
   subdomain     String    @unique
   plan          String    @default("growth")
+  communityType CommunityType @default(SUBDIVISION)
   // Self-serve signup starts a 30-day TRIAL; anything else (seed, a
   // manually-provisioned org) defaults straight to ACTIVE — no gate. A
   // platform admin flips TRIAL -> ACTIVE from /platform once the customer

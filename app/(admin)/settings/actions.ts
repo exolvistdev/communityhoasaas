@@ -107,6 +107,43 @@ export async function updatePaymentSettings(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
+/* ─────────────────────────── community type ──────────────────────── */
+
+const communityTypeSchema = z.object({
+  communityType: z.enum([
+    "SUBDIVISION",
+    "VILLAGE",
+    "TOWNHOUSE",
+    "CONDOMINIUM",
+    "MIXED",
+  ]),
+});
+
+export async function updateCommunityType(input: unknown): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const parsed = communityTypeSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org } = await getCurrentOrgContext();
+  const next = parsed.data.communityType;
+
+  // This only changes the words the app uses. Dues mode and vote weighting are
+  // deliberately left alone — they have their own settings, so switching type
+  // never silently rewrites billing or an election tally.
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { communityType: next },
+  });
+
+  revalidateAll();
+  revalidatePath("/portal");
+  await logAudit({ action: "settings.community_type_update", detail: next });
+  return { ok: true };
+}
+
 /* ─────────────────────── payment QR images ───────────────────────── */
 
 export async function setPaymentQr(formData: FormData): Promise<Result> {

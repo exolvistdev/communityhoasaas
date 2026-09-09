@@ -101,6 +101,7 @@ const ACTION_LABEL: Record<string, string> = {
   "water.reminder": "Sent a water-reading reminder",
   "water.source_update": "Set the subdivision's water source",
   "settings.water_update": "Updated water billing settings",
+  "settings.community_type_update": "Changed the community type",
 };
 
 const fmt = (d: Date) =>
