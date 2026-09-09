@@ -7,20 +7,30 @@ import { PropertyCsvImport } from "@/components/PropertyCsvImport";
 import { PasswordChecklist } from "@/components/PasswordChecklist";
 import { WATER_SOURCE_OPTIONS } from "@/lib/water";
 import { isStrongPassword } from "@/lib/password";
+import { COMMUNITY_TYPE_OPTIONS } from "@/lib/community";
+import { termsFor } from "@/lib/terms";
+import type { CommunityType } from "@prisma/client";
 import { createOrgAndAdmin } from "./actions";
 
 export function OnboardingWizard({ signedIn }: { signedIn: boolean }) {
   const [step, setStep] = useState<1 | 2>(signedIn ? 2 : 1);
+  const [communityType, setCommunityType] =
+    useState<CommunityType>("SUBDIVISION");
 
   return (
     <div>
       <div className="mb-8">
-        <Stepper steps={["HOA details", "Import properties"]} current={step} />
+        <Stepper steps={["Community details", "Import units"]} current={step} />
       </div>
       {step === 1 ? (
-        <Step1 onDone={() => setStep(2)} />
+        <Step1
+          onDone={(ct) => {
+            setCommunityType(ct);
+            setStep(2);
+          }}
+        />
       ) : (
-        <Step2 onBack={() => setStep(1)} />
+        <Step2 onBack={() => setStep(1)} communityType={communityType} />
       )}
     </div>
   );
@@ -28,17 +38,29 @@ export function OnboardingWizard({ signedIn }: { signedIn: boolean }) {
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Step 1 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-function Step1({ onDone }: { onDone: () => void }) {
+const PLACEHOLDER: Record<CommunityType, string> = {
+  SUBDIVISION: "Sample Subdivision HOA",
+  VILLAGE: "Sample Village Homeowners Association",
+  TOWNHOUSE: "Sample Townhomes HOA",
+  CONDOMINIUM: "Sample Tower Condominium Corp.",
+  MIXED: "Sample Community Association",
+};
+
+function Step1({ onDone }: { onDone: (ct: CommunityType) => void }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [subdomain, setSubdomain] = useState("");
   const [password, setPassword] = useState("");
+  const [communityType, setCommunityType] =
+    useState<CommunityType>("SUBDIVISION");
+  const t = termsFor(communityType);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const input = {
+      communityType,
       orgName: String(fd.get("orgName") ?? ""),
       subdomain: String(fd.get("subdomain") ?? ""),
       fullName: String(fd.get("fullName") ?? ""),
@@ -50,7 +72,7 @@ function Step1({ onDone }: { onDone: () => void }) {
     setFieldError(undefined);
     start(async () => {
       const res = await createOrgAndAdmin(input);
-      if (res.ok) onDone();
+      if (res.ok) onDone(communityType);
       else {
         setError(res.error);
         setFieldError(res.field);
@@ -61,14 +83,47 @@ function Step1({ onDone }: { onDone: () => void }) {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-fg">Set up your HOA</h1>
+        <h1 className="text-xl font-semibold text-fg">
+          Set up your {t.community}
+        </h1>
         <p className="mt-1 text-sm text-fg-muted">
           Create your organization and admin account. Takes about a minute —
           starts with a free 30-day trial, no card required.
         </p>
       </div>
 
-      <Field label="HOA name" name="orgName" placeholder="Sample Subdivision HOA" error={fieldError === "orgName" ? error : undefined} autoFocus />
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-fg">
+          What kind of community is this?
+        </legend>
+        {COMMUNITY_TYPE_OPTIONS.map((o) => (
+          <label
+            key={o.value}
+            className="flex cursor-pointer gap-2.5 rounded-md border border-border p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-subtle"
+          >
+            <input
+              type="radio"
+              name="communityType"
+              value={o.value}
+              checked={communityType === o.value}
+              onChange={() => setCommunityType(o.value)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium text-fg">{o.label}</span>
+              <span className="block text-xs text-fg-muted">{o.hint}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      <Field
+        label={`${t.orgCap} name`}
+        name="orgName"
+        placeholder={PLACEHOLDER[communityType]}
+        error={fieldError === "orgName" ? error : undefined}
+        autoFocus
+      />
 
       <div>
         <label className="block text-sm font-medium text-fg">
@@ -120,7 +175,7 @@ function Step1({ onDone }: { onDone: () => void }) {
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-fg">
-          How does your subdivision get water?
+          How does your {t.community} get water?
         </legend>
         <p className="text-xs text-fg-muted">
           This sets up (or hides) water sub-metering. You can change it later in
@@ -200,7 +255,13 @@ function Field({
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Step 2 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-function Step2({ onBack }: { onBack: () => void }) {
+function Step2({
+  onBack,
+  communityType,
+}: {
+  onBack: () => void;
+  communityType: CommunityType;
+}) {
   const router = useRouter();
   const goToDashboard = () => {
     router.push("/dashboard");
@@ -210,13 +271,20 @@ function Step2({ onBack }: { onBack: () => void }) {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-semibold text-fg">
-          Import your property roll
+          Import your {termsFor(communityType).units}
         </h1>
         <p className="mt-1 text-sm text-fg-muted">
           Optional. Upload a CSV now, or skip and add units by hand from the
           dashboard later.
         </p>
       </div>
+      {communityType === "CONDOMINIUM" && (
+        <p className="rounded-md bg-brand-subtle px-3 py-2 text-xs text-brand-accent">
+          For condos, include a <code>floor area</code> column (sqm) — it drives
+          both per-sqm dues and floor-area vote weighting. You can also add it
+          later per unit.
+        </p>
+      )}
       <PropertyCsvImport
         onBack={onBack}
         completeLabel="Go to dashboard"

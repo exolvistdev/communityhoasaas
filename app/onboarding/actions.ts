@@ -6,9 +6,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SEED_ACCOUNTS } from "@/lib/ledger";
 import { strongPasswordSchema } from "@/lib/password";
+import { communityTypeDefaults } from "@/lib/community";
 
 const step1Schema = z.object({
-  orgName: z.string().trim().min(2, "Enter your HOA's name"),
+  communityType: z.enum(
+    ["SUBDIVISION", "VILLAGE", "TOWNHOUSE", "CONDOMINIUM", "MIXED"],
+    { errorMap: () => ({ message: "Pick the kind of community this is" }) }
+  ),
+  orgName: z.string().trim().min(2, "Enter the community's name"),
   subdomain: z
     .string()
     .trim()
@@ -21,7 +26,7 @@ const step1Schema = z.object({
   email: z.string().trim().email("Enter a valid email"),
   password: strongPasswordSchema,
   waterSource: z.enum(["INTERNAL", "EXTERNAL_BULK", "EXTERNAL_DIRECT"], {
-    errorMap: () => ({ message: "Choose how your subdivision gets water" }),
+    errorMap: () => ({ message: "Choose how your community gets water" }),
   }),
 });
 
@@ -37,8 +42,17 @@ export async function createOrgAndAdmin(
     const first = parsed.error.issues[0];
     return { ok: false, error: first.message, field: String(first.path[0]) };
   }
-  const { orgName, subdomain, fullName, email, password, waterSource } =
-    parsed.data;
+  const {
+    communityType,
+    orgName,
+    subdomain,
+    fullName,
+    email,
+    password,
+    waterSource,
+  } = parsed.data;
+
+  const condoDefaults = communityTypeDefaults(communityType);
 
   const existing = await prisma.organization.findUnique({ where: { subdomain } });
   if (existing)
@@ -90,9 +104,11 @@ export async function createOrgAndAdmin(
         data: {
           name: orgName,
           subdomain,
+          communityType,
           waterSource,
           status: "TRIAL",
           trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          ...condoDefaults,
         },
       });
       await tx.user.create({
@@ -107,7 +123,7 @@ export async function createOrgAndAdmin(
     if (rollbackAuthUser) await rollbackAuthUser().catch(() => {});
     return {
       ok: false,
-      error: "Could not set up your HOA. Please try again.",
+      error: "Could not set up your community. Please try again.",
     };
   }
 
@@ -122,7 +138,7 @@ export async function createOrgAndAdmin(
       return {
         ok: false,
         error:
-          "Your HOA is set up. Confirm your email, then sign in to import properties.",
+          "Your community is set up. Confirm your email, then sign in to import properties.",
       };
     }
   }

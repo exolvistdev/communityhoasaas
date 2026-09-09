@@ -1,6 +1,10 @@
 // Pure community-type helpers — safe to import from client components.
 
-import type { CommunityType } from "@prisma/client";
+import type {
+  CommunityType,
+  DuesRateMode,
+  VoteWeightMode,
+} from "@prisma/client";
 
 export const COMMUNITY_TYPES: CommunityType[] = [
   "SUBDIVISION",
@@ -49,3 +53,17 @@ export const COMMUNITY_TYPE_OPTIONS: {
     hint: "A community that doesn't fit one label — neutral wording throughout.",
   },
 ];
+
+/**
+ * Org defaults implied by the community type at signup. Condominiums (RA 4726)
+ * default to per-sqm dues and floor-area-weighted voting; every other type
+ * keeps the column defaults. All still editable in Settings afterward.
+ */
+export function communityTypeDefaults(t: CommunityType): {
+  duesRateMode?: DuesRateMode;
+  voteWeightMode?: VoteWeightMode;
+} {
+  if (t === "CONDOMINIUM")
+    return { duesRateMode: "PER_SQM", voteWeightMode: "BY_FLOOR_AREA" };
+  return {};
+}
