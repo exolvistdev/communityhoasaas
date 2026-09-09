@@ -1102,8 +1102,10 @@ model ElectionVote {
   @@map("election_votes")
 }
 
-// A seat on the Board of Trustees. Created from an election's winners on
-// finalize, or added directly (an appointment). Active while endedAt is null.
+// A seat on the elected board. Created from an election's winners on finalize,
+// or added directly (an appointment). Active while endedAt is null. Called
+// "trustees" under RA 9904 and "directors" under RA 4726 — the display label
+// comes from lib/terms.ts; the model name stays `Trustee`.
 model Trustee {
   id          String   @id @default(uuid())
   orgId       String

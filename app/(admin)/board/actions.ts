@@ -77,7 +77,8 @@ export async function addTrustee(input: unknown): Promise<Result> {
     userId = h.userId;
     if (!name) name = h.fullName;
   }
-  if (!name) return { ok: false, error: "Pick a member or type the trustee's name." };
+  if (!name)
+    return { ok: false, error: "Pick a member or type a name." };
 
   await seatTrustee({
     orgId: org.id,
@@ -122,7 +123,7 @@ export async function endTrusteeTerm(trusteeId: string): Promise<Result> {
   const trustee = await prisma.trustee.findFirst({
     where: { id: trusteeId, orgId: org.id },
   });
-  if (!trustee) return { ok: false, error: "Trustee not found" };
+  if (!trustee) return { ok: false, error: "Board member not found" };
   if (trustee.endedAt) return { ok: true };
 
   await prisma.trustee.update({
@@ -161,11 +162,11 @@ export async function removeTrustee(trusteeId: string): Promise<Result> {
   const trustee = await prisma.trustee.findFirst({
     where: { id: trusteeId, orgId: org.id },
   });
-  if (!trustee) return { ok: false, error: "Trustee not found" };
+  if (!trustee) return { ok: false, error: "Board member not found" };
   if (trustee.electionId)
     return {
       ok: false,
-      error: "This trustee was elected — end their term instead of deleting.",
+      error: "This board member was elected — end their term instead of deleting.",
     };
 
   await prisma.trustee.delete({ where: { id: trusteeId } });

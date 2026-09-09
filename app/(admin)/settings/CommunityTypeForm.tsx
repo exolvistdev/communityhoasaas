@@ -33,8 +33,9 @@ export function CommunityTypeForm({ current }: { current: CommunityType }) {
     >
       <p className="rounded-md bg-surface-2 px-3 py-2 text-xs text-fg-muted">
         This only changes the words the app uses (&ldquo;homeowner&rdquo; vs
-        &ldquo;unit owner&rdquo;, &ldquo;Board of Trustees&rdquo; vs &ldquo;Board
-        of Directors&rdquo;, and so on). Dues rates and vote weighting have their
+        &ldquo;unit owner&rdquo;, &ldquo;Board of Trustees&rdquo; vs
+        &ldquo;Board of Directors&rdquo;, and so on). Dues rates and vote
+        weighting have their
         own settings and are left untouched.
       </p>
       {COMMUNITY_TYPE_OPTIONS.map((o) => (

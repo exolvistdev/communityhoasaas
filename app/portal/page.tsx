@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
+import { termsFor } from "@/lib/terms";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
 import { invoicePaid } from "@/lib/invoice";
 import { peso, periodLabel } from "@/lib/format";
@@ -38,6 +39,7 @@ const shortDate = (d: Date) =>
 
 export default async function PortalHome() {
   const { user, property, org } = await getHomeownerContext();
+  const terms = termsFor(org.communityType);
 
   if (!property) {
     return (
@@ -333,7 +335,9 @@ export default async function PortalHome() {
             href="/portal/board"
             icon={Users}
             label="Your Board"
-            sub={`${activeTrustees} trustee${activeTrustees === 1 ? "" : "s"}`}
+            sub={`${activeTrustees} ${
+              activeTrustees === 1 ? terms.boardMember : terms.boardMembers
+            }`}
           />
         )}
         {waterMetered(org.waterSource) && waterMeter?.readings[0] && (

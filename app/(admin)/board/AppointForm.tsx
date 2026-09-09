@@ -2,10 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { TRUSTEE_POSITIONS } from "@/lib/election";
+import { trusteePositions } from "@/lib/election";
+import { useTerms } from "@/components/TermsProvider";
 import { addTrustee } from "./actions";
 
 export function AppointForm({ pool }: { pool: { id: string; label: string }[] }) {
+  const terms = useTerms();
+  const positions = trusteePositions(terms);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"member" | "name">("member");
@@ -18,7 +21,7 @@ export function AppointForm({ pool }: { pool: { id: string; label: string }[] })
         onClick={() => setOpen(true)}
         className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
       >
-        Appoint a trustee
+        Appoint {terms.boardMember}
       </button>
     );
 
@@ -79,7 +82,7 @@ export function AppointForm({ pool }: { pool: { id: string; label: string }[] })
         <input
           name="name"
           required
-          placeholder="Trustee's full name"
+          placeholder="Full name"
           className={`${field} w-full`}
         />
       )}
@@ -87,7 +90,7 @@ export function AppointForm({ pool }: { pool: { id: string; label: string }[] })
       <label className="block text-sm">
         <span className="text-fg">Position</span>
         <select name="position" defaultValue="MEMBER" className={`mt-1 ${field} w-full`}>
-          {TRUSTEE_POSITIONS.map((p) => (
+          {positions.map((p) => (
             <option key={p.value} value={p.value}>
               {p.label}
             </option>

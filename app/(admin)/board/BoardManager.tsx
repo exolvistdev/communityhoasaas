@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { TrusteePosition } from "@prisma/client";
-import { TRUSTEE_POSITIONS } from "@/lib/election";
+import { trusteePositions } from "@/lib/election";
+import { useTerms } from "@/components/TermsProvider";
 import type { TrusteeRow } from "@/lib/board";
 import { setTrusteePosition, endTrusteeTerm, removeTrustee } from "./actions";
 
@@ -15,6 +16,7 @@ const fmt = (d: Date) =>
   });
 
 export function BoardManager({ trustees }: { trustees: TrusteeRow[] }) {
+  const positions = trusteePositions(useTerms());
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -56,7 +58,7 @@ export function BoardManager({ trustees }: { trustees: TrusteeRow[] }) {
                     }
                     className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-brand disabled:opacity-50"
                   >
-                    {TRUSTEE_POSITIONS.map((p) => (
+                    {positions.map((p) => (
                       <option key={p.value} value={p.value}>
                         {p.label}
                       </option>

@@ -85,7 +85,7 @@ export async function assignTrusteePosition(
   const trustee = await prisma.trustee.findFirst({
     where: { id: trusteeId, orgId },
   });
-  if (!trustee) return { ok: false as const, error: "Trustee not found", name: "" };
+  if (!trustee) return { ok: false as const, error: "Board member not found", name: "" };
   if (trustee.position === position)
     return { ok: true as const, name: trustee.name };
 
@@ -101,7 +101,7 @@ export async function reactivateTrustee(orgId: string, trusteeId: string) {
   const trustee = await prisma.trustee.findFirst({
     where: { id: trusteeId, orgId },
   });
-  if (!trustee) return { ok: false as const, error: "Trustee not found", name: "" };
+  if (!trustee) return { ok: false as const, error: "Board member not found", name: "" };
   if (!trustee.endedAt) return { ok: true as const, name: trustee.name };
 
   await prisma.$transaction(async (tx) => {

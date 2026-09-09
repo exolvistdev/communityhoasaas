@@ -9,6 +9,7 @@ import {
   finalizeElectionAction,
   publishElectionResult,
 } from "../actions";
+import { useTerms } from "@/components/TermsProvider";
 
 const RESULT_ACCEPT =
   "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -26,6 +27,7 @@ export function ElectionActions({
   canFinalize: boolean;
   hasResult: boolean;
 }) {
+  const terms = useTerms();
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export function ElectionActions({
   function onFinalize() {
     if (
       !window.confirm(
-        "Seat the winning candidates as trustees? This creates the board roster."
+        `Seat the winning candidates as ${terms.boardMembers}? This creates the board roster.`
       )
     )
       return;
@@ -64,7 +66,11 @@ export function ElectionActions({
     start(async () => {
       const res = await finalizeElectionAction(electionId, setBoardRole);
       if (res.ok) {
-        setMsg(`${res.trustees} trustee(s) seated.`);
+        setMsg(
+          `${res.trustees} ${
+            res.trustees === 1 ? terms.boardMember : terms.boardMembers
+          } seated.`
+        );
         router.refresh();
       } else setError(res.error);
     });
@@ -157,7 +163,9 @@ export function ElectionActions({
                   disabled={pending || !canFinalize}
                   className="mt-2 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
                 >
-                  {pending ? "Finalizing…" : "Finalize & seat trustees"}
+                  {pending
+                    ? "Finalizing…"
+                    : `Finalize & seat ${terms.boardMembers}`}
                 </button>
                 {!canFinalize && (
                   <p className="mt-1 text-xs text-fg-subtle">

@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { TRUSTEE_POSITION_LABEL } from "@/lib/election";
+import { trusteePositionLabel } from "@/lib/election";
+import { useTerms } from "@/components/TermsProvider";
 import type { TrusteeRow } from "@/lib/board";
 import { reactivateTrusteeAction } from "./actions";
 
@@ -14,6 +15,7 @@ const fmt = (d: Date) =>
   });
 
 export function PastTrustees({ trustees }: { trustees: TrusteeRow[] }) {
+  const terms = useTerms();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -42,7 +44,7 @@ export function PastTrustees({ trustees }: { trustees: TrusteeRow[] }) {
                 <tr key={t.id} className="border-t border-border first:border-t-0">
                   <td className="px-4 py-2 text-fg">{t.name}</td>
                   <td className="px-4 py-2 text-fg-muted">
-                    {TRUSTEE_POSITION_LABEL[t.position]}
+                    {trusteePositionLabel(t.position, terms)}
                   </td>
                   <td className="px-4 py-2 text-xs text-fg-subtle">
                     {fmt(t.termStart)} – {fmt(t.termEnd)}

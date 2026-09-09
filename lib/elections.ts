@@ -5,6 +5,7 @@ import { orgUnitStanding } from "@/lib/good-standing";
 import { orgVoteWeights } from "@/lib/vote-weights";
 import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect } from "@/lib/notifications";
+import { termsFor } from "@/lib/terms";
 
 export type ElectionOutcome = "ELECTED" | "RUNOFF" | "NO_QUORUM";
 
@@ -267,10 +268,18 @@ export async function finalizeElection(input: {
     });
   });
 
+  const org = await prisma.organization.findUniqueOrThrow({
+    where: { id: election.orgId },
+    select: { communityType: true },
+  });
+  const terms = termsFor(org.communityType);
+
   await logAudit({
     action: "election.finalize",
     target: election.title,
-    detail: `${winners.length} trustee${winners.length === 1 ? "" : "s"} seated`,
+    detail: `${winners.length} ${
+      winners.length === 1 ? terms.boardMember : terms.boardMembers
+    } seated`,
   });
 
   const residents = await prisma.user.findMany({
@@ -282,7 +291,7 @@ export async function finalizeElection(input: {
       users: residents,
       type: "BOARD_ELECTION",
       title: `New board elected — ${election.title}`,
-      body: `The results are in. The new Board of Trustees serves until ${termEnd.toLocaleDateString(
+      body: `The results are in. The new ${terms.board} serves until ${termEnd.toLocaleDateString(
         "en-PH",
         { day: "numeric", month: "long", year: "numeric" }
       )}.`,

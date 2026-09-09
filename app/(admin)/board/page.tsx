@@ -5,11 +5,14 @@ import { BoardManager } from "./BoardManager";
 import { PastTrustees } from "./PastTrustees";
 import { AppointForm } from "./AppointForm";
 import { PageHeader } from "@/components/PageHeader";
+import { termsFor } from "@/lib/terms";
 
-export const metadata = { title: "Board of Trustees · HOA SaaS" };
+export const metadata = { title: "Board · HOA SaaS" };
 
 export default async function BoardPage() {
   const { org } = await requirePermission("election:manage");
+  const terms = termsFor(org.communityType);
+  const aOrAn = (w: string) => (/^[aeiou]/i.test(w) ? "an " : "a ") + w;
 
   const [{ current, past }, homeowners] = await Promise.all([
     boardRoster(org.id),
@@ -32,8 +35,8 @@ export default async function BoardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Board of Trustees"
-        description="The seated board and its officers. Elected trustees come from finalizing an election; you can also appoint one."
+        title={terms.board}
+        description={`The seated board and its officers. Elected ${terms.boardMembers} come from finalizing an election; you can also appoint one.`}
       />
 
       <section className="space-y-2">
@@ -42,7 +45,8 @@ export default async function BoardPage() {
         </h2>
         {current.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-fg-muted">
-            No seated trustees. Finalize an election or appoint one below.
+            No seated {terms.boardMembers}. Finalize an election or appoint one
+            below.
           </p>
         ) : (
           <BoardManager trustees={current} />
@@ -51,13 +55,17 @@ export default async function BoardPage() {
 
       {past.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-fg">Past trustees</h2>
+          <h2 className="text-sm font-semibold text-fg">
+            Past {terms.boardMembers}
+          </h2>
           <PastTrustees trustees={past} />
         </section>
       )}
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-fg">Appoint a trustee</h2>
+        <h2 className="text-sm font-semibold text-fg">
+          Appoint {aOrAn(terms.boardMember)}
+        </h2>
         <AppointForm pool={pool} />
       </section>
     </div>

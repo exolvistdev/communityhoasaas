@@ -10,6 +10,7 @@ import {
   type ResponsiveColumn,
 } from "@/components/ui/responsive-table";
 import { ElectionsManager } from "./ElectionsManager";
+import { termsFor } from "@/lib/terms";
 
 export const metadata = { title: "Elections · HOA SaaS" };
 
@@ -45,6 +46,7 @@ export default async function ElectionsPage() {
 
   const eligibleUnits = [...standing.values()].filter((s) => s.inGoodStanding).length;
   const weighted = org.voteWeightMode !== "ONE_UNIT_ONE_VOTE";
+  const terms = termsFor(org.communityType);
 
   const open = elections.filter((e) => e.status === "OPEN");
   const draft = elections.filter((e) => e.status === "DRAFT");
@@ -56,7 +58,7 @@ export default async function ElectionsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Elections"
-        description="Elect the Board of Trustees. One ballot per unit; delinquent units are suspended."
+        description={`Elect the ${terms.board}. One ballot per unit; delinquent units are suspended.`}
         action={<ElectionsManager meetings={meetings} />}
       />
 

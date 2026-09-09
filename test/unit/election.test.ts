@@ -3,7 +3,10 @@ import {
   tallyElection,
   isDelinquent,
   electionIsOpen,
+  trusteePositionLabel,
+  trusteePositions,
 } from "@/lib/election";
+import { termsFor } from "@/lib/terms";
 
 const cand = (id: string, name = id, withdrawn = false) => ({ id, name, withdrawn });
 const votes = (...ids: string[]) => ids.map((candidateId) => ({ candidateId }));
@@ -105,6 +108,24 @@ describe("tallyElection", () => {
     );
     expect(clear.winners).toEqual(["a", "c"]);
     expect(clear.runoffNeeded).toBe(false);
+  });
+});
+
+describe("trusteePositionLabel", () => {
+  it("relabels the chair for the community type, keeps the rest", () => {
+    const hoa = termsFor("SUBDIVISION");
+    const condo = termsFor("CONDOMINIUM");
+    expect(trusteePositionLabel("CHAIRPERSON", hoa)).toBe("Chairperson");
+    expect(trusteePositionLabel("CHAIRPERSON", condo)).toBe("President");
+    expect(trusteePositionLabel("VICE_CHAIRPERSON", condo)).toBe("Vice-President");
+    expect(trusteePositionLabel("SECRETARY", condo)).toBe("Secretary");
+    expect(trusteePositionLabel("TREASURER", hoa)).toBe("Treasurer");
+    expect(trusteePositionLabel("MEMBER", condo)).toBe("Member");
+  });
+  it("trusteePositions returns all five, relabelled", () => {
+    const opts = trusteePositions(termsFor("CONDOMINIUM"));
+    expect(opts).toHaveLength(5);
+    expect(opts[0]).toEqual({ value: "CHAIRPERSON", label: "President" });
   });
 });
 

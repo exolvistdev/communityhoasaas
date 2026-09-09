@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createElection, updateElection } from "./actions";
+import { useTerms } from "@/components/TermsProvider";
 
 type Initial = {
   id: string;
@@ -23,6 +24,7 @@ export function ElectionsManager({
   initial?: Initial;
   meetings: { id: string; title: string }[];
 }) {
+  const terms = useTerms();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export function ElectionsManager({
             name="title"
             required
             defaultValue={initial?.title}
-            placeholder="e.g. 2027 Board of Trustees Election"
+            placeholder={`e.g. 2027 ${terms.board} Election`}
             className={field}
           />
         </label>

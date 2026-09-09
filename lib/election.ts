@@ -1,4 +1,5 @@
 import type { ElectionStatus, TrusteePosition } from "@prisma/client";
+import type { Terms } from "@/lib/terms";
 
 // Pure election helpers — safe to import from client components.
 
@@ -35,6 +36,27 @@ export const TRUSTEE_POSITIONS: { value: TrusteePosition; label: string }[] = [
 export const TRUSTEE_POSITION_LABEL = Object.fromEntries(
   TRUSTEE_POSITIONS.map((p) => [p.value, p.label])
 ) as Record<TrusteePosition, string>;
+
+/** Position label for the org's community type — "Chairperson" for an HOA,
+ *  "President" for a condominium; the rest are the same everywhere. */
+export function trusteePositionLabel(
+  pos: TrusteePosition,
+  terms: Terms
+): string {
+  if (pos === "CHAIRPERSON") return terms.chairTitle;
+  if (pos === "VICE_CHAIRPERSON") return terms.viceChairTitle;
+  return TRUSTEE_POSITION_LABEL[pos];
+}
+
+/** The position options, relabelled for the org's community type. */
+export function trusteePositions(
+  terms: Terms
+): { value: TrusteePosition; label: string }[] {
+  return TRUSTEE_POSITIONS.map((p) => ({
+    value: p.value,
+    label: trusteePositionLabel(p.value, terms),
+  }));
+}
 
 /** Officer positions that at most one active trustee may hold. */
 export const OFFICER_POSITIONS: TrusteePosition[] = [
