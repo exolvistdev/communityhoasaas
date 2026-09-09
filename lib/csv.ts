@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PropertyType } from "@prisma/client";
 import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
 
 /* ── CSV writing ──────────────────────────────────────────────────────
@@ -29,8 +30,13 @@ export type RawRow = Record<string, string>;
 
 export type ValidRow = {
   unitNumber: string;
-  type: "RESIDENTIAL" | "COMMERCIAL" | "TOWNHOUSE";
+  type: PropertyType;
   monthlyRate: number;
+  // condominium detail — all optional
+  building?: string;
+  floor?: string;
+  floorArea?: number;
+  commonAreaShare?: number;
   homeownerName?: string;
   homeownerEmail?: string;
   homeownerPhone?: string;
@@ -60,6 +66,21 @@ const HEADER_ALIASES: Record<string, Field> = {
   monthly_rate: "monthlyRate",
   monthlyrate: "monthlyRate",
   dues: "monthlyRate",
+  // optional condominium columns
+  building: "building",
+  tower: "building",
+  floor: "floor",
+  level: "floor",
+  storey: "floor",
+  "floor area": "floorArea",
+  floor_area: "floorArea",
+  floorarea: "floorArea",
+  sqm: "floorArea",
+  area: "floorArea",
+  "unit area": "floorArea",
+  "common area share": "commonAreaShare",
+  common_area_share: "commonAreaShare",
+  share: "commonAreaShare",
   // optional homeowner columns
   homeowner: "homeownerName",
   "homeowner name": "homeownerName",
@@ -87,7 +108,35 @@ const TYPE_MAP: Record<string, ValidRow["type"]> = {
   com: "COMMERCIAL",
   townhouse: "TOWNHOUSE",
   th: "TOWNHOUSE",
+  condo: "CONDO_UNIT",
+  condominium: "CONDO_UNIT",
+  "condo unit": "CONDO_UNIT",
+  cu: "CONDO_UNIT",
+  parking: "PARKING_SLOT",
+  "parking slot": "PARKING_SLOT",
+  slot: "PARKING_SLOT",
 };
+
+const TYPE_HINT = "residential, commercial, townhouse, condo, or parking";
+
+/** Parse an optional positive number that may carry ₱ / commas / whitespace. */
+const optionalNumber = (label: string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .transform((v, ctx) => {
+      if (!v) return undefined;
+      const n = Number(v.replace(/[₱,%\s]/g, ""));
+      if (!Number.isFinite(n) || n < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Invalid ${label} "${v}"`,
+        });
+        return z.NEVER;
+      }
+      return n;
+    });
 
 const rowSchema = z.object({
   unitNumber: z.string().trim().min(1, "Unit number is required"),
@@ -96,12 +145,16 @@ const rowSchema = z.object({
     if (!mapped) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Unknown type "${v}" (use residential, commercial, or townhouse)`,
+        message: `Unknown type "${v}" (use ${TYPE_HINT})`,
       });
       return z.NEVER;
     }
     return mapped;
   }),
+  building: z.string().trim().optional(),
+  floor: z.string().trim().optional(),
+  floorArea: optionalNumber("floor area"),
+  commonAreaShare: optionalNumber("common-area share"),
   monthlyRate: z
     .string()
     .trim()
@@ -228,6 +281,11 @@ export function validateRows(
       type: parsed.data.type,
       monthlyRate,
     };
+    if (parsed.data.building) row.building = parsed.data.building;
+    if (parsed.data.floor) row.floor = parsed.data.floor;
+    if (parsed.data.floorArea !== undefined) row.floorArea = parsed.data.floorArea;
+    if (parsed.data.commonAreaShare !== undefined)
+      row.commonAreaShare = parsed.data.commonAreaShare;
     if (parsed.data.homeownerName) row.homeownerName = parsed.data.homeownerName;
     if (parsed.data.homeownerEmail) row.homeownerEmail = parsed.data.homeownerEmail;
     if (parsed.data.homeownerPhone) row.homeownerPhone = parsed.data.homeownerPhone;

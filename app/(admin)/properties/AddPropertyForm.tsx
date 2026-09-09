@@ -7,14 +7,21 @@ import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
 import { addProperty } from "./actions";
 
 type Plan = { id: string; name: string; monthlyRate: number };
-type PropertyType = "RESIDENTIAL" | "COMMERCIAL" | "TOWNHOUSE";
+type PropertyType =
+  | "RESIDENTIAL"
+  | "COMMERCIAL"
+  | "TOWNHOUSE"
+  | "CONDO_UNIT"
+  | "PARKING_SLOT";
 
 export function AddPropertyForm({
   ratePlans,
   typeDefaults,
+  buildings = [],
 }: {
   ratePlans: Plan[];
   typeDefaults: TypeRateDefaults;
+  buildings?: string[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -22,6 +29,7 @@ export function AddPropertyForm({
   const [pending, start] = useTransition();
 
   const [type, setType] = useState<PropertyType>("RESIDENTIAL");
+  const isCondo = type === "CONDO_UNIT" || type === "PARKING_SLOT";
   const [rateChoice, setRateChoice] = useState("custom");
   const [customRate, setCustomRate] = useState("");
 
@@ -44,6 +52,9 @@ export function AddPropertyForm({
           ? undefined
           : customRate,
         ratePlanId: selectedPlan ? selectedPlan.id : "",
+        building: isCondo ? fd.get("building") : "",
+        floor: isCondo ? fd.get("floor") : "",
+        floorArea: isCondo ? fd.get("floorArea") : "",
         homeownerName: fd.get("homeownerName"),
         homeownerEmail: fd.get("homeownerEmail"),
       });
@@ -98,6 +109,8 @@ export function AddPropertyForm({
             <option value="RESIDENTIAL">Residential</option>
             <option value="COMMERCIAL">Commercial</option>
             <option value="TOWNHOUSE">Townhouse</option>
+            <option value="CONDO_UNIT">Condo unit</option>
+            <option value="PARKING_SLOT">Parking slot</option>
           </select>
         </label>
         <label className="text-sm">
@@ -133,6 +146,43 @@ export function AddPropertyForm({
               className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             />
           </label>
+        )}
+        {isCondo && (
+          <>
+            <label className="text-sm">
+              <span className="text-fg">Building / tower</span>
+              <input
+                name="building"
+                list="building-names"
+                placeholder="Tower A"
+                className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+              />
+              <datalist id="building-names">
+                {buildings.map((b) => (
+                  <option key={b} value={b} />
+                ))}
+              </datalist>
+            </label>
+            <label className="text-sm">
+              <span className="text-fg">Floor</span>
+              <input
+                name="floor"
+                placeholder="14"
+                className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="text-fg">Floor area (sqm)</span>
+              <input
+                name="floorArea"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="45"
+                className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+              />
+            </label>
+          </>
         )}
         <label className="text-sm">
           <span className="text-fg">Primary homeowner (optional)</span>

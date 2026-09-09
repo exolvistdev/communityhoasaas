@@ -8,13 +8,31 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import type { ValidRow } from "@/lib/csv";
 import { typeDefaultRate, toTypeRateDefaults } from "@/lib/rate";
+import { resolveBuildingId } from "@/lib/buildings";
+
+const PROPERTY_TYPE = z.enum([
+  "RESIDENTIAL",
+  "COMMERCIAL",
+  "TOWNHOUSE",
+  "CONDO_UNIT",
+  "PARKING_SLOT",
+]);
+
+const optionalPositive = z.preprocess(
+  (v) => (v === "" || v == null ? undefined : v),
+  z.coerce.number().nonnegative().max(1_000_000).optional()
+);
 
 const schema = z.object({
   unitNumber: z.string().trim().min(1, "Unit number is required"),
-  type: z.enum(["RESIDENTIAL", "COMMERCIAL", "TOWNHOUSE"]),
+  type: PROPERTY_TYPE,
   // omitted → resolve from the rate plan or the org's type default
   monthlyRate: z.coerce.number().nonnegative("Rate must be 0 or more").optional(),
   ratePlanId: z.string().uuid().optional().or(z.literal("")),
+  building: z.string().trim().max(120).optional().or(z.literal("")),
+  floor: z.string().trim().max(40).optional().or(z.literal("")),
+  floorArea: optionalPositive,
+  commonAreaShare: optionalPositive,
   homeownerName: z.string().trim().optional(),
   homeownerEmail: z
     .string()
@@ -60,10 +78,14 @@ export async function addProperty(input: unknown): Promise<AddPropertyResult> {
     if (fallback === null)
       return {
         ok: false,
-        error: `Enter a rate, pick a plan, or set a ${d.type.toLowerCase()} default in Settings`,
+        error: `Enter a rate, pick a plan, or set a ${d.type
+          .toLowerCase()
+          .replace("_", " ")} default in Settings`,
       };
     monthlyRate = fallback;
   }
+
+  const buildingId = await resolveBuildingId(org.id, d.building);
 
   await prisma.property.create({
     data: {
@@ -72,6 +94,10 @@ export async function addProperty(input: unknown): Promise<AddPropertyResult> {
       type: d.type,
       monthlyRate,
       ratePlanId,
+      buildingId,
+      floor: d.floor || null,
+      floorArea: d.floorArea ?? null,
+      commonAreaShare: d.commonAreaShare ?? null,
       homeowners: d.homeownerName
         ? {
             create: {
@@ -93,8 +119,12 @@ export async function addProperty(input: unknown): Promise<AddPropertyResult> {
 
 const importRowSchema = z.object({
   unitNumber: z.string().trim().min(1),
-  type: z.enum(["RESIDENTIAL", "COMMERCIAL", "TOWNHOUSE"]),
+  type: PROPERTY_TYPE,
   monthlyRate: z.number().nonnegative(),
+  building: z.string().trim().max(120).optional(),
+  floor: z.string().trim().max(40).optional(),
+  floorArea: z.number().nonnegative().optional(),
+  commonAreaShare: z.number().nonnegative().optional(),
   homeownerName: z.string().trim().optional(),
   homeownerEmail: z.string().trim().optional(),
   homeownerPhone: z.string().trim().optional(),
@@ -112,6 +142,13 @@ export async function importProperties(rows: ValidRow[]): Promise<ImportResult> 
   const parsed = z.array(importRowSchema).max(5000).safeParse(rows);
   if (!parsed.success) return { ok: false, error: "Invalid property data" };
 
+  // Resolve every distinct building name once, up front.
+  const buildingIds = new Map<string, string | null>();
+  for (const name of new Set(
+    parsed.data.map((r) => r.building?.trim()).filter(Boolean) as string[]
+  ))
+    buildingIds.set(name, await resolveBuildingId(org.id, name));
+
   let imported = 0;
   for (const r of parsed.data) {
     try {
@@ -121,6 +158,10 @@ export async function importProperties(rows: ValidRow[]): Promise<ImportResult> 
           unitNumber: r.unitNumber,
           type: r.type,
           monthlyRate: r.monthlyRate,
+          buildingId: r.building ? buildingIds.get(r.building.trim()) ?? null : null,
+          floor: r.floor || null,
+          floorArea: r.floorArea ?? null,
+          commonAreaShare: r.commonAreaShare ?? null,
           homeowners: r.homeownerName
             ? {
                 create: {

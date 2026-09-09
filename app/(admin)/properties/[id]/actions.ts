@@ -8,6 +8,7 @@ import { denyUnless } from "@/lib/rbac";
 import { generateInviteLink } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
 import { typeDefaultRate, toTypeRateDefaults } from "@/lib/rate";
+import { resolveBuildingId } from "@/lib/buildings";
 import { postRefund } from "@/lib/ledger";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 
@@ -54,13 +55,28 @@ export async function setPropertyArchived(
 
 /* ───────────────────────────── property ──────────────────────────── */
 
+const optionalPositive = z.preprocess(
+  (v) => (v === "" || v == null ? undefined : v),
+  z.coerce.number().nonnegative().max(1_000_000).optional()
+);
+
 const updateSchema = z
   .object({
     unitNumber: z.string().trim().min(1, "Unit number is required"),
-    type: z.enum(["RESIDENTIAL", "COMMERCIAL", "TOWNHOUSE"]),
+    type: z.enum([
+      "RESIDENTIAL",
+      "COMMERCIAL",
+      "TOWNHOUSE",
+      "CONDO_UNIT",
+      "PARKING_SLOT",
+    ]),
     ratePlanId: z.string().uuid().optional(),
     customRate: z.coerce.number().nonnegative("Rate must be 0 or more").optional(),
     useTypeDefault: z.boolean().optional(),
+    building: z.string().trim().max(120).optional().or(z.literal("")),
+    floor: z.string().trim().max(40).optional().or(z.literal("")),
+    floorArea: optionalPositive,
+    commonAreaShare: optionalPositive,
   })
   .refine(
     (d) => d.ratePlanId || d.customRate !== undefined || d.useTypeDefault,
@@ -116,9 +132,20 @@ export async function updateProperty(
     ratePlanId = null;
   }
 
+  const buildingId = await resolveBuildingId(org.id, d.building);
+
   await prisma.property.update({
     where: { id },
-    data: { unitNumber: d.unitNumber, type: d.type, monthlyRate, ratePlanId },
+    data: {
+      unitNumber: d.unitNumber,
+      type: d.type,
+      monthlyRate,
+      ratePlanId,
+      buildingId,
+      floor: d.floor || null,
+      floorArea: d.floorArea ?? null,
+      commonAreaShare: d.commonAreaShare ?? null,
+    },
   });
 
   revalidateProperty(id);

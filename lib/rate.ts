@@ -8,23 +8,39 @@ export type TypeRateDefaults = {
   typeRateTownhouse: number | null;
 };
 
-/** Organization column that holds the default for a given property type. */
-export const TYPE_RATE_FIELD: Record<PropertyType, keyof TypeRateDefaults> = {
+/** Organization column that holds the default for a given property type.
+ *  Partial — CONDO_UNIT / PARKING_SLOT get their columns in a later slice; a
+ *  type with no entry simply has no by-type default (per-sqm dues cover it). */
+export const TYPE_RATE_FIELD: Partial<
+  Record<PropertyType, keyof TypeRateDefaults>
+> = {
   RESIDENTIAL: "typeRateResidential",
   COMMERCIAL: "typeRateCommercial",
   TOWNHOUSE: "typeRateTownhouse",
 };
 
-export const PROPERTY_TYPES: PropertyType[] = [
+/** Types that have a configurable by-type default rate in Settings. */
+export const PROPERTY_TYPES = [
   "RESIDENTIAL",
   "COMMERCIAL",
   "TOWNHOUSE",
+] as const satisfies readonly PropertyType[];
+
+/** Every property type, for pickers and CSV import. */
+export const ALL_PROPERTY_TYPES: PropertyType[] = [
+  "RESIDENTIAL",
+  "COMMERCIAL",
+  "TOWNHOUSE",
+  "CONDO_UNIT",
+  "PARKING_SLOT",
 ];
 
 export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   RESIDENTIAL: "Residential",
   COMMERCIAL: "Commercial",
   TOWNHOUSE: "Townhouse",
+  CONDO_UNIT: "Condo unit",
+  PARKING_SLOT: "Parking slot",
 };
 
 /** Normalise a raw Organization row (Decimal | null columns) to plain numbers. */
@@ -46,7 +62,9 @@ export function typeDefaultRate(
   defaults: TypeRateDefaults,
   type: PropertyType
 ): number | null {
-  const v = defaults[TYPE_RATE_FIELD[type]];
+  const field = TYPE_RATE_FIELD[type];
+  if (!field) return null;
+  const v = defaults[field];
   return v == null ? null : Number(v);
 }
 

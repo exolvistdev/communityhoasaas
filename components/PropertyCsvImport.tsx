@@ -3,15 +3,11 @@
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import Papa from "papaparse";
 import { peso } from "@/lib/format";
-import { validateRows, type ParseResult, type ValidRow } from "@/lib/csv";
-import type { TypeRateDefaults } from "@/lib/rate";
+import { validateRows, type ParseResult } from "@/lib/csv";
+import { type TypeRateDefaults, PROPERTY_TYPE_LABEL } from "@/lib/rate";
 import { importProperties } from "@/app/(admin)/properties/actions";
 
-const TYPE_LABEL: Record<ValidRow["type"], string> = {
-  RESIDENTIAL: "Residential",
-  COMMERCIAL: "Commercial",
-  TOWNHOUSE: "Townhouse",
-};
+const TYPE_LABEL = PROPERTY_TYPE_LABEL;
 
 type Imported = { imported: number; skipped: number } | null;
 
@@ -115,9 +111,13 @@ export function PropertyCsvImport({
     <div className="space-y-5">
       <p className="text-sm text-fg-muted">
         CSV columns: <code className="text-fg">unit number</code>,{" "}
-        <code className="text-fg">type</code>. Optional:{" "}
+        <code className="text-fg">type</code> (residential, commercial,
+        townhouse, condo or parking). Optional:{" "}
         <code className="text-fg">monthly rate</code> (falls back to the type
-        default when blank), <code className="text-fg">homeowner name</code>,{" "}
+        default when blank), <code className="text-fg">building</code>,{" "}
+        <code className="text-fg">floor</code>,{" "}
+        <code className="text-fg">floor area</code> (sqm, for condos),{" "}
+        <code className="text-fg">homeowner name</code>,{" "}
         <code className="text-fg">email</code>,{" "}
         <code className="text-fg">phone</code>.
       </p>

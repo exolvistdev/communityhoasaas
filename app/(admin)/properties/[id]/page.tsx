@@ -5,7 +5,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { peso, periodLabel } from "@/lib/format";
 import { effectiveStatus, invoicePaid } from "@/lib/invoice";
 import { can } from "@/lib/permissions";
-import { toTypeRateDefaults } from "@/lib/rate";
+import { toTypeRateDefaults, PROPERTY_TYPE_LABEL } from "@/lib/rate";
 import { effectiveGatePassStatus } from "@/lib/gatepass";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
 import { InvoiceStatusBadge, GatePassStatusBadge } from "@/components/StatusBadge";
@@ -18,11 +18,7 @@ import { EditPropertyForm } from "./EditPropertyForm";
 import { PeopleSection } from "./PeopleSection";
 import { RefundCreditButton } from "./RefundCreditButton";
 
-const TYPE_LABEL: Record<string, string> = {
-  RESIDENTIAL: "Residential",
-  COMMERCIAL: "Commercial",
-  TOWNHOUSE: "Townhouse",
-};
+const TYPE_LABEL = PROPERTY_TYPE_LABEL;
 
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
@@ -52,6 +48,7 @@ export default async function PropertyDetailPage({
     where: { id: params.id, orgId: org.id },
     include: {
       ratePlan: true,
+      building: { select: { name: true } },
       homeowners: {
         include: { user: { select: { acceptedAt: true } } },
         orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
@@ -71,12 +68,17 @@ export default async function PropertyDetailPage({
   });
   if (!property) notFound();
 
-  const [ratePlans, statement] = await Promise.all([
+  const [ratePlans, statement, buildings] = await Promise.all([
     prisma.ratePlan.findMany({
       where: { orgId: org.id },
       orderBy: { name: "asc" },
     }),
     buildStatement(property.id, parseStatementRange({})),
+    prisma.building.findMany({
+      where: { orgId: org.id },
+      select: { name: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   const balance = statement?.closingBalance ?? 0;
@@ -102,6 +104,15 @@ export default async function PropertyDetailPage({
           </h1>
           <div className="text-sm text-fg-muted">
             {TYPE_LABEL[property.type]} · {peso(Number(property.monthlyRate))}/mo
+            {(property.building || property.floor || property.floorArea) && (
+              <span className="ml-1 text-xs text-fg-subtle">
+                ·{property.building ? ` ${property.building.name}` : ""}
+                {property.floor ? ` · Floor ${property.floor}` : ""}
+                {property.floorArea
+                  ? ` · ${Number(property.floorArea)} sqm`
+                  : ""}
+              </span>
+            )}
             {property.ratePlan ? (
               <span className="ml-1 rounded bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted">
                 {property.ratePlan.name}
@@ -168,6 +179,14 @@ export default async function PropertyDetailPage({
             type: property.type,
             monthlyRate: Number(property.monthlyRate),
             ratePlanId: property.ratePlanId,
+            building: property.building?.name ?? null,
+            floor: property.floor,
+            floorArea:
+              property.floorArea != null ? Number(property.floorArea) : null,
+            commonAreaShare:
+              property.commonAreaShare != null
+                ? Number(property.commonAreaShare)
+                : null,
           }}
           ratePlans={ratePlans.map((r) => ({
             id: r.id,
@@ -175,6 +194,7 @@ export default async function PropertyDetailPage({
             monthlyRate: Number(r.monthlyRate),
           }))}
           typeDefaults={toTypeRateDefaults(org)}
+          buildings={buildings.map((b) => b.name)}
         />
       )}
 

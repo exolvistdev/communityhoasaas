@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { peso } from "@/lib/format";
 import { can } from "@/lib/permissions";
-import { toTypeRateDefaults } from "@/lib/rate";
+import { toTypeRateDefaults, PROPERTY_TYPE_LABEL } from "@/lib/rate";
 import { InvoiceStatusBadge } from "@/components/StatusBadge";
 import { PageHeader } from "@/components/PageHeader";
 import { ResponsiveTable, type ResponsiveColumn } from "@/components/ui/responsive-table";
@@ -11,11 +11,7 @@ import { AddPropertyForm } from "./AddPropertyForm";
 
 export const metadata = { title: "Properties · HOA SaaS" };
 
-const TYPE_LABEL: Record<string, string> = {
-  RESIDENTIAL: "Residential",
-  COMMERCIAL: "Commercial",
-  TOWNHOUSE: "Townhouse",
-};
+const TYPE_LABEL = PROPERTY_TYPE_LABEL;
 
 export default async function PropertiesPage({
   searchParams,
@@ -26,7 +22,7 @@ export default async function PropertiesPage({
   const canWrite = can(user.role, "property:write");
   const showArchived = searchParams.archived === "1";
 
-  const [properties, ratePlans, archivedCount] = await Promise.all([
+  const [properties, ratePlans, archivedCount, buildings] = await Promise.all([
     prisma.property.findMany({
       where: { orgId: org.id, ...(showArchived ? {} : { archivedAt: null }) },
       include: {
@@ -42,6 +38,11 @@ export default async function PropertiesPage({
     }),
     prisma.property.count({
       where: { orgId: org.id, archivedAt: { not: null } },
+    }),
+    prisma.building.findMany({
+      where: { orgId: org.id },
+      select: { name: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -149,6 +150,7 @@ export default async function PropertiesPage({
                   monthlyRate: Number(r.monthlyRate),
                 }))}
                 typeDefaults={toTypeRateDefaults(org)}
+                buildings={buildings.map((b) => b.name)}
               />
             </>
           ) : undefined

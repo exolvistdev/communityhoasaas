@@ -8,7 +8,12 @@ import { createRatePlan } from "../../settings/actions";
 import { updateProperty } from "./actions";
 
 type Plan = { id: string; name: string; monthlyRate: number };
-type PropertyType = "RESIDENTIAL" | "COMMERCIAL" | "TOWNHOUSE";
+type PropertyType =
+  | "RESIDENTIAL"
+  | "COMMERCIAL"
+  | "TOWNHOUSE"
+  | "CONDO_UNIT"
+  | "PARKING_SLOT";
 
 type Props = {
   property: {
@@ -17,12 +22,22 @@ type Props = {
     type: PropertyType;
     monthlyRate: number;
     ratePlanId: string | null;
+    building: string | null;
+    floor: string | null;
+    floorArea: number | null;
+    commonAreaShare: number | null;
   };
   ratePlans: Plan[];
   typeDefaults: TypeRateDefaults;
+  buildings?: string[];
 };
 
-export function EditPropertyForm({ property, ratePlans, typeDefaults }: Props) {
+export function EditPropertyForm({
+  property,
+  ratePlans,
+  typeDefaults,
+  buildings = [],
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -30,10 +45,16 @@ export function EditPropertyForm({ property, ratePlans, typeDefaults }: Props) {
 
   const [plans, setPlans] = useState<Plan[]>(ratePlans);
   const [type, setType] = useState<PropertyType>(property.type);
+  const isCondo = type === "CONDO_UNIT" || type === "PARKING_SLOT";
   const [rateChoice, setRateChoice] = useState<string>(
     property.ratePlanId ?? "custom"
   );
   const [customRate, setCustomRate] = useState(String(property.monthlyRate));
+  const [building, setBuilding] = useState(property.building ?? "");
+  const [floor, setFloor] = useState(property.floor ?? "");
+  const [floorArea, setFloorArea] = useState(
+    property.floorArea != null ? String(property.floorArea) : ""
+  );
 
   const typeDefault = typeDefaultRate(typeDefaults, type);
 
@@ -78,6 +99,9 @@ export function EditPropertyForm({ property, ratePlans, typeDefaults }: Props) {
       const res = await updateProperty(property.id, {
         unitNumber: fd.get("unitNumber"),
         type,
+        building: isCondo ? building : "",
+        floor: isCondo ? floor : "",
+        floorArea: isCondo ? floorArea : "",
         ...(rateChoice === "custom"
           ? { customRate }
           : rateChoice === "type-default"
@@ -124,9 +148,52 @@ export function EditPropertyForm({ property, ratePlans, typeDefaults }: Props) {
             <option value="RESIDENTIAL">Residential</option>
             <option value="COMMERCIAL">Commercial</option>
             <option value="TOWNHOUSE">Townhouse</option>
+            <option value="CONDO_UNIT">Condo unit</option>
+            <option value="PARKING_SLOT">Parking slot</option>
           </select>
         </label>
       </div>
+
+      {isCondo && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="text-sm">
+            <span className="text-fg">Building / tower</span>
+            <input
+              value={building}
+              onChange={(e) => setBuilding(e.target.value)}
+              list="edit-building-names"
+              placeholder="Tower A"
+              className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+            />
+            <datalist id="edit-building-names">
+              {buildings.map((b) => (
+                <option key={b} value={b} />
+              ))}
+            </datalist>
+          </label>
+          <label className="text-sm">
+            <span className="text-fg">Floor</span>
+            <input
+              value={floor}
+              onChange={(e) => setFloor(e.target.value)}
+              placeholder="14"
+              className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="text-fg">Floor area (sqm)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={floorArea}
+              onChange={(e) => setFloorArea(e.target.value)}
+              placeholder="45"
+              className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
+            />
+          </label>
+        </div>
+      )}
 
       <div className="text-sm">
         <span className="text-fg">Rate</span>

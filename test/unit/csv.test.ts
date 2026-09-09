@@ -115,6 +115,51 @@ describe("validateRows", () => {
     expect(res.valid[0].monthlyRate).toBe(1200);
   });
 
+  it("accepts condo / parking types and parses building, floor and floor area", () => {
+    const res = validateRows([
+      {
+        unit: "TA-1203",
+        type: "condo",
+        rate: "3800",
+        Building: "Tower A",
+        Floor: "12",
+        "Floor Area": "45.5",
+      },
+      {
+        unit: "P-114",
+        type: "parking",
+        rate: "600",
+        Building: "",
+        Floor: "",
+        "Floor Area": "12.5",
+      },
+    ]);
+    expect(res.errors).toEqual([]);
+    expect(res.valid).toEqual([
+      {
+        unitNumber: "TA-1203",
+        type: "CONDO_UNIT",
+        monthlyRate: 3800,
+        building: "Tower A",
+        floor: "12",
+        floorArea: 45.5,
+      },
+      {
+        unitNumber: "P-114",
+        type: "PARKING_SLOT",
+        monthlyRate: 600,
+        floorArea: 12.5,
+      },
+    ]);
+  });
+
+  it("names the accepted types in the unknown-type error", () => {
+    const res = validateRows([{ unit: "A", type: "mansion", rate: "1500" }]);
+    expect(res.errors[0].field).toBe("type");
+    expect(res.errors[0].message).toContain("condo");
+    expect(res.errors[0].message).toContain("parking");
+  });
+
   it("skips fully blank lines", () => {
     const res = validateRows([
       { unit: "A", type: "res", rate: "1500" },

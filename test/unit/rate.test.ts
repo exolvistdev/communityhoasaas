@@ -4,6 +4,8 @@ import {
   resolvePropertyRate,
   toTypeRateDefaults,
   TYPE_RATE_FIELD,
+  ALL_PROPERTY_TYPES,
+  PROPERTY_TYPE_LABEL,
 } from "@/lib/rate";
 
 const defaults = {
@@ -27,6 +29,30 @@ describe("TYPE_RATE_FIELD", () => {
     expect(TYPE_RATE_FIELD.RESIDENTIAL).toBe("typeRateResidential");
     expect(TYPE_RATE_FIELD.COMMERCIAL).toBe("typeRateCommercial");
     expect(TYPE_RATE_FIELD.TOWNHOUSE).toBe("typeRateTownhouse");
+  });
+});
+
+describe("property types", () => {
+  it("ALL_PROPERTY_TYPES covers condo units and parking slots", () => {
+    expect(ALL_PROPERTY_TYPES).toContain("CONDO_UNIT");
+    expect(ALL_PROPERTY_TYPES).toContain("PARKING_SLOT");
+    expect(ALL_PROPERTY_TYPES).toHaveLength(5);
+  });
+  it("every type has a label", () => {
+    for (const t of ALL_PROPERTY_TYPES)
+      expect(PROPERTY_TYPE_LABEL[t]?.length).toBeGreaterThan(0);
+  });
+  it("typeDefaultRate is null for a type with no default column", () => {
+    expect(
+      typeDefaultRate(
+        {
+          typeRateResidential: 1500,
+          typeRateCommercial: 5000,
+          typeRateTownhouse: 2200,
+        },
+        "CONDO_UNIT"
+      )
+    ).toBeNull();
   });
 });
 

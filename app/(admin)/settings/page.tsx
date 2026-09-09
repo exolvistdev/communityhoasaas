@@ -56,7 +56,8 @@ export default async function SettingsPage() {
   // Default rate per property type + how many non-plan units are off that rate.
   const typeRows = await Promise.all(
     PROPERTY_TYPES.map(async (type) => {
-      const raw = org[TYPE_RATE_FIELD[type]];
+      const field = TYPE_RATE_FIELD[type];
+      const raw = field ? org[field] : null;
       if (raw == null) return { type, rate: null, offPlan: 0 };
       const offPlan = await prisma.property.count({
         where: {
