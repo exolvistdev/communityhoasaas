@@ -84,6 +84,17 @@ enum DuesRateMode {
   PER_SQM
 }
 
+// How each unit's vote counts in board elections and resolutions.
+// ONE_UNIT_ONE_VOTE — every non-delinquent unit counts as 1 (RA 9904 default).
+// BY_FLOOR_AREA / BY_COMMON_SHARE — proportional to the unit's interest in the
+// common areas (RA 4726). BY_COMMON_SHARE falls back to floor area when a unit
+// has no explicit share.
+enum VoteWeightMode {
+  ONE_UNIT_ONE_VOTE
+  BY_FLOOR_AREA
+  BY_COMMON_SHARE
+}
+
 model Organization {
   id            String    @id @default(uuid())
   name          String
@@ -177,8 +188,12 @@ model Organization {
   waterUtilityVendor   Vendor?   @relation("WaterUtilityVendor", fields: [waterUtilityVendorId], references: [id], onDelete: SetNull)
 
   // A unit this many monthly dues invoices past due can't vote or run for the
-  // board (RA 9904). 0 disables the rule.
+  // board (RA 9904 for HOAs; condominium by-laws set the equivalent under
+  // RA 4726). 0 disables the rule.
   electionArrearsMonths Int @default(3)
+
+  // How each unit's vote is weighted in elections & resolutions.
+  voteWeightMode VoteWeightMode @default(ONE_UNIT_ONE_VOTE)
 
   @@map("organizations")
 }

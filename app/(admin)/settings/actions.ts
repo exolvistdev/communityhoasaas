@@ -281,6 +281,40 @@ export async function updateElectionSettings(input: unknown): Promise<Result> {
   return { ok: true };
 }
 
+/* ───────────────────────── vote weighting ────────────────────────── */
+
+const voteWeightSchema = z.object({
+  voteWeightMode: z.enum([
+    "ONE_UNIT_ONE_VOTE",
+    "BY_FLOOR_AREA",
+    "BY_COMMON_SHARE",
+  ]),
+});
+
+export async function updateVoteWeightMode(input: unknown): Promise<Result> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const parsed = voteWeightSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0].message };
+
+  const { org } = await getCurrentOrgContext();
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { voteWeightMode: parsed.data.voteWeightMode },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/votes");
+  revalidatePath("/elections");
+  await logAudit({
+    action: "settings.vote_weight_update",
+    detail: parsed.data.voteWeightMode,
+  });
+  return { ok: true };
+}
+
 /* ─────────────────── default rates by property type ──────────────── */
 
 const optionalRate = z.preprocess(

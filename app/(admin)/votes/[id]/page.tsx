@@ -10,6 +10,7 @@ import {
   THRESHOLD_LABEL,
 } from "@/lib/vote";
 import { voteSummary } from "@/lib/votes";
+import { fmtWeight } from "@/lib/vote-weights";
 import { VotesManager } from "../VotesManager";
 import { VoteActions, RevokeProxyButton } from "./VoteActions";
 
@@ -51,7 +52,17 @@ export default async function VoteDetailPage({
   if (!exists) notFound();
 
   const [
-    { vote, ballots, eligibleUnits, suspendedUnits, tally, quorumOK, outcome },
+    {
+      vote,
+      ballots,
+      eligibleUnits,
+      suspendedUnits,
+      tally,
+      quorumOK,
+      outcome,
+      weightMode,
+      eligibleWeight,
+    },
     proxies,
     meetings,
   ] = await Promise.all([
@@ -73,8 +84,9 @@ export default async function VoteDetailPage({
     ]);
 
   const badge = VOTE_STATUS_BADGE[vote.status];
+  const weighted = weightMode !== "ONE_UNIT_ONE_VOTE";
   const turnout =
-    eligibleUnits > 0 ? Math.round((tally.total / eligibleUnits) * 100) : 0;
+    eligibleWeight > 0 ? Math.round((tally.total / eligibleWeight) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -122,14 +134,27 @@ export default async function VoteDetailPage({
       <section className="rounded-lg border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold text-fg">Tally</h2>
         <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat label="In favour" value={tally.yes} />
-          <Stat label="Against" value={tally.no} />
-          <Stat label="Abstain" value={tally.abstain} />
+          <Stat label="In favour" value={fmtWeight(tally.yes)} />
+          <Stat label="Against" value={fmtWeight(tally.no)} />
+          <Stat label="Abstain" value={fmtWeight(tally.abstain)} />
           <Stat
-            label={`Turnout (${turnout}%)`}
-            value={`${tally.total} / ${eligibleUnits}`}
+            label={
+              weighted ? `Turnout by interest (${turnout}%)` : `Turnout (${turnout}%)`
+            }
+            value={
+              weighted
+                ? `${fmtWeight(tally.total)} / ${fmtWeight(eligibleWeight)}`
+                : `${tally.total} / ${eligibleUnits}`
+            }
           />
         </div>
+        {weighted && (
+          <p className="mt-2 text-xs text-fg-subtle">
+            Votes are weighted by{" "}
+            {weightMode === "BY_FLOOR_AREA" ? "floor area" : "common-area share"};
+            quorum is measured against total voting weight, not unit count.
+          </p>
+        )}
         {suspendedUnits > 0 && (
           <p className="mt-2 text-xs text-warning-fg">
             {suspendedUnits} unit{suspendedUnits === 1 ? "" : "s"} suspended for

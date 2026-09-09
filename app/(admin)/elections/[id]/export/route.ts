@@ -23,12 +23,21 @@ export async function GET(
   const winners = new Set(tally.winners);
   const tied = new Set(tally.tieAtCutoff);
 
+  const weighted = s.weightMode !== "ONE_UNIT_ONE_VOTE";
+
   const rows: (string | number | null)[][] = [
     ["Election", election.title],
     ["Opens", ymd(election.opensAt)],
     ["Closes", ymd(election.closesAt)],
     ["Seats", election.seats],
+    ["Vote weighting", s.weightMode],
     ["Eligible units", s.eligibleUnits],
+    ...(weighted
+      ? [
+          ["Eligible voting weight", Math.round(s.eligibleWeight * 100) / 100],
+          ["Voting weight cast", Math.round(s.castWeight * 100) / 100],
+        ]
+      : []),
     ["Ballots cast", s.cast],
     ["Turnout %", s.turnoutPct],
     ["Quorum %", election.quorumPct],
@@ -37,7 +46,12 @@ export async function GET(
     ["Suspended candidates", s.suspendedCandidates],
     ["Outcome", s.outcome],
     [],
-    ["candidate", "unit", "votes", "status"],
+    [
+      "candidate",
+      "unit",
+      weighted ? "weighted votes" : "votes",
+      "status",
+    ],
   ];
 
   for (const r of tally.rows) {

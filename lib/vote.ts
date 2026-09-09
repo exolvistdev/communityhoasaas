@@ -41,12 +41,21 @@ export const THRESHOLD_LABEL: Record<PassThreshold, string> = {
 
 export type VoteTally = { yes: number; no: number; abstain: number; total: number };
 
-export function voteTally(ballots: { choice: VoteChoice }[]): VoteTally {
-  const t: VoteTally = { yes: 0, no: 0, abstain: 0, total: ballots.length };
+/**
+ * Sum ballots into yes/no/abstain totals. Each ballot counts as `weight` (its
+ * unit's voting weight) — omit `weight` and every ballot counts as 1, which is
+ * the one-unit-one-vote behaviour every non-condo org relies on.
+ */
+export function voteTally(
+  ballots: { choice: VoteChoice; weight?: number }[]
+): VoteTally {
+  const t: VoteTally = { yes: 0, no: 0, abstain: 0, total: 0 };
   for (const b of ballots) {
-    if (b.choice === "YES") t.yes++;
-    else if (b.choice === "NO") t.no++;
-    else t.abstain++;
+    const w = b.weight ?? 1;
+    t.total += w;
+    if (b.choice === "YES") t.yes += w;
+    else if (b.choice === "NO") t.no += w;
+    else t.abstain += w;
   }
   return t;
 }

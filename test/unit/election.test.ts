@@ -51,6 +51,61 @@ describe("tallyElection", () => {
     expect(r.winners.sort()).toEqual(["a", "b"]); // 0 == 0, but both fit the seats
     expect(r.rows.every((x) => x.votes === 0)).toBe(true);
   });
+
+  it("without a weight key, results are identical to the old unweighted tally", () => {
+    // regression guard for weighted voting
+    const r = tallyElection(
+      [cand("a"), cand("b"), cand("c")],
+      votes("a", "a", "b", "b", "b", "c"),
+      2
+    );
+    expect(r.winners).toEqual(["b", "a"]);
+    expect(r.rows.map((x) => x.votes)).toEqual([3, 2, 1]);
+  });
+
+  it("weights each vote when a weight is given — the order can flip", () => {
+    // a wins on raw count (3 vs 2) but b's voters carry more weight
+    const r = tallyElection(
+      [cand("a"), cand("b")],
+      [
+        { candidateId: "a", weight: 20 },
+        { candidateId: "a", weight: 20 },
+        { candidateId: "a", weight: 20 },
+        { candidateId: "b", weight: 90 },
+        { candidateId: "b", weight: 90 },
+      ],
+      1
+    );
+    expect(r.winners).toEqual(["b"]);
+    expect(r.rows[0]).toMatchObject({ candidateId: "b", votes: 180 });
+  });
+
+  it("treats a sub-epsilon gap at the cut-off as a tie, and a real gap as a clear win", () => {
+    // b = 0.3, c = 0.1 + 0.2 = 0.30000000000000004 — a floating-point hair apart
+    const tieVotes = [
+      { candidateId: "a", weight: 1 },
+      { candidateId: "b", weight: 0.3 },
+      { candidateId: "c", weight: 0.1 },
+      { candidateId: "c", weight: 0.2 },
+    ];
+    const tied = tallyElection(
+      [cand("a"), cand("b"), cand("c")],
+      tieVotes,
+      2 // a clearly in; b vs c fight for seat 2
+    );
+    expect(tied.winners).toEqual(["a"]);
+    expect(tied.tieAtCutoff.sort()).toEqual(["b", "c"]);
+    expect(tied.runoffNeeded).toBe(true);
+
+    // widen c's lead past epsilon → clean result, no runoff
+    const clear = tallyElection(
+      [cand("a"), cand("b"), cand("c")],
+      [...tieVotes, { candidateId: "c", weight: 0.5 }],
+      2
+    );
+    expect(clear.winners).toEqual(["a", "c"]);
+    expect(clear.runoffNeeded).toBe(false);
+  });
 });
 
 describe("isDelinquent", () => {

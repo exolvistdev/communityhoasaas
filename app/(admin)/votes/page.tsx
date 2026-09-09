@@ -49,6 +49,7 @@ export default async function VotesPage() {
   ]);
 
   const eligibleUnits = [...standing.values()].filter((s) => s.inGoodStanding).length;
+  const weighted = org.voteWeightMode !== "ONE_UNIT_ONE_VOTE";
 
   // only ballots from units in good standing count toward the inline tallies
   const counted = votes.map((v) => ({
@@ -72,12 +73,13 @@ export default async function VotesPage() {
         action={<VotesManager meetings={meetings} />}
       />
 
-      <Section title="Open" votes={open} eligibleUnits={eligibleUnits} fmt={fmt} />
-      <Section title="Drafts" votes={draft} eligibleUnits={eligibleUnits} fmt={fmt} />
+      <Section title="Open" votes={open} eligibleUnits={eligibleUnits} weighted={weighted} fmt={fmt} />
+      <Section title="Drafts" votes={draft} eligibleUnits={eligibleUnits} weighted={weighted} fmt={fmt} />
       <Section
         title="Closed & cancelled"
         votes={past}
         eligibleUnits={eligibleUnits}
+        weighted={weighted}
         fmt={fmt}
       />
 
@@ -94,6 +96,7 @@ function Section({
   title,
   votes,
   eligibleUnits,
+  weighted,
   fmt,
 }: {
   title: string;
@@ -109,6 +112,7 @@ function Section({
     resultDocument: { id: string } | null;
   }[];
   eligibleUnits: number;
+  weighted: boolean;
   fmt: (d: Date) => string;
 }) {
   if (votes.length === 0) return null;
@@ -140,6 +144,8 @@ function Section({
       className: "text-xs text-fg-muted",
       cell: (v) => {
         const t = voteTally(v.ballots);
+        if (weighted)
+          return `${t.total}/${eligibleUnits} units cast · ${v.quorumPct}% quorum by voting weight — open the vote for the weighted tally`;
         return `${t.total}/${eligibleUnits} cast · ${v.quorumPct}% quorum${
           t.total > 0 ? ` · ${t.yes} for / ${t.no} against` : ""
         }`;
@@ -169,14 +175,20 @@ function Section({
         const t = voteTally(v.ballots);
         const quorumOK = quorumMet(t.total, eligibleUnits, v.quorumPct);
         const outcome = resolutionOutcome(t, v.threshold, quorumOK);
-        const note =
-          v.status === "CLOSED" ? (
-            <span className="text-fg-muted">{OUTCOME_LABEL[outcome]}</span>
-          ) : v.status === "OPEN" ? (
-            <span className="text-fg-subtle">
-              {quorumOK ? "Quorum met" : "No quorum yet"}
-            </span>
-          ) : null;
+        const note = weighted ? (
+          <Link
+            href={`/votes/${v.id}`}
+            className="text-fg-subtle underline hover:text-fg"
+          >
+            weighted — see vote
+          </Link>
+        ) : v.status === "CLOSED" ? (
+          <span className="text-fg-muted">{OUTCOME_LABEL[outcome]}</span>
+        ) : v.status === "OPEN" ? (
+          <span className="text-fg-subtle">
+            {quorumOK ? "Quorum met" : "No quorum yet"}
+          </span>
+        ) : null;
         if (!note && !v.resultDocument) return null;
         return (
           <>

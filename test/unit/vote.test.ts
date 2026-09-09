@@ -22,6 +22,25 @@ describe("voteTally", () => {
   it("is all zeros for no ballots", () => {
     expect(voteTally([])).toEqual({ yes: 0, no: 0, abstain: 0, total: 0 });
   });
+  it("without a weight key, every ballot counts as 1 (unchanged behaviour)", () => {
+    // regression guard for weighted voting — the no-weight path is exactly the old one
+    expect(voteTally(ballots("YES", "NO", "NO", "ABSTAIN", "YES"))).toEqual({
+      yes: 2,
+      no: 2,
+      abstain: 1,
+      total: 5,
+    });
+  });
+  it("sums each ballot's weight when given", () => {
+    expect(
+      voteTally([
+        { choice: "YES", weight: 45 },
+        { choice: "YES", weight: 30.5 },
+        { choice: "NO", weight: 60 },
+        { choice: "ABSTAIN", weight: 12 },
+      ])
+    ).toEqual({ yes: 75.5, no: 60, abstain: 12, total: 147.5 });
+  });
 });
 
 describe("quorumMet", () => {

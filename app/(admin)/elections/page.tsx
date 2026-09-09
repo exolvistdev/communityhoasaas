@@ -44,6 +44,7 @@ export default async function ElectionsPage() {
   ]);
 
   const eligibleUnits = [...standing.values()].filter((s) => s.inGoodStanding).length;
+  const weighted = org.voteWeightMode !== "ONE_UNIT_ONE_VOTE";
 
   const open = elections.filter((e) => e.status === "OPEN");
   const draft = elections.filter((e) => e.status === "DRAFT");
@@ -59,12 +60,13 @@ export default async function ElectionsPage() {
         action={<ElectionsManager meetings={meetings} />}
       />
 
-      <Section title="Open" rows={open} eligibleUnits={eligibleUnits} fmt={fmt} />
-      <Section title="Drafts" rows={draft} eligibleUnits={eligibleUnits} fmt={fmt} />
+      <Section title="Open" rows={open} eligibleUnits={eligibleUnits} weighted={weighted} fmt={fmt} />
+      <Section title="Drafts" rows={draft} eligibleUnits={eligibleUnits} weighted={weighted} fmt={fmt} />
       <Section
         title="Closed & cancelled"
         rows={past}
         eligibleUnits={eligibleUnits}
+        weighted={weighted}
         fmt={fmt}
       />
 
@@ -94,11 +96,13 @@ function Section({
   title,
   rows,
   eligibleUnits,
+  weighted,
   fmt,
 }: {
   title: string;
   rows: Row[];
   eligibleUnits: number;
+  weighted: boolean;
   fmt: (d: Date) => string;
 }) {
   if (rows.length === 0) return null;
@@ -162,7 +166,11 @@ function Section({
         const note =
           e.status === "OPEN" ? (
             <span className="text-fg-subtle">
-              {quorumOK ? "Quorum met" : "No quorum yet"}
+              {weighted
+                ? "weighted — see election"
+                : quorumOK
+                ? "Quorum met"
+                : "No quorum yet"}
             </span>
           ) : e.status === "CLOSED" ? (
             <span className="text-fg-muted">

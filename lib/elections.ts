@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { quorumMet } from "@/lib/vote";
 import { electionIsOpen, tallyElection, type ElectionTally } from "@/lib/election";
 import { orgUnitStanding } from "@/lib/good-standing";
+import { orgVoteWeights } from "@/lib/vote-weights";
 import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect } from "@/lib/notifications";
 
@@ -35,6 +36,7 @@ export async function electionSummary(electionId: string) {
   });
 
   const standing = await orgUnitStanding(election.orgId);
+  const weights = await orgVoteWeights(election.orgId, standing);
   const eligibleUnits = [...standing.values()].filter((s) => s.inGoodStanding).length;
   const suspendedUnits = standing.size - eligibleUnits;
 
@@ -42,7 +44,13 @@ export async function electionSummary(electionId: string) {
   const countedBallots = election.ballots.filter(
     (b) => standing.get(b.propertyId)?.inGoodStanding ?? false
   );
-  const votes = countedBallots.flatMap((b) => b.votes);
+  // each approval carries its unit's voting weight (1 under one-unit-one-vote)
+  const votes = countedBallots.flatMap((b) =>
+    b.votes.map((v) => ({
+      candidateId: v.candidateId,
+      weight: weights.byProperty.get(b.propertyId) ?? 0,
+    }))
+  );
 
   // RA 9904: a candidate whose own unit isn't in good standing can't be voted
   // for. Free-text candidates (no linked homeowner) are staff-vouched → eligible.
@@ -70,9 +78,19 @@ export async function electionSummary(electionId: string) {
   );
 
   const cast = countedBallots.length;
-  const quorumOK = quorumMet(cast, eligibleUnits, election.quorumPct);
+  const castWeight = countedBallots.reduce(
+    (s, b) => s + (weights.byProperty.get(b.propertyId) ?? 0),
+    0
+  );
+  const quorumOK = quorumMet(
+    castWeight,
+    weights.eligibleWeight,
+    election.quorumPct
+  );
   const turnoutPct =
-    eligibleUnits > 0 ? Math.round((cast / eligibleUnits) * 100) : 0;
+    weights.eligibleWeight > 0
+      ? Math.round((castWeight / weights.eligibleWeight) * 100)
+      : 0;
 
   const outcome: ElectionOutcome = !quorumOK
     ? "NO_QUORUM"
@@ -93,6 +111,10 @@ export async function electionSummary(electionId: string) {
     quorumOK,
     turnoutPct,
     outcome,
+    weightMode: weights.mode,
+    eligibleWeight: weights.eligibleWeight,
+    castWeight,
+    weightsMissing: weights.missingFigure,
   };
 }
 

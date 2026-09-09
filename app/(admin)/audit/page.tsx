@@ -102,6 +102,7 @@ const ACTION_LABEL: Record<string, string> = {
   "water.source_update": "Set the community's water source",
   "settings.water_update": "Updated water billing settings",
   "settings.community_type_update": "Changed the community type",
+  "settings.vote_weight_update": "Changed vote weighting",
 };
 
 const fmt = (d: Date) =>

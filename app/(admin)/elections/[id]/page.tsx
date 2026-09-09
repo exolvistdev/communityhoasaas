@@ -85,8 +85,10 @@ export default async function ElectionDetailPage({
     quorumOK,
     turnoutPct,
     outcome,
+    weightMode,
   } = summary;
   const badge = ELECTION_STATUS_BADGE[election.status];
+  const weighted = weightMode !== "ONE_UNIT_ONE_VOTE";
 
   const takenHomeownerIds = new Set(
     candidates.map((c) => c.homeownerId).filter(Boolean) as string[]
@@ -183,7 +185,8 @@ export default async function ElectionDetailPage({
           </h2>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
             <span className="min-w-0">
-              {cast}/{eligibleUnits} units cast · {turnoutPct}% turnout
+              {cast}/{eligibleUnits} units cast · {turnoutPct}%{" "}
+              {weighted ? "of voting weight" : "turnout"}
               {suspendedUnits > 0 && ` · ${suspendedUnits} suspended`}
             </span>
             <a
@@ -345,7 +348,9 @@ function TallyBar({
             <span className="ml-2 text-xs text-fg-subtle">cut-off</span>
           )}
         </span>
-        <span className="shrink-0 tabular-nums text-fg-muted">{row.votes}</span>
+        <span className="shrink-0 tabular-nums text-fg-muted">
+          {Math.round(row.votes * 100) / 100}
+        </span>
       </div>
       <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
         <div

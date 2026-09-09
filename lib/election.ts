@@ -75,19 +75,26 @@ export type ElectionTally = {
   runoffNeeded: boolean;
 };
 
+const EPS = 1e-6;
+
 /**
  * "Vote for up to N" tally: the `seats` candidates with the most approvals win.
  * A tie on the vote count of the last available seat can't be resolved
  * automatically — those candidates are returned in `tieAtCutoff` and `winners`
  * holds only the ones safely above the tie.
+ *
+ * Each vote counts as `weight` (its unit's voting weight) — omit `weight` and
+ * every vote counts as 1 (one-unit-one-vote). Comparisons use an epsilon so
+ * fractional weights don't create phantom ties.
  */
 export function tallyElection(
   candidates: { id: string; name: string; withdrawn: boolean }[],
-  votes: { candidateId: string }[],
+  votes: { candidateId: string; weight?: number }[],
   seats: number
 ): ElectionTally {
   const count = new Map<string, number>();
-  for (const v of votes) count.set(v.candidateId, (count.get(v.candidateId) ?? 0) + 1);
+  for (const v of votes)
+    count.set(v.candidateId, (count.get(v.candidateId) ?? 0) + (v.weight ?? 1));
 
   const rows: ElectionTallyRow[] = candidates
     .map((c) => ({
@@ -109,7 +116,7 @@ export function tallyElection(
 
   // clear win: everyone at rank < n whose count is strictly above the cutoff,
   // plus the cutoff group only if it doesn't overflow the remaining seats
-  if (cutoffVotes !== nextVotes) {
+  if (Math.abs(cutoffVotes - nextVotes) > EPS) {
     return {
       rows,
       winners: contenders.slice(0, n).map((r) => r.candidateId),
@@ -118,8 +125,10 @@ export function tallyElection(
     };
   }
 
-  const aboveCutoff = contenders.filter((r) => r.votes > cutoffVotes);
-  const atCutoff = contenders.filter((r) => r.votes === cutoffVotes);
+  const aboveCutoff = contenders.filter((r) => r.votes > cutoffVotes + EPS);
+  const atCutoff = contenders.filter(
+    (r) => Math.abs(r.votes - cutoffVotes) <= EPS
+  );
   return {
     rows,
     winners: aboveCutoff.map((r) => r.candidateId),

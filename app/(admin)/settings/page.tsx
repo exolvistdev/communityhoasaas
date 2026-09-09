@@ -12,6 +12,7 @@ import { RatePlansManager } from "./RatePlansManager";
 import { WaterSettingsForm } from "./WaterSettingsForm";
 import { WaterBulkSettingsForm } from "./WaterBulkSettingsForm";
 import { WaterSourceForm } from "./WaterSourceForm";
+import { VoteWeightForm } from "./VoteWeightForm";
 import { waterConfig } from "@/lib/water-billing";
 import { PageHeader } from "@/components/PageHeader";
 import { termsFor } from "@/lib/terms";
@@ -86,6 +87,13 @@ export default async function SettingsPage() {
          AND "monthlyRate" <> ROUND(${rate}::numeric * "floorArea", 2)`;
     perSqmOffRate = Number(count);
   }
+
+  const unitsMissingFloorArea =
+    org.voteWeightMode === "ONE_UNIT_ONE_VOTE"
+      ? 0
+      : await prisma.property.count({
+          where: { orgId: org.id, archivedAt: null, floorArea: null },
+        });
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -194,6 +202,16 @@ export default async function SettingsPage() {
         </div>
         <ElectionSettingsForm
           electionArrearsMonths={org.electionArrearsMonths}
+        />
+        <div>
+          <h3 className="text-sm font-semibold text-fg">Vote weighting</h3>
+          <p className="text-xs text-fg-muted">
+            How much each unit&apos;s ballot counts in elections and resolutions.
+          </p>
+        </div>
+        <VoteWeightForm
+          current={org.voteWeightMode}
+          unitsMissingFigure={unitsMissingFloorArea}
         />
       </section>
 
