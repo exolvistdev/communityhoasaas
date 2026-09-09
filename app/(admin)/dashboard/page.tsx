@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Table, Thead, Th, Tbody, Tr, Td } from "@/components/ui/table";
 import { peso, periodLabel, currentPeriod } from "@/lib/format";
 import { waterMetered } from "@/lib/water";
+import { termsFor } from "@/lib/terms";
 
 export const metadata = { title: "Dashboard · HOA SaaS" };
 
@@ -275,7 +276,7 @@ export default async function DashboardPage() {
     isAdmin && org.waterSource === "UNSET"
       ? {
           href: "/settings",
-          text: "Tell us how your subdivision gets water",
+          text: `Tell us how your ${termsFor(org.communityType).community} gets water`,
         }
       : null,
   ].filter(Boolean) as { href: string; text: string }[];

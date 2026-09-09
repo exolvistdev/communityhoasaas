@@ -21,10 +21,10 @@ export function AuthShell({
         />
         <div className="max-w-sm">
           <p className="text-2xl font-semibold leading-snug">
-            Billing, records and gate security for your subdivision — in one place.
+            Billing, records and gate security for your community — in one place.
           </p>
           <p className="mt-3 text-sm text-brand-fg/70">
-            Accurate dues, an auditable ledger, and a portal your homeowners
+            Accurate dues, an auditable ledger, and a portal your residents
             actually use.
           </p>
         </div>

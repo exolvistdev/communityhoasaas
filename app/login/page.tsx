@@ -19,11 +19,11 @@ export default function LoginPage() {
 
         <div className="max-w-sm">
           <p className="text-2xl font-semibold leading-snug text-white">
-            Billing, records and gate security for your subdivision — in one
+            Billing, records and gate security for your community — in one
             place.
           </p>
           <p className="mt-3 text-sm text-slate-400">
-            Accurate dues, an auditable ledger, and a portal your homeowners
+            Accurate dues, an auditable ledger, and a portal your residents
             actually use.
           </p>
         </div>

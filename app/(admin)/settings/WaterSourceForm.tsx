@@ -4,9 +4,11 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { WaterSource } from "@prisma/client";
 import { WATER_SOURCE_OPTIONS } from "@/lib/water";
+import { useTerms } from "@/components/TermsProvider";
 import { updateWaterSource } from "./actions";
 
 export function WaterSourceForm({ current }: { current: WaterSource }) {
+  const terms = useTerms();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function WaterSourceForm({ current }: { current: WaterSource }) {
     >
       {current === "UNSET" && (
         <p className="rounded-md bg-warning-subtle px-3 py-2 text-xs text-warning-fg">
-          Tell us how your subdivision gets water to finish setting up.
+          Tell us how your {terms.community} gets water to finish setting up.
         </p>
       )}
       {WATER_SOURCE_OPTIONS.map((o) => (

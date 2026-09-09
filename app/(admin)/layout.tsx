@@ -6,6 +6,8 @@ import { TrialBanner } from "@/components/TrialBanner";
 import { getNotificationSummary } from "@/lib/notifications";
 import { waterMetered } from "@/lib/water";
 import { trialDaysLeft } from "@/lib/trial";
+import { TermsProvider } from "@/components/TermsProvider";
+import { termsFor } from "@/lib/terms";
 
 export default async function AdminLayout({
   children,
@@ -20,6 +22,7 @@ export default async function AdminLayout({
   const daysLeft = trialDaysLeft(org);
 
   return (
+    <TermsProvider value={termsFor(org.communityType)}>
     <div className="flex min-h-dvh flex-col">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
@@ -43,5 +46,6 @@ export default async function AdminLayout({
         </div>
       </div>
     </div>
+    </TermsProvider>
   );
 }

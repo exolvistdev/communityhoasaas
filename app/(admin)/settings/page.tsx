@@ -14,11 +14,13 @@ import { WaterBulkSettingsForm } from "./WaterBulkSettingsForm";
 import { WaterSourceForm } from "./WaterSourceForm";
 import { waterConfig } from "@/lib/water-billing";
 import { PageHeader } from "@/components/PageHeader";
+import { termsFor } from "@/lib/terms";
 
 export const metadata = { title: "Settings · HOA SaaS" };
 
 export default async function SettingsPage() {
   const { org, user } = await requireRole("ADMIN");
+  const terms = termsFor(org.communityType);
 
   const plans = await prisma.ratePlan.findMany({
     where: { orgId: org.id },
@@ -177,8 +179,8 @@ export default async function SettingsPage() {
         <div>
           <h2 className="text-sm font-semibold text-fg">Water</h2>
           <p className="text-xs text-fg-muted">
-            How your subdivision gets water. This sets up (or hides) sub-metering
-            and picks the billing method.
+            How your {terms.community} gets water. This sets up (or hides)
+            sub-metering and picks the billing method.
           </p>
         </div>
         <WaterSourceForm current={org.waterSource} />

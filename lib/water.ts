@@ -20,12 +20,12 @@ export const WATER_SOURCE_OPTIONS: {
   {
     value: "EXTERNAL_BULK",
     label: "A water utility, through one master meter",
-    hint: "Maynilad / Manila Water / Laguna Water / Prime Water bills the HOA one bill; the HOA sub-meters each unit and divides it.",
+    hint: "Maynilad / Manila Water / Laguna Water / Prime Water bills the association one bill; the association sub-meters each unit and divides it.",
   },
   {
     value: "EXTERNAL_DIRECT",
-    label: "A water utility, one account per lot",
-    hint: "Each home has its own utility account and pays the provider directly — the HOA isn't involved in water billing.",
+    label: "A water utility, one account per unit",
+    hint: "Each unit has its own utility account and pays the provider directly — the association isn't involved in water billing.",
   },
 ];
 

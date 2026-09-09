@@ -10,6 +10,8 @@ import { PortalTabBar } from "@/components/PortalTabBar";
 import { UnitSwitcher } from "@/components/UnitSwitcher";
 import { getNotificationSummary } from "@/lib/notifications";
 import { trialDaysLeft } from "@/lib/trial";
+import { TermsProvider } from "@/components/TermsProvider";
+import { termsFor } from "@/lib/terms";
 
 export const metadata = { title: "Homeowner portal · HOA SaaS" };
 
@@ -50,6 +52,7 @@ export default async function PortalLayout({
   const daysLeft = trialDaysLeft(org);
 
   return (
+    <TermsProvider value={termsFor(org.communityType)}>
     <div className="min-h-dvh bg-bg">
       {impersonating && (
         <ImpersonationBanner name={user.fullName} role={user.role} />
@@ -109,5 +112,6 @@ export default async function PortalLayout({
 
       <PortalTabBar unread={unread} openRequests={openRequests} />
     </div>
+    </TermsProvider>
   );
 }

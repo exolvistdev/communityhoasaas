@@ -99,7 +99,7 @@ const ACTION_LABEL: Record<string, string> = {
   "water.bill_bulk": "Split the utility water bill",
   "water.adjust": "Corrected a billed water reading",
   "water.reminder": "Sent a water-reading reminder",
-  "water.source_update": "Set the subdivision's water source",
+  "water.source_update": "Set the community's water source",
   "settings.water_update": "Updated water billing settings",
   "settings.community_type_update": "Changed the community type",
 };

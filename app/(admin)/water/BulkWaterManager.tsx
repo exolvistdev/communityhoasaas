@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { peso, periodLabel } from "@/lib/format";
 import { formatConsumption } from "@/lib/water";
+import { useTerms } from "@/components/TermsProvider";
 import type { MeterRow } from "@/lib/water-billing";
 import {
   addSourceMeter,
@@ -74,6 +75,7 @@ export function BulkWaterManager({
   period: string;
   data: BulkData;
 }) {
+  const terms = useTerms();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -234,7 +236,7 @@ export function BulkWaterManager({
             className="flex flex-wrap items-end gap-2 text-sm"
           >
             <span className="text-xs text-fg-muted">
-              Add the utility&apos;s master meter for the whole subdivision.
+              Add the utility&apos;s master meter for the whole {terms.community}.
             </span>
             <label className="block">
               <span className="text-xs text-fg-subtle">Serial (optional)</span>
