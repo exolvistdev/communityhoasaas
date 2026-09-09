@@ -20,8 +20,9 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
           <div className="space-y-2">
             <Wordmark label="HOA Manager" />
             <p className="max-w-xs text-sm text-fg-muted">
-              HOA management built for Philippine subdivisions — peso billing,
-              GCash and Maya, an auditable ledger.
+              HOA and condo management built for Philippine subdivisions,
+              villages and condominiums — peso billing, GCash and Maya, an
+              auditable ledger.
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">

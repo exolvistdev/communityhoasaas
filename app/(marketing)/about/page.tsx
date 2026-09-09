@@ -4,7 +4,7 @@ import { CtaBand } from "@/components/marketing/CtaBand";
 export const metadata: Metadata = {
   title: "About · HOA Manager",
   description:
-    "Why HOA Manager exists: HOA software built from how Philippine subdivisions actually operate, not adapted from a foreign template.",
+    "Why HOA Manager exists: software built from how Philippine subdivisions, villages and condominiums actually operate, not adapted from a foreign template.",
   alternates: { canonical: "/about" },
 };
 
@@ -20,9 +20,10 @@ export default function AboutPage() {
           <p>
             Most HOA software is built for North American associations — monthly
             ACH drafts, no concept of GCash or Maya, prices in dollars.
-            Philippine subdivisions run differently: manual payment methods, a
-            treasurer reconciling references by hand, a guardhouse with a
-            logbook, dues that vary by property type.
+            Philippine subdivisions, villages and condominiums run differently:
+            manual payment methods, a treasurer reconciling references by hand, a
+            guardhouse with a logbook, dues that vary by property type or floor
+            area.
           </p>
           <p>
             HOA Manager was built from those specifics rather than adapted from a

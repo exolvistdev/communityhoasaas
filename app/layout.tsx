@@ -14,7 +14,8 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
   ),
   title: "HOA Manager",
-  description: "HOA management platform for Philippine subdivisions",
+  description:
+    "HOA and condo management platform for Philippine subdivisions, villages and condominiums",
   openGraph: { siteName: "HOA Manager", type: "website" },
 };
 

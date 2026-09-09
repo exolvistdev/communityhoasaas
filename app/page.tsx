@@ -5,9 +5,9 @@ import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { HomeSections } from "@/components/marketing/HomeSections";
 
 export const metadata: Metadata = {
-  title: "HOA Manager — HOA management for Philippine subdivisions",
+  title: "HOA Manager — HOA & condo management for the Philippines",
   description:
-    "Dues billing, an auditable ledger, a homeowner portal, and gate security in one system built for the Philippines — GCash, Maya, and pesos.",
+    "Dues billing, an auditable ledger, a resident portal, and gate security in one system built for Philippine subdivisions, villages and condominiums — GCash, Maya, and pesos.",
   alternates: { canonical: "/" },
 };
 

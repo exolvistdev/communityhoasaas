@@ -71,11 +71,12 @@ export function HomeSections() {
       <section className="bg-brand bg-gradient-to-br from-brand-hi to-brand text-brand-fg">
         <div className="mx-auto max-w-5xl px-5 py-20 sm:py-28">
           <h1 className="font-display max-w-3xl text-3xl font-semibold leading-tight sm:text-5xl">
-            HOA management, built for Philippine subdivisions.
+            HOA and condo management, built for the Philippines.
           </h1>
           <p className="mt-5 max-w-2xl text-base text-brand-fg/80 sm:text-lg">
-            Dues billing, an auditable ledger, a homeowner portal, and gate
-            security in one system that speaks GCash, Maya, and pesos.
+            Dues billing, an auditable ledger, a resident portal, and gate
+            security in one system — for subdivisions, villages and
+            condominiums, and it speaks GCash, Maya, and pesos.
           </p>
           <div className="mt-8">
             <Link
@@ -116,7 +117,7 @@ export function HomeSections() {
             One system for the whole association.
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-fg-muted">
-            Five things every subdivision needs, working together instead of in
+            Five things every community needs, working together instead of in
             five separate spreadsheets.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
