@@ -153,6 +153,28 @@ describe("validateRows", () => {
     ]);
   });
 
+  it("fills a blank rate from ₱/sqm × floor area on a PER_SQM org", () => {
+    const res = validateRows(
+      [
+        { unit: "TA-1203", type: "condo", rate: "", "Floor Area": "45" },
+        { unit: "TA-1204", type: "condo", rate: "", "Floor Area": "" },
+      ],
+      { duesRateMode: "PER_SQM", duesRatePerSqm: 85 }
+    );
+    expect(res.valid).toEqual([
+      {
+        unitNumber: "TA-1203",
+        type: "CONDO_UNIT",
+        monthlyRate: 3825,
+        floorArea: 45,
+      },
+    ]);
+    // no floor area, no per-sqm rate possible → an error, not a silent drop
+    expect(res.errors).toEqual([
+      expect.objectContaining({ line: 2, field: "monthlyRate" }),
+    ]);
+  });
+
   it("names the accepted types in the unknown-type error", () => {
     const res = validateRows([{ unit: "A", type: "mansion", rate: "1500" }]);
     expect(res.errors[0].field).toBe("type");

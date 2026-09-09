@@ -72,6 +72,21 @@ export default async function SettingsPage() {
     })
   );
 
+  // Per-sqm: non-plan units with a floor area whose stored rate is off the
+  // current ₱/sqm × area.
+  let perSqmOffRate = 0;
+  if (org.duesRateMode === "PER_SQM" && org.duesRatePerSqm != null) {
+    const rate = Number(org.duesRatePerSqm);
+    const [{ count }] = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*)::bigint AS count FROM "properties"
+       WHERE "orgId" = ${org.id}
+         AND "ratePlanId" IS NULL
+         AND "archivedAt" IS NULL
+         AND "floorArea" IS NOT NULL
+         AND "monthlyRate" <> ROUND(${rate}::numeric * "floorArea", 2)`;
+    perSqmOffRate = Number(count);
+  }
+
   return (
     <div className="max-w-2xl space-y-8">
       <PageHeader title="Settings" />
@@ -130,15 +145,21 @@ export default async function SettingsPage() {
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-fg">
-            Default rates by property type
-          </h2>
+          <h2 className="text-sm font-semibold text-fg">Default dues rate</h2>
           <p className="text-xs text-fg-muted">
-            A fallback monthly due for units without a rate plan or a custom
-            rate — handy for bulk CSV imports.
+            How a unit&apos;s monthly dues are set when it has no rate plan and
+            no custom rate — by property type, or per square metre of floor area
+            (condominiums).
           </p>
         </div>
-        <TypeRatesForm rows={typeRows} />
+        <TypeRatesForm
+          rows={typeRows}
+          duesRateMode={org.duesRateMode}
+          duesRatePerSqm={
+            org.duesRatePerSqm != null ? Number(org.duesRatePerSqm) : null
+          }
+          perSqmOffRate={perSqmOffRate}
+        />
       </section>
 
       <section className="space-y-3">

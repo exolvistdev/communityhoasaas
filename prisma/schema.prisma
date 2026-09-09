@@ -77,6 +77,13 @@ enum CommunityType {
   MIXED
 }
 
+// How default monthly dues are computed for a unit with no rate plan / custom
+// rate. PER_SQM (duesRatePerSqm × floorArea) is the condominium norm.
+enum DuesRateMode {
+  BY_TYPE
+  PER_SQM
+}
+
 model Organization {
   id            String    @id @default(uuid())
   name          String
@@ -100,11 +107,18 @@ model Organization {
   mayaName            String?
   mayaQrPath          String? // uploaded Maya QR image
   paymentInstructions String? // bank transfer + cash / office-hours notes
+  // How a unit's monthly dues are set when it has neither a rate plan nor a
+  // custom rate: BY_TYPE uses the typeRate* default for its property type;
+  // PER_SQM multiplies duesRatePerSqm by the unit's floorArea (condominiums).
+  duesRateMode   DuesRateMode @default(BY_TYPE)
+  duesRatePerSqm Decimal?     @db.Decimal(12, 2)
   // Default monthly dues by property type — used when a unit has neither a rate
   // plan nor a custom rate. Null = no default for that type.
   typeRateResidential Decimal? @db.Decimal(12, 2)
   typeRateCommercial  Decimal? @db.Decimal(12, 2)
   typeRateTownhouse   Decimal? @db.Decimal(12, 2)
+  typeRateCondoUnit   Decimal? @db.Decimal(12, 2)
+  typeRateParking     Decimal? @db.Decimal(12, 2)
   // Late fees (opt-in, per HOA). amount is pesos when FIXED, a percent when PERCENT.
   lateFeeEnabled        Boolean     @default(false)
   lateFeeType           LateFeeType @default(FIXED)

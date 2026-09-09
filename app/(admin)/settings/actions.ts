@@ -8,6 +8,7 @@ import { denyUnless } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 import { uploadPaymentQr, deletePaymentQr } from "@/lib/payment-qr";
 import { validateBands, type RateBand } from "@/lib/water";
+import { reapplyPerSqm } from "@/lib/rate-reapply";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -288,6 +289,8 @@ const optionalRate = z.preprocess(
 );
 
 const typeRatesSchema = z.object({
+  duesRateMode: z.enum(["BY_TYPE", "PER_SQM"]).optional(),
+  duesRatePerSqm: optionalRate,
   typeRateResidential: optionalRate,
   typeRateCommercial: optionalRate,
   typeRateTownhouse: optionalRate,
@@ -303,9 +306,15 @@ export async function updateTypeRates(input: unknown): Promise<Result> {
 
   const { org } = await getCurrentOrgContext();
   const d = parsed.data;
+
+  if (d.duesRateMode === "PER_SQM" && (d.duesRatePerSqm ?? 0) <= 0)
+    return { ok: false, error: "Enter a per-sqm rate greater than 0" };
+
   await prisma.organization.update({
     where: { id: org.id },
     data: {
+      duesRateMode: d.duesRateMode ?? org.duesRateMode,
+      duesRatePerSqm: d.duesRatePerSqm ?? null,
       typeRateResidential: d.typeRateResidential ?? null,
       typeRateCommercial: d.typeRateCommercial ?? null,
       typeRateTownhouse: d.typeRateTownhouse ?? null,
@@ -313,8 +322,33 @@ export async function updateTypeRates(input: unknown): Promise<Result> {
   });
 
   revalidateAll();
-  await logAudit({ action: "settings.type_rates_update" });
+  await logAudit({
+    action: "settings.type_rates_update",
+    detail: d.duesRateMode === "PER_SQM" ? "per-sqm" : undefined,
+  });
   return { ok: true };
+}
+
+/** Set monthlyRate = duesRatePerSqm × floorArea for every non-plan, non-archived
+ *  property that has a floor area. */
+export async function reapplyPerSqmRate(): Promise<Result<{ updated: number }>> {
+  const denied = await guardRatePlan();
+  if (denied) return denied;
+
+  const { org } = await getCurrentOrgContext();
+  if (org.duesRateMode !== "PER_SQM" || org.duesRatePerSqm == null)
+    return { ok: false, error: "Set a per-sqm rate first" };
+
+  const updated = await reapplyPerSqm(prisma, org.id, Number(org.duesRatePerSqm));
+
+  revalidateAll();
+  if (updated > 0)
+    await logAudit({
+      action: "settings.type_rates_reapply",
+      target: "per-sqm",
+      detail: `${updated} propert${updated === 1 ? "y" : "ies"}`,
+    });
+  return { ok: true, updated };
 }
 
 const TYPE_FIELD = {

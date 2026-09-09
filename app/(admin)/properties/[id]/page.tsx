@@ -195,6 +195,10 @@ export default async function PropertyDetailPage({
           }))}
           typeDefaults={toTypeRateDefaults(org)}
           buildings={buildings.map((b) => b.name)}
+          duesRateMode={org.duesRateMode}
+          duesRatePerSqm={
+            org.duesRatePerSqm != null ? Number(org.duesRatePerSqm) : null
+          }
         />
       )}
 

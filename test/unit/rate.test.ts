@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   typeDefaultRate,
   resolvePropertyRate,
+  perSqmRate,
   toTypeRateDefaults,
   TYPE_RATE_FIELD,
   ALL_PROPERTY_TYPES,
@@ -63,11 +64,15 @@ describe("toTypeRateDefaults", () => {
         typeRateResidential: "1500.00",
         typeRateCommercial: null,
         typeRateTownhouse: 2200,
+        typeRateCondoUnit: null,
+        typeRateParking: undefined,
       })
     ).toEqual({
       typeRateResidential: 1500,
       typeRateCommercial: null,
       typeRateTownhouse: 2200,
+      typeRateCondoUnit: null,
+      typeRateParking: null,
     });
   });
 });
@@ -96,5 +101,64 @@ describe("resolvePropertyRate", () => {
     expect(
       resolvePropertyRate({ customRate: 0, type: "RESIDENTIAL" }, defaults)
     ).toBe(0);
+  });
+});
+
+describe("perSqmRate", () => {
+  it("multiplies ₱/sqm by floor area", () => {
+    expect(perSqmRate(85, 45)).toBe(3825);
+    expect(perSqmRate(75.5, 32.4)).toBe(2446.2);
+  });
+  it("is null when either input is missing or non-positive", () => {
+    expect(perSqmRate(null, 45)).toBeNull();
+    expect(perSqmRate(85, null)).toBeNull();
+    expect(perSqmRate(0, 45)).toBeNull();
+    expect(perSqmRate(85, 0)).toBeNull();
+  });
+});
+
+describe("resolvePropertyRate — PER_SQM", () => {
+  const ctx = { duesRateMode: "PER_SQM" as const, duesRatePerSqm: 85 };
+
+  it("uses ₱/sqm × floor area when the org is on PER_SQM", () => {
+    expect(
+      resolvePropertyRate(
+        { type: "CONDO_UNIT", floorArea: 45 },
+        defaults,
+        ctx
+      )
+    ).toBe(3825);
+  });
+  it("a rate plan still beats per-sqm", () => {
+    expect(
+      resolvePropertyRate(
+        { type: "CONDO_UNIT", floorArea: 45, ratePlanRate: 2000 },
+        defaults,
+        ctx
+      )
+    ).toBe(2000);
+  });
+  it("a custom rate still beats per-sqm", () => {
+    expect(
+      resolvePropertyRate(
+        { type: "CONDO_UNIT", floorArea: 45, customRate: 1500 },
+        defaults,
+        ctx
+      )
+    ).toBe(1500);
+  });
+  it("falls back to the by-type default when the unit has no floor area", () => {
+    expect(
+      resolvePropertyRate({ type: "RESIDENTIAL" }, defaults, ctx)
+    ).toBe(1500);
+  });
+  it("BY_TYPE orgs ignore per-sqm entirely", () => {
+    expect(
+      resolvePropertyRate(
+        { type: "RESIDENTIAL", floorArea: 45 },
+        defaults,
+        { duesRateMode: "BY_TYPE", duesRatePerSqm: 85 }
+      )
+    ).toBe(1500);
   });
 });

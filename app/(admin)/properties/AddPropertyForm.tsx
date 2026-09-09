@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { DuesRateMode } from "@prisma/client";
 import { peso } from "@/lib/format";
-import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
+import { typeDefaultRate, perSqmRate, type TypeRateDefaults } from "@/lib/rate";
 import { addProperty } from "./actions";
 
 type Plan = { id: string; name: string; monthlyRate: number };
@@ -18,10 +19,14 @@ export function AddPropertyForm({
   ratePlans,
   typeDefaults,
   buildings = [],
+  duesRateMode = "BY_TYPE",
+  duesRatePerSqm = null,
 }: {
   ratePlans: Plan[];
   typeDefaults: TypeRateDefaults;
   buildings?: string[];
+  duesRateMode?: DuesRateMode;
+  duesRatePerSqm?: number | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -32,9 +37,14 @@ export function AddPropertyForm({
   const isCondo = type === "CONDO_UNIT" || type === "PARKING_SLOT";
   const [rateChoice, setRateChoice] = useState("custom");
   const [customRate, setCustomRate] = useState("");
+  const [floorArea, setFloorArea] = useState("");
 
   const selectedPlan = ratePlans.find((p) => p.id === rateChoice) ?? null;
   const typeDefault = typeDefaultRate(typeDefaults, type);
+  const perSqm =
+    duesRateMode === "PER_SQM"
+      ? perSqmRate(duesRatePerSqm, Number(floorArea) || null)
+      : null;
   const usingTypeDefault = rateChoice === "type-default";
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -54,7 +64,7 @@ export function AddPropertyForm({
         ratePlanId: selectedPlan ? selectedPlan.id : "",
         building: isCondo ? fd.get("building") : "",
         floor: isCondo ? fd.get("floor") : "",
-        floorArea: isCondo ? fd.get("floorArea") : "",
+        floorArea: isCondo ? floorArea : "",
         homeownerName: fd.get("homeownerName"),
         homeownerEmail: fd.get("homeownerEmail"),
       });
@@ -63,6 +73,7 @@ export function AddPropertyForm({
         setType("RESIDENTIAL");
         setRateChoice("custom");
         setCustomRate("");
+        setFloorArea("");
         setOpen(false);
         router.refresh();
       } else setError(res.error);
@@ -125,10 +136,16 @@ export function AddPropertyForm({
                 {p.name} — {peso(p.monthlyRate)}
               </option>
             ))}
-            {typeDefault != null && (
+            {duesRateMode === "PER_SQM" ? (
               <option value="type-default">
-                Use type default — {peso(typeDefault)}
+                Per-sqm rate{perSqm != null ? ` — ${peso(perSqm)}` : ""}
               </option>
+            ) : (
+              typeDefault != null && (
+                <option value="type-default">
+                  Use type default — {peso(typeDefault)}
+                </option>
+              )
             )}
             <option value="custom">Custom rate…</option>
           </select>
@@ -174,10 +191,11 @@ export function AddPropertyForm({
             <label className="text-sm">
               <span className="text-fg">Floor area (sqm)</span>
               <input
-                name="floorArea"
                 type="number"
                 min="0"
                 step="0.01"
+                value={floorArea}
+                onChange={(e) => setFloorArea(e.target.value)}
                 placeholder="45"
                 className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
               />

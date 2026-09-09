@@ -7,7 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import type { ValidRow } from "@/lib/csv";
-import { typeDefaultRate, toTypeRateDefaults } from "@/lib/rate";
+import {
+  resolvePropertyRate,
+  toTypeRateDefaults,
+  toDuesRateContext,
+} from "@/lib/rate";
 import { resolveBuildingId } from "@/lib/buildings";
 
 const PROPERTY_TYPE = z.enum([
@@ -74,13 +78,20 @@ export async function addProperty(input: unknown): Promise<AddPropertyResult> {
   } else if (d.monthlyRate !== undefined) {
     monthlyRate = d.monthlyRate;
   } else {
-    const fallback = typeDefaultRate(toTypeRateDefaults(org), d.type);
+    const fallback = resolvePropertyRate(
+      { type: d.type, floorArea: d.floorArea ?? null },
+      toTypeRateDefaults(org),
+      toDuesRateContext(org)
+    );
     if (fallback === null)
       return {
         ok: false,
-        error: `Enter a rate, pick a plan, or set a ${d.type
-          .toLowerCase()
-          .replace("_", " ")} default in Settings`,
+        error:
+          org.duesRateMode === "PER_SQM"
+            ? "Enter a rate, pick a plan, or add a floor area so the per-sqm rate applies"
+            : `Enter a rate, pick a plan, or set a ${d.type
+                .toLowerCase()
+                .replace("_", " ")} default in Settings`,
       };
     monthlyRate = fallback;
   }

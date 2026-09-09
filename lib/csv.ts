@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { PropertyType } from "@prisma/client";
-import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
+import type { PropertyType, DuesRateMode } from "@prisma/client";
+import { typeDefaultRate, perSqmRate, type TypeRateDefaults } from "@/lib/rate";
 
 /* ── CSV writing ──────────────────────────────────────────────────────
  * Shared by every downloadable-CSV route handler. */
@@ -209,7 +209,11 @@ function resolveHeaders(headers: string[]) {
  */
 export function validateRows(
   rawRows: RawRow[],
-  opts: { typeDefaults?: TypeRateDefaults } = {}
+  opts: {
+    typeDefaults?: TypeRateDefaults;
+    duesRateMode?: DuesRateMode;
+    duesRatePerSqm?: number | null;
+  } = {}
 ): ParseResult {
   const headers = rawRows.length ? Object.keys(rawRows[0]) : [];
   const { map, missing } = resolveHeaders(headers);
@@ -261,15 +265,23 @@ export function validateRows(
 
     let monthlyRate = parsed.data.monthlyRate;
     if (monthlyRate === undefined) {
-      const fallback = opts.typeDefaults
-        ? typeDefaultRate(opts.typeDefaults, parsed.data.type)
-        : null;
+      const perSqm =
+        opts.duesRateMode === "PER_SQM"
+          ? perSqmRate(opts.duesRatePerSqm, parsed.data.floorArea)
+          : null;
+      const fallback =
+        perSqm ??
+        (opts.typeDefaults
+          ? typeDefaultRate(opts.typeDefaults, parsed.data.type)
+          : null);
       if (fallback === null) {
         errors.push({
           line,
           field: "monthlyRate",
           message:
-            "No monthly rate, and no default set for this property type — add a rate column or set type defaults in Settings",
+            opts.duesRateMode === "PER_SQM"
+              ? "No monthly rate — add a rate column, or a floor area so the per-sqm rate applies"
+              : "No monthly rate, and no default set for this property type — add a rate column or set type defaults in Settings",
         });
         return;
       }

@@ -7,7 +7,11 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { generateInviteLink } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
-import { typeDefaultRate, toTypeRateDefaults } from "@/lib/rate";
+import {
+  resolvePropertyRate,
+  toTypeRateDefaults,
+  toDuesRateContext,
+} from "@/lib/rate";
 import { resolveBuildingId } from "@/lib/buildings";
 import { postRefund } from "@/lib/ledger";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
@@ -122,11 +126,20 @@ export async function updateProperty(
     monthlyRate = d.customRate;
     ratePlanId = null;
   } else {
-    const fallback = typeDefaultRate(toTypeRateDefaults(org), d.type);
+    const fallback = resolvePropertyRate(
+      { type: d.type, floorArea: d.floorArea ?? null },
+      toTypeRateDefaults(org),
+      toDuesRateContext(org)
+    );
     if (fallback === null)
       return {
         ok: false,
-        error: `No ${d.type.toLowerCase()} default is set. Add one in Settings, or enter a rate.`,
+        error:
+          org.duesRateMode === "PER_SQM"
+            ? "Set a floor area so the per-sqm rate applies, or enter a rate."
+            : `No ${d.type
+                .toLowerCase()
+                .replace("_", " ")} default is set. Add one in Settings, or enter a rate.`,
       };
     monthlyRate = fallback;
     ratePlanId = null;

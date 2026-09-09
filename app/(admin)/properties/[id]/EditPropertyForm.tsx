@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { DuesRateMode } from "@prisma/client";
 import { peso } from "@/lib/format";
-import { typeDefaultRate, type TypeRateDefaults } from "@/lib/rate";
+import { typeDefaultRate, perSqmRate, type TypeRateDefaults } from "@/lib/rate";
 import { createRatePlan } from "../../settings/actions";
 import { updateProperty } from "./actions";
 
@@ -30,6 +31,8 @@ type Props = {
   ratePlans: Plan[];
   typeDefaults: TypeRateDefaults;
   buildings?: string[];
+  duesRateMode?: DuesRateMode;
+  duesRatePerSqm?: number | null;
 };
 
 export function EditPropertyForm({
@@ -37,6 +40,8 @@ export function EditPropertyForm({
   ratePlans,
   typeDefaults,
   buildings = [],
+  duesRateMode = "BY_TYPE",
+  duesRatePerSqm = null,
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -57,6 +62,10 @@ export function EditPropertyForm({
   );
 
   const typeDefault = typeDefaultRate(typeDefaults, type);
+  const perSqm =
+    duesRateMode === "PER_SQM"
+      ? perSqmRate(duesRatePerSqm, Number(floorArea) || null)
+      : null;
 
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [newPlanName, setNewPlanName] = useState("");
@@ -207,10 +216,16 @@ export function EditPropertyForm({
               {p.name} — {peso(p.monthlyRate)}
             </option>
           ))}
-          {typeDefault != null && (
+          {duesRateMode === "PER_SQM" ? (
             <option value="type-default">
-              Use type default — {peso(typeDefault)}
+              Per-sqm rate{perSqm != null ? ` — ${peso(perSqm)}` : ""}
             </option>
+          ) : (
+            typeDefault != null && (
+              <option value="type-default">
+                Use type default — {peso(typeDefault)}
+              </option>
+            )
           )}
           <option value="custom">Custom rate…</option>
         </select>

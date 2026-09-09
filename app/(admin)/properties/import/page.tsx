@@ -6,5 +6,13 @@ export const metadata = { title: "Import properties · HOA SaaS" };
 
 export default async function ImportPropertiesPage() {
   const { org } = await requirePermission("property:write");
-  return <ImportClient typeDefaults={toTypeRateDefaults(org)} />;
+  return (
+    <ImportClient
+      typeDefaults={toTypeRateDefaults(org)}
+      duesRateMode={org.duesRateMode}
+      duesRatePerSqm={
+        org.duesRatePerSqm != null ? Number(org.duesRatePerSqm) : null
+      }
+    />
+  );
 }

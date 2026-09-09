@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import Papa from "papaparse";
 import { peso } from "@/lib/format";
+import type { DuesRateMode } from "@prisma/client";
 import { validateRows, type ParseResult } from "@/lib/csv";
 import { type TypeRateDefaults, PROPERTY_TYPE_LABEL } from "@/lib/rate";
 import { importProperties } from "@/app/(admin)/properties/actions";
@@ -18,6 +19,8 @@ export function PropertyCsvImport({
   onSkip,
   skipLabel = "Skip for now",
   typeDefaults,
+  duesRateMode,
+  duesRatePerSqm,
 }: {
   onComplete: () => void;
   completeLabel?: string;
@@ -28,6 +31,9 @@ export function PropertyCsvImport({
   skipLabel?: string;
   /** Org defaults used to fill in a missing rate column, per property type. */
   typeDefaults?: TypeRateDefaults;
+  /** When PER_SQM, a blank rate is filled from duesRatePerSqm × the row's floor area. */
+  duesRateMode?: DuesRateMode;
+  duesRatePerSqm?: number | null;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -51,11 +57,13 @@ export function PropertyCsvImport({
           setParseError("Could not read this file as CSV.");
           return;
         }
-        setResult(validateRows(out.data, { typeDefaults }));
+        setResult(
+          validateRows(out.data, { typeDefaults, duesRateMode, duesRatePerSqm })
+        );
       },
       error: () => setParseError("Could not read this file."),
     });
-  }, [typeDefaults]);
+  }, [typeDefaults, duesRateMode, duesRatePerSqm]);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
