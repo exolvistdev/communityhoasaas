@@ -42,6 +42,12 @@ import {
 } from "../lib/maintenance-photos";
 import { qrPngBase64 } from "../lib/qr";
 import { createAdminClient } from "../lib/supabase/admin";
+import {
+  seedCondo,
+  resetCondoOrg,
+  CONDO_STAFF,
+  CONDO_HOMEOWNERS,
+} from "./seed-condo";
 
 const prisma = new PrismaClient();
 
@@ -83,7 +89,13 @@ type SeededAuth = Record<string, string | null>; // email -> authId
 async function createDemoAuthUsers(): Promise<SeededAuth> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const all = [...DEMO_STAFF, ...DEMO_HOMEOWNERS, PLATFORM_ADMIN];
+  const all = [
+    ...DEMO_STAFF,
+    ...DEMO_HOMEOWNERS,
+    ...CONDO_STAFF,
+    ...CONDO_HOMEOWNERS,
+    PLATFORM_ADMIN,
+  ];
   const out: SeededAuth = {};
   if (!url || !key) {
     console.log("  (no service-role key — skipping auth users; DB-only demo)");
@@ -218,6 +230,7 @@ async function main() {
     );
   }
   await resetDemoOrg();
+  await resetCondoOrg(prisma);
   const auth = await createDemoAuthUsers();
   await ensureMarketplaceBucket().catch((e) =>
     console.log("  (marketplace bucket setup skipped:", e.message, ")")
@@ -1701,6 +1714,15 @@ async function main() {
       console.log(`    HOMEOWNER     ${h.email}`);
     if (auth[PLATFORM_ADMIN.email])
       console.log(`    PLATFORM     ${PLATFORM_ADMIN.email}  (sign in at /platform/login)`);
+  }
+
+  const condo = await seedCondo(prisma, auth);
+  console.log(`Seeded "${condo.name}" (${condo.subdomain})`);
+  if (auth["admin@sample-condo.ph"]) {
+    console.log(`  logins (password: ${DEMO_PASSWORD}):`);
+    for (const s of CONDO_STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
+    for (const h of CONDO_HOMEOWNERS)
+      console.log(`    HOMEOWNER     ${h.email}`);
   }
 }
 
