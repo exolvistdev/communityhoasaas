@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteLegalLine } from "@/components/SiteLegalLine";
 
 /** Shared shell for the standalone /privacy and /terms pages — no marketing
  *  chrome, just a centred column, so the two stay visually identical. */
@@ -40,6 +41,8 @@ export function LegalPage({
           </Link>
         )}
       </p>
+
+      <SiteLegalLine className="mt-6 text-xs leading-relaxed text-fg-subtle" />
     </main>
   );
 }

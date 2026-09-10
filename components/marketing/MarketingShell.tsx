@@ -3,6 +3,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { MarketingHeader } from "./MarketingHeader";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ConsentedAnalytics } from "@/components/ConsentedAnalytics";
+import { SiteLegalLine } from "@/components/SiteLegalLine";
 
 const NAV = [
   { href: "/features", label: "Features" },
@@ -49,12 +50,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
         <div className="border-t border-border">
-          <p className="mx-auto max-w-5xl px-5 py-4 text-xs text-fg-subtle">
-            © {new Date().getFullYear()} HOA Manager · Built for the Philippines
-            <span className="mx-1.5">·</span>
-            Designed and built by{" "}
-            <span className="font-medium text-fg-muted">Exolvist</span>
-          </p>
+          <SiteLegalLine className="mx-auto max-w-5xl px-5 py-4 text-xs leading-relaxed text-fg-subtle" />
         </div>
       </footer>
 
