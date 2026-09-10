@@ -12,19 +12,29 @@ export async function logAudit(entry: {
   detail?: string;
 }) {
   try {
-    const { org, user } = await getCurrentOrgContext();
+    const ctx = await getCurrentOrgContext();
+    // When a platform operator is impersonating, record THEM as the actor —
+    // the tenant's own audit trail must not blame the customer for a
+    // platform-side action.
+    const actorId = ctx.impersonating ? null : ctx.user.id;
+    const actorName = ctx.impersonating
+      ? `${ctx.realActor.fullName} · platform operator (as ${ctx.user.fullName})`
+      : ctx.user.fullName;
     await prisma.auditEvent.create({
       data: {
-        orgId: org.id,
-        actorId: user.id,
-        actorName: user.fullName,
+        orgId: ctx.org.id,
+        actorId,
+        actorName,
         action: entry.action,
         target: entry.target ?? null,
         detail: entry.detail ?? null,
       },
     });
-  } catch {
-    // best-effort only
+  } catch (e) {
+    // Best-effort — a logging hiccup must not break the action it logs — but
+    // surface the failure so audit-trail gaps are detectable (financial
+    // actions especially).
+    console.error("[audit] failed to record", entry.action, e);
   }
 }
 
@@ -49,7 +59,7 @@ export async function logSystemAudit(
         detail: detail ?? null,
       },
     });
-  } catch {
-    // best-effort only
+  } catch (e) {
+    console.error("[audit] failed to record", action, e);
   }
 }

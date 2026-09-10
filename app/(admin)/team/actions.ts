@@ -37,8 +37,11 @@ export async function inviteMember(
   const { org } = await getCurrentOrgContext();
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing)
+  if (existing?.orgId === org.id)
     return { ok: false, error: "Someone with that email is already on the team" };
+  if (existing)
+    // exists in another org — don't confirm that (account enumeration)
+    return { ok: false, error: "Couldn't send an invite to that address." };
 
   const invite = await generateInviteLink(email, fullName, {
     orgName: org.name,

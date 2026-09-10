@@ -161,6 +161,15 @@ export async function updateProperty(
     },
   });
 
+  const rateChanged = Number(property.monthlyRate) !== monthlyRate;
+  await logAudit({
+    action: "property.update",
+    target: d.unitNumber,
+    detail: rateChanged
+      ? `dues ₱${Number(property.monthlyRate)} → ₱${monthlyRate}`
+      : undefined,
+  });
+
   revalidateProperty(id);
   return { ok: true };
 }
@@ -401,7 +410,8 @@ export async function inviteHomeowner(
       revalidateProperty(person.property.id);
       return { ok: true, actionLink: null };
     }
-    return { ok: false, error: "That email already has an account" };
+    // exists in another org — don't confirm that (account enumeration)
+    return { ok: false, error: "Couldn't invite that address." };
   }
 
   const invite = await generateInviteLink(person.email, person.fullName, {

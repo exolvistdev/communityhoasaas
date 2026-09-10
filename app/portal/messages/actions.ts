@@ -52,8 +52,16 @@ const bodySchema = z.object({
   body: z.string().trim().min(1, "Write a message").max(2000),
 });
 
-async function participantConversation(id: string, userId: string) {
-  const convo = await prisma.marketConversation.findUnique({ where: { id } });
+async function participantConversation(
+  id: string,
+  userId: string,
+  orgId: string
+) {
+  // Scope to the org too (defense in depth — participant ids are already
+  // org-bound, but match the admin side's { id, orgId } pattern).
+  const convo = await prisma.marketConversation.findFirst({
+    where: { id, orgId },
+  });
   if (!convo) return null;
   if (convo.buyerId !== userId && convo.sellerId !== userId) return null;
   return convo;
@@ -67,8 +75,8 @@ export async function sendMessage(
   if (!parsed.success)
     return { ok: false, error: parsed.error.issues[0].message };
 
-  const { user } = await getHomeownerContext();
-  const convo = await participantConversation(conversationId, user.id);
+  const { user, org } = await getHomeownerContext();
+  const convo = await participantConversation(conversationId, user.id, org.id);
   if (!convo) return { ok: false, error: "Conversation not found" };
   if (convo.closedAt)
     return { ok: false, error: "A moderator closed this conversation" };
@@ -101,8 +109,8 @@ export async function sendMessage(
 export async function markConversationRead(
   conversationId: string
 ): Promise<Result> {
-  const { user } = await getHomeownerContext();
-  const convo = await participantConversation(conversationId, user.id);
+  const { user, org } = await getHomeownerContext();
+  const convo = await participantConversation(conversationId, user.id, org.id);
   if (!convo) return { ok: false, error: "Conversation not found" };
 
   await prisma.marketMessage.updateMany({
@@ -173,8 +181,8 @@ export async function reportConversation(
   if (!parsed.success)
     return { ok: false, error: parsed.error.issues[0].message };
 
-  const { user } = await getHomeownerContext();
-  const convo = await participantConversation(conversationId, user.id);
+  const { user, org } = await getHomeownerContext();
+  const convo = await participantConversation(conversationId, user.id, org.id);
   if (!convo) return { ok: false, error: "Conversation not found" };
 
   await prisma.conversationReport.upsert({

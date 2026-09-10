@@ -66,6 +66,15 @@ export async function createOrgAndAdmin(
   let authId: string;
   let rollbackAuthUser: (() => Promise<void>) | null = null;
 
+  // Generic on failure — don't echo Supabase's "already registered" (account
+  // enumeration). A genuine dup still can't proceed; the message just doesn't
+  // confirm the address exists.
+  const signupFailed = {
+    ok: false as const,
+    error: "Could not create your account. Check your details and try again.",
+    field: "email",
+  };
+
   if (hasServiceRole) {
     const admin = createAdminClient();
     const { data, error } = await admin.auth.admin.createUser({
@@ -74,12 +83,7 @@ export async function createOrgAndAdmin(
       email_confirm: true,
       user_metadata: { full_name: fullName },
     });
-    if (error || !data.user)
-      return {
-        ok: false,
-        error: error?.message ?? "Could not create your account",
-        field: "email",
-      };
+    if (error || !data.user) return signupFailed;
     authId = data.user.id;
     rollbackAuthUser = () =>
       admin.auth.admin.deleteUser(authId).then(() => {});
@@ -89,12 +93,7 @@ export async function createOrgAndAdmin(
       password,
       options: { data: { full_name: fullName } },
     });
-    if (error || !data.user)
-      return {
-        ok: false,
-        error: error?.message ?? "Could not create your account",
-        field: "email",
-      };
+    if (error || !data.user) return signupFailed;
     authId = data.user.id;
   }
 

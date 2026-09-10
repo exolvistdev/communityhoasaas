@@ -29,10 +29,10 @@ export default async function ConversationPage({
 }: {
   params: { id: string };
 }) {
-  const { user } = await getHomeownerContext();
+  const { user, org } = await getHomeownerContext();
 
-  const convo = await prisma.marketConversation.findUnique({
-    where: { id: params.id },
+  const convo = await prisma.marketConversation.findFirst({
+    where: { id: params.id, orgId: org.id },
     include: {
       listing: {
         select: { id: true, title: true, price: true, photos: true, status: true },

@@ -36,13 +36,14 @@ export const getCurrentOrgContext = requestCache(async function getCurrentOrgCon
 
   if (!authUser) redirect("/login");
 
-  const impersonation = await resolveImpersonation();
+  const impersonation = await resolveImpersonation(authUser.id);
   if (impersonation) {
     return {
       authUser,
       user: impersonation.user,
       org: impersonation.org,
       impersonating: true as const,
+      realActor: impersonation.realActor,
     };
   }
 
@@ -80,13 +81,14 @@ export const tryGetOrgContext = requestCache(async function tryGetOrgContext() {
 
   if (!authUser) return null;
 
-  const impersonation = await resolveImpersonation();
+  const impersonation = await resolveImpersonation(authUser.id);
   if (impersonation) {
     return {
       authUser,
       user: impersonation.user,
       org: impersonation.org,
       impersonating: true as const,
+      realActor: impersonation.realActor,
     };
   }
 

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getHomeownerContext, ACTIVE_UNIT_COOKIE } from "@/lib/portal";
 import { generateGatePassCode } from "@/lib/gatepass";
 import { deliver, staffRecipients } from "@/lib/notifications";
+import { logSystemAudit } from "@/lib/audit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -69,6 +70,13 @@ export async function submitPayment(input: unknown): Promise<Result> {
       submittedById: user.id,
     },
   });
+
+  await logSystemAudit(
+    org.id,
+    "payment.submit",
+    `${property.unitNumber} · ${user.fullName}`,
+    `${d.method} ₱${d.amount.toLocaleString("en-PH")} · ref ${d.reference}`
+  );
 
   revalidatePath("/portal");
   revalidatePath("/reconciliation");
