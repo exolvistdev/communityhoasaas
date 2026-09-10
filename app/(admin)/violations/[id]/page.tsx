@@ -12,15 +12,8 @@ import { ViolationActions } from "./ViolationActions";
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const v = await prisma.violation.findUnique({
-    where: { id: params.id },
-    select: { property: { select: { unitNumber: true } } },
-  });
-  return {
-    title: v ? `Violation · ${v.property.unitNumber}` : "Violation · HOA SaaS",
-  };
-}
+// Static — a per-id lookup here runs before the page's org check.
+export const metadata = { title: "Violation · HOA SaaS" };
 
 export default async function ViolationDetailPage({
   params,

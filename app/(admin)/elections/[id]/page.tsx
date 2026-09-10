@@ -29,13 +29,8 @@ const dtLocal = (d: Date) => {
   return `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}`;
 };
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const e = await prisma.election.findUnique({
-    where: { id: params.id },
-    select: { title: true },
-  });
-  return { title: e ? `${e.title} · HOA SaaS` : "Election · HOA SaaS" };
-}
+// Static — a per-id lookup here runs before the page's org check.
+export const metadata = { title: "Election · HOA SaaS" };
 
 export default async function ElectionDetailPage({
   params,

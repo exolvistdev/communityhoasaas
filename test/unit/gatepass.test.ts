@@ -24,6 +24,16 @@ describe("generateGatePassCode", () => {
       expect(code).not.toMatch(/[ILO01]/);
     }
   });
+
+  it("defaults to 10 chars", () => {
+    expect(generateGatePassCode()).toHaveLength(10);
+  });
+
+  it("produces no collisions across a large batch (CSPRNG-backed)", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 5000; i++) seen.add(generateGatePassCode());
+    expect(seen.size).toBe(5000);
+  });
 });
 
 describe("effectiveGatePassStatus", () => {

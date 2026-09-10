@@ -9,13 +9,8 @@ import { BillActions } from "./BillActions";
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const b = await prisma.bill.findUnique({
-    where: { id: params.id },
-    select: { vendor: { select: { name: true } } },
-  });
-  return { title: b ? `Bill · ${b.vendor.name}` : "Bill · HOA SaaS" };
-}
+// Static — a per-id lookup here runs before the page's org check.
+export const metadata = { title: "Bill · HOA SaaS" };
 
 export default async function BillDetailPage({
   params,

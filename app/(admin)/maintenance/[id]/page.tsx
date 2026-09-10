@@ -18,13 +18,8 @@ const fmt = (d: Date) =>
     minute: "2-digit",
   });
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const r = await prisma.maintenanceRequest.findUnique({
-    where: { id: params.id },
-    select: { title: true },
-  });
-  return { title: r ? `${r.title} · HOA SaaS` : "Maintenance · HOA SaaS" };
-}
+// Static — a per-id lookup here runs before the page's org check.
+export const metadata = { title: "Maintenance · HOA SaaS" };
 
 export default async function MaintenanceDetailPage({
   params,

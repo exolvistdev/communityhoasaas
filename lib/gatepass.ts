@@ -12,11 +12,22 @@ export function extractGatePassCode(raw: string): string {
   return (m ? m[1] : raw).trim().toUpperCase();
 }
 
-/** A short, human-enterable gate-pass code, e.g. "K7M4PQ2R". */
-export function generateGatePassCode(length = 8) {
+/**
+ * A short, human-enterable gate-pass code, e.g. "K7M4PQ2R". The code is the only
+ * credential a guard checks, so it must be unpredictable — drawn from a CSPRNG
+ * (Web Crypto, works in Node and the browser), with rejection sampling to avoid
+ * modulo bias across the 30-char alphabet.
+ */
+export function generateGatePassCode(length = 10) {
+  const n = CODE_ALPHABET.length;
+  const limit = 256 - (256 % n); // reject bytes at/above this to keep it uniform
   let out = "";
-  for (let i = 0; i < length; i++) {
-    out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  while (out.length < length) {
+    const bytes = new Uint8Array(length - out.length);
+    crypto.getRandomValues(bytes);
+    for (const b of bytes) {
+      if (b < limit) out += CODE_ALPHABET[b % n];
+    }
   }
   return out;
 }

@@ -23,17 +23,8 @@ const TYPE_LABEL = PROPERTY_TYPE_LABEL;
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const p = await prisma.property.findUnique({
-    where: { id: params.id },
-    select: { unitNumber: true },
-  });
-  return { title: p ? `${p.unitNumber} · HOA SaaS` : "Property · HOA SaaS" };
-}
+// Static — a per-id lookup here runs before the page's org check.
+export const metadata = { title: "Property · HOA SaaS" };
 
 export default async function PropertyDetailPage({
   params,

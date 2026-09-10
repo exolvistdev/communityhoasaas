@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrgContext } from "@/lib/tenant";
+import { requireStaff } from "@/lib/rbac";
 import { parseStatementRange } from "@/lib/soa";
 import { toCsvString, csvResponse } from "@/lib/csv";
 
 export async function GET(request: Request) {
-  const { org } = await getCurrentOrgContext();
+  // Route handlers are NOT wrapped by the (admin) layout guard — the role
+  // check has to live here (a homeowner/guard otherwise gets the full ledger).
+  const { org } = await requireStaff();
   const url = new URL(request.url);
   const from = url.searchParams.get("from") ?? undefined;
   const to = url.searchParams.get("to") ?? undefined;

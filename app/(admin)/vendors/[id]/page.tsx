@@ -8,13 +8,8 @@ import { billStatus, BILL_STATUS_BADGE, effectiveBillStatus } from "@/lib/bill";
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const v = await prisma.vendor.findUnique({
-    where: { id: params.id },
-    select: { name: true },
-  });
-  return { title: v ? `${v.name} · HOA SaaS` : "Vendor · HOA SaaS" };
-}
+// Static — a per-id lookup here runs before the page's org check.
+export const metadata = { title: "Vendor · HOA SaaS" };
 
 export default async function VendorDetailPage({
   params,

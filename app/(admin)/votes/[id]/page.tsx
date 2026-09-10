@@ -30,13 +30,9 @@ const dtLocal = (d: Date) => {
   return `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}`;
 };
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const v = await prisma.boardVote.findUnique({
-    where: { id: params.id },
-    select: { title: true },
-  });
-  return { title: v ? `${v.title} · HOA SaaS` : "Vote · HOA SaaS" };
-}
+// Static — a per-id lookup here runs before the page's org check and would leak
+// a title / act as a cross-tenant existence oracle.
+export const metadata = { title: "Vote · HOA SaaS" };
 
 export default async function VoteDetailPage({
   params,

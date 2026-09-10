@@ -23,13 +23,8 @@ const fmt = (d: Date) =>
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const m = await prisma.boardMeeting.findUnique({
-    where: { id: params.id },
-    select: { title: true },
-  });
-  return { title: m ? `${m.title} · HOA SaaS` : "Meeting · HOA SaaS" };
-}
+// Static — a per-id lookup here runs before the page's org check.
+export const metadata = { title: "Meeting · HOA SaaS" };
 
 export default async function MeetingDetailPage({
   params,
