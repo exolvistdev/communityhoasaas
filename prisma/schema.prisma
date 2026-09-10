@@ -42,14 +42,15 @@ model ImpersonationEvent {
 /// Demo / sales enquiry from the public marketing site (/contact). Not tied to
 /// any org or user — a prospect who hasn't signed up.
 model Lead {
-  id        String    @id @default(uuid())
-  name      String
-  email     String
-  hoaName   String
-  phone     String?
-  message   String?
-  createdAt DateTime  @default(now())
-  handledAt DateTime?
+  id            String    @id @default(uuid())
+  name          String
+  email         String
+  hoaName       String
+  phone         String?
+  message       String?
+  propertyCount Int? // approximate unit/lot count, for quoting
+  createdAt     DateTime  @default(now())
+  handledAt     DateTime?
 
   @@index([createdAt])
   @@map("leads")
@@ -113,8 +114,13 @@ model Organization {
   id            String    @id @default(uuid())
   name          String
   subdomain     String    @unique
+  // TODO: unused — the "Plan" shown everywhere is now derived from the active
+  // property count (lib/pricing.ts). Remove via a later expand/contract migration.
   plan          String    @default("growth")
   communityType CommunityType @default(SUBDIVISION)
+  // Approximate unit/lot count entered at signup, for a pre-import cost estimate
+  // and sales visibility. The real figure is the active Property count.
+  estimatedUnits Int?
   // Self-serve signup starts a 30-day TRIAL; anything else (seed, a
   // manually-provisioned org) defaults straight to ACTIVE — no gate. A
   // platform admin flips TRIAL -> ACTIVE from /platform once the customer

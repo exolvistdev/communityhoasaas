@@ -9,6 +9,8 @@ import { WATER_SOURCE_OPTIONS } from "@/lib/water";
 import { isStrongPassword } from "@/lib/password";
 import { COMMUNITY_TYPE_OPTIONS } from "@/lib/community";
 import { termsFor } from "@/lib/terms";
+import { monthlyEstimate } from "@/lib/pricing";
+import { peso } from "@/lib/format";
 import type { CommunityType } from "@prisma/client";
 import { createOrgAndAdmin } from "./actions";
 
@@ -52,9 +54,13 @@ function Step1({ onDone }: { onDone: (ct: CommunityType) => void }) {
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [subdomain, setSubdomain] = useState("");
   const [password, setPassword] = useState("");
+  const [unitCount, setUnitCount] = useState("");
   const [communityType, setCommunityType] =
     useState<CommunityType>("SUBDIVISION");
   const t = termsFor(communityType);
+  const units = Number(unitCount);
+  const estimate =
+    Number.isFinite(units) && units >= 1 ? monthlyEstimate(units) : null;
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,6 +69,7 @@ function Step1({ onDone }: { onDone: (ct: CommunityType) => void }) {
       communityType,
       orgName: String(fd.get("orgName") ?? ""),
       subdomain: String(fd.get("subdomain") ?? ""),
+      estimatedUnits: String(fd.get("estimatedUnits") ?? ""),
       fullName: String(fd.get("fullName") ?? ""),
       email: String(fd.get("email") ?? ""),
       password: String(fd.get("password") ?? ""),
@@ -145,6 +152,41 @@ function Step1({ onDone }: { onDone: (ct: CommunityType) => void }) {
           </span>
         </div>
         {fieldError === "subdomain" && (
+          <p className="mt-1 text-xs text-danger-fg">{error}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-fg">
+          About how many {t.units}?
+        </label>
+        <input
+          name="estimatedUnits"
+          type="number"
+          min={1}
+          inputMode="numeric"
+          value={unitCount}
+          onChange={(e) => setUnitCount(e.target.value.replace(/[^0-9]/g, ""))}
+          placeholder="e.g. 120"
+          required
+          className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+        />
+        {estimate ? (
+          <p className="mt-1 text-xs text-fg-muted">
+            About{" "}
+            <span className="font-medium text-fg">
+              {peso(estimate.total, { cents: false })}/month
+            </span>{" "}
+            at {peso(estimate.rate, { cents: false })} per {t.unit} — free for
+            your first 30 days.
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-fg-muted">
+            A rough count is fine — it sets your rate band. You&apos;re not
+            billed during the trial.
+          </p>
+        )}
+        {fieldError === "estimatedUnits" && (
           <p className="mt-1 text-xs text-danger-fg">{error}</p>
         )}
       </div>

@@ -23,6 +23,11 @@ const step1Schema = z.object({
       /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$/,
       "3–32 chars, lowercase letters, numbers and hyphens only"
     ),
+  estimatedUnits: z.coerce
+    .number({ invalid_type_error: "Enter an approximate number of units" })
+    .int("Enter a whole number")
+    .positive("Enter an approximate number of units")
+    .max(1_000_000, "That seems too high — contact us for a large portfolio"),
   fullName: z.string().trim().min(2, "Enter your full name"),
   email: z.string().trim().email("Enter a valid email"),
   password: strongPasswordSchema,
@@ -54,6 +59,7 @@ export async function createOrgAndAdmin(
     communityType,
     orgName,
     subdomain,
+    estimatedUnits,
     fullName,
     email,
     password,
@@ -112,6 +118,7 @@ export async function createOrgAndAdmin(
           name: orgName,
           subdomain,
           communityType,
+          estimatedUnits,
           waterSource,
           status: "TRIAL",
           trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

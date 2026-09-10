@@ -25,6 +25,7 @@ export function ContactForm() {
         name,
         email: fd.get("email"),
         hoaName: fd.get("hoaName"),
+        propertyCount: fd.get("propertyCount"),
         phone: fd.get("phone"),
         message: fd.get("message"),
         company: fd.get("company"),
@@ -65,6 +66,15 @@ export function ContactForm() {
       </Field>
       <Field label="HOA or community name" error={fieldError.hoaName}>
         <Input name="hoaName" required autoComplete="organization" />
+      </Field>
+      <Field label="Number of units / lots" hint="Optional — for an exact quote">
+        <Input
+          name="propertyCount"
+          type="number"
+          min={1}
+          max={1000000}
+          inputMode="numeric"
+        />
       </Field>
       <Field label="Phone" hint="Optional">
         <Input name="phone" type="tel" autoComplete="tel" />

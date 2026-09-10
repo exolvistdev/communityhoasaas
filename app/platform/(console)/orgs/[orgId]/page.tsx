@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePlatformAdmin } from "@/lib/platform";
+import { monthlyEstimate } from "@/lib/pricing";
+import { BILLABLE_PROPERTY_WHERE } from "@/lib/rate";
+import { peso } from "@/lib/format";
 import { OrgStatusBadge } from "../../OrgStatusBadge";
 import { ImpersonateButton } from "./ImpersonateButton";
 import { ActivateOrgButton } from "./ActivateOrgButton";
@@ -22,6 +25,11 @@ export default async function PlatformOrgPage({
   });
   if (!org) notFound();
 
+  const billableUnits = await prisma.property.count({
+    where: { orgId: org.id, ...BILLABLE_PROPERTY_WHERE },
+  });
+  const est = billableUnits > 0 ? monthlyEstimate(billableUnits) : null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -33,7 +41,15 @@ export default async function PlatformOrgPage({
           <OrgStatusBadge org={org} />
         </div>
         <p className="text-sm text-fg-muted">
-          {org.subdomain} · {org.plan} plan · {org._count.properties} properties
+          {org.subdomain} · {org._count.properties} properties
+          {est
+            ? ` · ${billableUnits} billable · ₱${est.rate}/unit · about ${peso(
+                est.total,
+                { cents: false }
+              )}/mo`
+            : " · no billable units yet"}
+          {org.estimatedUnits != null &&
+            ` · ${org.estimatedUnits.toLocaleString("en-PH")} at signup`}
           {org.trialEndsAt &&
             ` · trial ends ${org.trialEndsAt.toLocaleDateString("en-PH", {
               day: "numeric",

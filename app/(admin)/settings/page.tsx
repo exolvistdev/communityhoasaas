@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
-import { PROPERTY_TYPES, TYPE_RATE_FIELD } from "@/lib/rate";
+import { PROPERTY_TYPES, TYPE_RATE_FIELD, BILLABLE_PROPERTY_WHERE } from "@/lib/rate";
 import { paymentQrUrl } from "@/lib/payment-qr";
 import { OrgSettingsForm } from "./OrgSettingsForm";
 import { CommunityTypeForm } from "./CommunityTypeForm";
@@ -16,6 +16,8 @@ import { VoteWeightForm } from "./VoteWeightForm";
 import { waterConfig } from "@/lib/water-billing";
 import { PageHeader } from "@/components/PageHeader";
 import { termsFor } from "@/lib/terms";
+import { monthlyEstimate } from "@/lib/pricing";
+import { peso } from "@/lib/format";
 
 export const metadata = { title: "Settings · HOA SaaS" };
 
@@ -95,6 +97,22 @@ export default async function SettingsPage() {
           where: { orgId: org.id, archivedAt: null, floorArea: null },
         });
 
+  // Subscription band — the live billable-property count once units exist, else
+  // the approximate figure given at signup (labelled as an estimate).
+  const billableProperties = await prisma.property.count({
+    where: { orgId: org.id, ...BILLABLE_PROPERTY_WHERE },
+  });
+  const usingEstimate = billableProperties === 0 && (org.estimatedUnits ?? 0) > 0;
+  const planCount = billableProperties || org.estimatedUnits || 0;
+  const planEst = monthlyEstimate(planCount);
+  const planNoun = planCount === 1 ? terms.unit : terms.units;
+  const planValue = `${planCount.toLocaleString("en-PH")} ${planNoun}${
+    usingEstimate ? " (estimated)" : ""
+  } · ${peso(planEst.rate, { cents: false })}/${terms.unit}/mo · about ${peso(
+    planEst.total,
+    { cents: false }
+  )}/month`;
+
   return (
     <div className="max-w-2xl space-y-8">
       <PageHeader title="Settings" />
@@ -110,7 +128,7 @@ export default async function SettingsPage() {
         />
         <dl className="divide-y divide-border rounded-lg border border-border bg-surface text-sm">
           <Row label="Subdomain" value={`${org.subdomain}.hoasaas.ph`} />
-          <Row label="Plan" value={org.plan} />
+          <Row label="Plan" value={planValue} />
           <Row
             label="Signed in as"
             value={`${user.fullName} (${user.email}) · ${user.role}`}

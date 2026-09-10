@@ -1,15 +1,22 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePlatformAdmin } from "@/lib/platform";
+import { ratePerProperty } from "@/lib/pricing";
+import { BILLABLE_PROPERTY_WHERE } from "@/lib/rate";
 import { OrgStatusBadge } from "./OrgStatusBadge";
 
 export default async function PlatformDirectoryPage() {
   await requirePlatformAdmin();
 
-  const [orgs, recentImpersonations] = await Promise.all([
+  const [orgs, billableByOrg, recentImpersonations] = await Promise.all([
     prisma.organization.findMany({
       include: { _count: { select: { properties: true, users: true } } },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.property.groupBy({
+      by: ["orgId"],
+      where: BILLABLE_PROPERTY_WHERE,
+      _count: { _all: true },
     }),
     prisma.impersonationEvent.findMany({
       include: {
@@ -20,6 +27,8 @@ export default async function PlatformDirectoryPage() {
       take: 15,
     }),
   ]);
+
+  const billable = new Map(billableByOrg.map((r) => [r.orgId, r._count._all]));
 
   const fmt = (d: Date) =>
     d.toLocaleString("en-PH", {
@@ -45,15 +54,18 @@ export default async function PlatformDirectoryPage() {
             <tr>
               <th className="px-4 py-2.5 font-medium">Name</th>
               <th className="px-4 py-2.5 font-medium">Subdomain</th>
-              <th className="px-4 py-2.5 font-medium">Plan</th>
+              <th className="px-4 py-2.5 font-medium">Rate</th>
               <th className="px-4 py-2.5 font-medium">Status</th>
+              <th className="px-4 py-2.5 text-right font-medium">Billable</th>
               <th className="px-4 py-2.5 text-right font-medium">Properties</th>
               <th className="px-4 py-2.5 text-right font-medium">Users</th>
               <th className="px-4 py-2.5 font-medium">Created</th>
             </tr>
           </thead>
           <tbody>
-            {orgs.map((org) => (
+            {orgs.map((org) => {
+              const n = billable.get(org.id) ?? 0;
+              return (
               <tr key={org.id} className="border-t border-border">
                 <td className="px-4 py-2.5 font-medium text-fg">
                   <Link href={`/platform/orgs/${org.id}`} className="hover:underline">
@@ -61,10 +73,13 @@ export default async function PlatformDirectoryPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-2.5 text-fg-muted">{org.subdomain}</td>
-                <td className="px-4 py-2.5 text-fg-muted">{org.plan}</td>
+                <td className="px-4 py-2.5 text-fg-muted">
+                  {n > 0 ? `₱${ratePerProperty(n)}/unit` : "—"}
+                </td>
                 <td className="px-4 py-2.5">
                   <OrgStatusBadge org={org} />
                 </td>
+                <td className="px-4 py-2.5 text-right text-fg-muted">{n}</td>
                 <td className="px-4 py-2.5 text-right text-fg-muted">
                   {org._count.properties}
                 </td>
@@ -75,10 +90,11 @@ export default async function PlatformDirectoryPage() {
                   {fmt(org.createdAt)}
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {orgs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-fg-subtle">
+                <td colSpan={8} className="px-4 py-8 text-center text-fg-subtle">
                   No organizations yet.
                 </td>
               </tr>

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, emailShell } from "@/lib/email";
 import { esc } from "@/lib/notifications";
 import { rateLimit } from "@/lib/rate-limit";
+import { monthlyEstimate } from "@/lib/pricing";
+import { peso } from "@/lib/format";
 
 type Field = "name" | "email" | "hoaName";
 
@@ -16,6 +18,11 @@ const schema = z.object({
   name: z.string().trim().min(2, "Enter your name").max(120),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
   hoaName: z.string().trim().min(2, "Enter your HOA or community name").max(160),
+  // Optional, best-effort — a bad value is dropped, never blocks the lead.
+  propertyCount: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : v),
+    z.coerce.number().int().positive().max(1_000_000).optional().catch(undefined)
+  ),
   phone: z.string().trim().max(40).optional().or(z.literal("")),
   message: z.string().trim().max(2000).optional().or(z.literal("")),
   // Honeypot — real users never see or fill this.
@@ -36,7 +43,8 @@ export async function submitLead(input: unknown): Promise<ContactResult> {
     };
   }
 
-  const { name, email, hoaName, phone, message, company } = parsed.data;
+  const { name, email, hoaName, propertyCount, phone, message, company } =
+    parsed.data;
 
   // Bot: pretend it worked, do nothing.
   if (company && company.trim()) return { ok: true };
@@ -51,6 +59,7 @@ export async function submitLead(input: unknown): Promise<ContactResult> {
         name,
         email,
         hoaName,
+        propertyCount: propertyCount ?? null,
         phone: phone || null,
         message: message || null,
       },
@@ -64,10 +73,20 @@ export async function submitLead(input: unknown): Promise<ContactResult> {
 
   const to = process.env.CONTACT_INBOX;
   if (to) {
+    const est = propertyCount ? monthlyEstimate(propertyCount) : null;
     const rows = [
       ["Name", name],
       ["Email", email],
       ["HOA / community", hoaName],
+      est ? ["Properties", String(est.count)] : null,
+      est
+        ? [
+            "Est. monthly",
+            `${peso(est.total, { cents: false })} (at ${peso(est.rate, {
+              cents: false,
+            })}/property)`,
+          ]
+        : null,
       phone ? ["Phone", phone] : null,
       message ? ["Notes", message] : null,
     ].filter(Boolean) as [string, string][];

@@ -1,6 +1,16 @@
-import type { PropertyType, DuesRateMode } from "@prisma/client";
+import type { Prisma, PropertyType, DuesRateMode } from "@prisma/client";
 
 // Pure rate-resolution helpers — safe to import from client components.
+
+/**
+ * Property rows that count toward the platform subscription and its rate band:
+ * active (not archived) and not a parking slot. Used by the Settings "Plan" row
+ * and the platform console so every surface counts the same thing.
+ */
+export const BILLABLE_PROPERTY_WHERE: Prisma.PropertyWhereInput = {
+  archivedAt: null,
+  type: { not: "PARKING_SLOT" },
+};
 
 export type TypeRateDefaults = {
   typeRateResidential: number | null;

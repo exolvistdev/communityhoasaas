@@ -4,19 +4,21 @@ import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { CtaBand } from "@/components/marketing/CtaBand";
+import { PRICING_BANDS, bandRangeLabel } from "@/lib/pricing";
+
+const BANDS = PRICING_BANDS.map((b) => ({
+  rate: `₱${b.rate}`,
+  unit: "/ property / month",
+  range: bandRangeLabel(b),
+}));
 
 export const metadata: Metadata = {
   title: "Pricing · HOA Manager",
-  description:
-    "One rate per property, per month: ₱7 for 1–500 properties, ₱6 for 501–1,000, ₱5 for 1,001+. Every feature at every tier.",
+  description: `One rate per property, per month: ${PRICING_BANDS.map(
+    (b) => `₱${b.rate} for ${bandRangeLabel(b, "")}`
+  ).join(", ")} properties. Every feature at every tier.`,
   alternates: { canonical: "/pricing" },
 };
-
-const BANDS = [
-  { rate: "₱7", unit: "/ property / month", range: "1 – 500 properties" },
-  { rate: "₱6", unit: "/ property / month", range: "501 – 1,000 properties" },
-  { rate: "₱5", unit: "/ property / month", range: "1,001+ properties" },
-];
 
 const INCLUDED = [
   "Billing & double-entry accounting",
