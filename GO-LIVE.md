@@ -33,6 +33,8 @@ Work top to bottom. Details for each step are in `DEPLOYMENT.md`.
       email no-ops (in-app notifications still work)
 - [ ] Node version 22.x or 24.x (Project → Settings → General) — `@supabase/supabase-js`
       wants Node ≥ 22
+- [ ] Enable **Web Analytics** (Project → Analytics) — the marketing site only sends
+      data after a visitor accepts the cookie banner; nothing until then
 - [ ] Custom domain (optional)
 
 ## Secrets — precautionary (`.env` was never committed, so not urgent)

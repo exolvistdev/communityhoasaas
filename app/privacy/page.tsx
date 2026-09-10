@@ -86,6 +86,28 @@ export default function PrivacyPolicyPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Cookies and similar technologies">
+        <p>
+          Once you sign in, the app sets a few{" "}
+          <strong className="font-medium text-fg">strictly-necessary</strong>{" "}
+          cookies — a login session, an operator support token (only for
+          platform staff), and a remembered active-unit preference. These are
+          not set when you only browse the public website.
+        </p>
+        <p>
+          On the public website we store your{" "}
+          <strong className="font-medium text-fg">cookie choice</strong> in your
+          browser, and — only if you accept — load{" "}
+          <strong className="font-medium text-fg">Vercel Web Analytics</strong>,
+          which counts page views in aggregate without cookies, without
+          cross-site tracking, and without building a profile of you.
+        </p>
+        <p>
+          You can change your choice at any time from the{" "}
+          &ldquo;Cookie settings&rdquo; link in the website footer.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Why we use it">
         <p>
           To run the association: bill and collect dues, keep financial records,
