@@ -95,16 +95,17 @@ export default function PrivacyPolicyPage() {
           not set when you only browse the public website.
         </p>
         <p>
-          On the public website we store your{" "}
-          <strong className="font-medium text-fg">cookie choice</strong> in your
-          browser, and — only if you accept — load{" "}
-          <strong className="font-medium text-fg">Vercel Web Analytics</strong>,
-          which counts page views in aggregate without cookies, without
-          cross-site tracking, and without building a profile of you.
+          On the public website we use{" "}
+          <strong className="font-medium text-fg">Vercel Web Analytics</strong> to
+          count page views in aggregate — without cookies, without cross-site
+          tracking, and without building a profile of you. It relies on a
+          short-lived, one-way hash rather than any identifier stored on your
+          device.
         </p>
         <p>
-          You can change your choice at any time from the{" "}
-          &ldquo;Cookie settings&rdquo; link in the website footer.
+          You can opt out at any time from the{" "}
+          &ldquo;Cookie settings&rdquo; link in the website footer; your choice is
+          then remembered in your browser.
         </p>
       </LegalSection>
 

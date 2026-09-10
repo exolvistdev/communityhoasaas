@@ -5,10 +5,11 @@ import { Analytics } from "@vercel/analytics/react";
 import { CONSENT_CHANGE_EVENT, readConsent } from "@/lib/consent";
 
 /**
- * Vercel Web Analytics, mounted only after the visitor accepts analytics in the
- * cookie banner. Cookieless and first-party (`/_vercel/insights/*`), but gated
- * anyway so the choice in the banner actually controls something. Unmounts if
- * consent is later withdrawn. No-ops off Vercel / in dev.
+ * Vercel Web Analytics, mounted for every marketing-site visitor unless they
+ * opt out from the notice or the footer "Cookie settings" control. Cookieless
+ * and first-party (`/_vercel/insights/*`) — a daily-rotating hash, no persistent
+ * id, no cross-site tracking. Unmounts if the visitor opts out later. No-ops off
+ * Vercel / in dev.
  */
 export function ConsentedAnalytics() {
   const [allowed, setAllowed] = useState(false);
