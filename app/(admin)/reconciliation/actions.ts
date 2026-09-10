@@ -38,9 +38,37 @@ export async function confirmPayment(id: string): Promise<Result> {
   const denied = await denyUnless("billing:write");
   if (denied) return denied;
 
-  const { user } = await getCurrentOrgContext();
+  const { user, org } = await getCurrentOrgContext();
   const payment = await findPending(id);
   if (!payment) return { ok: false, error: "Payment not found" };
+
+  // Duplicate-reference guard: a GCash/Maya reference is unique per real
+  // transaction, so the same (method, reference) already confirmed elsewhere in
+  // the org means this submission is a duplicate — don't double-credit.
+  const ref = payment.reference?.trim();
+  if (ref) {
+    const dup = await prisma.payment.findFirst({
+      where: {
+        id: { not: id },
+        status: "CONFIRMED",
+        method: payment.method,
+        reference: payment.reference,
+        invoice: { property: { orgId: org.id } },
+      },
+      include: {
+        invoice: {
+          include: { property: { select: { unitNumber: true } } },
+        },
+      },
+    });
+    if (dup)
+      return {
+        ok: false,
+        error: `Reference ${ref} is already confirmed for ${dup.invoice.property.unitNumber} (${peso(
+          dup.amount
+        )}). Reject this one if it's a duplicate.`,
+      };
+  }
 
   // Allocate the payment oldest-first across the unit's open invoices;
   // any excess becomes resident credit (handled by postPaymentReceived).

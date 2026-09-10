@@ -177,6 +177,28 @@ export async function recordPayment(
   if (invoice.status === "VOID")
     return { ok: false, error: "This invoice is void" };
 
+  // Duplicate-reference guard — a GCash/Maya reference is unique per real
+  // transaction, so a matching confirmed one already in the org is a duplicate.
+  const ref = reference?.trim();
+  if (ref) {
+    const dup = await prisma.payment.findFirst({
+      where: {
+        status: "CONFIRMED",
+        method,
+        reference,
+        invoice: { property: { orgId: org.id } },
+      },
+      include: {
+        invoice: { include: { property: { select: { unitNumber: true } } } },
+      },
+    });
+    if (dup)
+      return {
+        ok: false,
+        error: `Reference ${ref} is already recorded for ${dup.invoice.property.unitNumber}.`,
+      };
+  }
+
   // Allocate oldest-first, starting with the invoice the staffer clicked;
   // anything left over becomes resident credit (handled by postPaymentReceived).
   const open = await prisma.invoice.findMany({
