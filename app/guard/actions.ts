@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePortalRole } from "@/lib/rbac";
 import { validateGatePass, extractGatePassCode } from "@/lib/gatepass";
+import { rateLimit } from "@/lib/rate-limit";
 
 export type ScanVerdict =
   | "VALID"
@@ -33,6 +34,15 @@ export async function validatePass(input: unknown): Promise<ScanResult> {
 
   const parsed = rawSchema.safeParse(input);
   const code = parsed.success ? extractGatePassCode(parsed.data).slice(0, 16) : "";
+
+  // A real gate never scans this fast — a burst past this is automated
+  // code-guessing. Fail closed as NOT_FOUND (don't reveal the throttle).
+  const limited = await rateLimit("gate-validate", {
+    max: 120,
+    windowMs: 60_000,
+    extra: user.id,
+  });
+  if (!limited.ok) return { code, verdict: "NOT_FOUND", scannedAt };
 
   const pass = code
     ? await prisma.gatePass.findUnique({

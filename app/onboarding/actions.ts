@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SEED_ACCOUNTS } from "@/lib/ledger";
 import { strongPasswordSchema } from "@/lib/password";
 import { communityTypeDefaults } from "@/lib/community";
+import { rateLimit } from "@/lib/rate-limit";
 
 const step1Schema = z.object({
   communityType: z.enum(
@@ -42,6 +43,13 @@ export async function createOrgAndAdmin(
     const first = parsed.error.issues[0];
     return { ok: false, error: first.message, field: String(first.path[0]) };
   }
+
+  const limited = await rateLimit("signup", { max: 5, windowMs: 30 * 60_000 });
+  if (!limited.ok)
+    return {
+      ok: false,
+      error: "Too many sign-up attempts from here. Try again later.",
+    };
   const {
     communityType,
     orgName,

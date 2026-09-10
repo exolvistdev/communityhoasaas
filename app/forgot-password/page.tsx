@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
+import { requestPasswordReset } from "./actions";
 
 export default function ForgotPasswordPage() {
   const [pending, start] = useTransition();
@@ -16,10 +16,7 @@ export default function ForgotPasswordPage() {
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
     if (!email) return;
     start(async () => {
-      const supabase = createClient();
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      await requestPasswordReset({ email });
       setSent(true);
     });
   }

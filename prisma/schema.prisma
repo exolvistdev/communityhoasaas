@@ -55,6 +55,20 @@ model Lead {
   @@map("leads")
 }
 
+/// One request against a rate-limited surface (login, signup, password reset,
+/// lead form, gate-pass lookup). Not tenant-scoped — most of these are pre-auth.
+/// Rows are pruned per-key on each check; a daily cron sweeps the rest.
+model RateLimitHit {
+  id     String   @id @default(uuid())
+  bucket String
+  key    String
+  at     DateTime @default(now())
+
+  @@index([bucket, key, at])
+  @@index([at])
+  @@map("rate_limit_hits")
+}
+
 // ─────────────────────────────────────────────
 // Tenancy
 // ─────────────────────────────────────────────

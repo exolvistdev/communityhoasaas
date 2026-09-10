@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   email: z.string().trim().email(),
@@ -15,6 +16,13 @@ export async function signInPlatform(input: unknown): Promise<SignInResult> {
   const parsed = schema.safeParse(input);
   if (!parsed.success)
     return { ok: false, error: "Enter your email and password" };
+
+  const limited = await rateLimit("platform-login", {
+    max: 8,
+    windowMs: 5 * 60_000,
+  });
+  if (!limited.ok)
+    return { ok: false, error: "Too many attempts. Wait a few minutes." };
 
   const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);

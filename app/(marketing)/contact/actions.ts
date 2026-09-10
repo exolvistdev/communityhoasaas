@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, emailShell } from "@/lib/email";
 import { esc } from "@/lib/notifications";
+import { rateLimit } from "@/lib/rate-limit";
 
 type Field = "name" | "email" | "hoaName";
 
@@ -39,6 +40,10 @@ export async function submitLead(input: unknown): Promise<ContactResult> {
 
   // Bot: pretend it worked, do nothing.
   if (company && company.trim()) return { ok: true };
+
+  // Cap the lead form so it can't be used to spam the table / inbox.
+  const limited = await rateLimit("lead", { max: 4, windowMs: 60 * 60_000 });
+  if (!limited.ok) return { ok: true }; // same success shape a bot would see
 
   try {
     await prisma.lead.create({

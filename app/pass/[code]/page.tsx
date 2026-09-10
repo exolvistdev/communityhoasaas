@@ -2,8 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { qrSvg } from "@/lib/qr";
 import { siteOrigin } from "@/lib/url";
 import { validateGatePass, type GatePassVerdict } from "@/lib/gatepass";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const metadata = { title: "Visitor pass" };
+
+// Public page — cap lookups per IP so it can't be walked to harvest passes.
+export const dynamic = "force-dynamic";
 
 const fmt = (d: Date) =>
   d.toLocaleString("en-PH", {
@@ -28,6 +32,19 @@ export default async function VisitorPassPage({
   params: { code: string };
 }) {
   const code = params.code.toUpperCase();
+
+  const limited = await rateLimit("pass-lookup", { max: 40, windowMs: 5 * 60_000 });
+  if (!limited.ok) {
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-lg font-semibold text-gray-900">Please wait a moment</h1>
+        <p className="mt-2 text-sm text-gray-500">
+          Too many requests from your connection. Refresh in a few minutes.
+        </p>
+      </main>
+    );
+  }
+
   const pass = await prisma.gatePass.findUnique({
     where: { code },
     include: {

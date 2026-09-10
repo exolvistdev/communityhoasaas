@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateOverdueNotifications } from "@/lib/notifications";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +22,13 @@ export async function GET(req: Request) {
   }
 
   const { sent } = await generateOverdueNotifications();
-  return NextResponse.json({ ok: true, sent });
+
+  // Housekeeping: clear rate-limit rows older than a day (the limiter prunes
+  // active keys itself; this sweeps the tail from IPs that never came back).
+  const pruned = await prisma.rateLimitHit
+    .deleteMany({ where: { at: { lt: new Date(Date.now() - 24 * 60 * 60_000) } } })
+    .then((r) => r.count)
+    .catch(() => 0);
+
+  return NextResponse.json({ ok: true, sent, pruned });
 }

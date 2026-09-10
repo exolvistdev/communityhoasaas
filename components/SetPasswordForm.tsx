@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, FormError } from "@/components/ui/field";
 import { PasswordChecklist } from "@/components/PasswordChecklist";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password";
+import { setOwnPassword } from "@/app/reset-password/actions";
 
 type Phase = "checking" | "ready" | "no-session" | "done";
 
@@ -54,11 +55,12 @@ export function SetPasswordForm({
       return;
     }
     setBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
+    // Server-side action re-checks the strong-password rule and updates via the
+    // request's recovery/invite session — a direct call can't set a weak one.
+    const res = await setOwnPassword(password);
     setBusy(false);
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      setError(res.error);
       return;
     }
     setPhase("done");
