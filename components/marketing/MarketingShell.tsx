@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
 import { MarketingHeader } from "./MarketingHeader";
-import { CookieConsent, CookieSettingsButton } from "@/components/CookieConsent";
+import { CookieConsent } from "@/components/CookieConsent";
 import { ConsentedAnalytics } from "@/components/ConsentedAnalytics";
 
 const NAV = [
@@ -43,7 +43,6 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             <Link href="/terms" className="text-fg-muted hover:text-fg">
               Terms
             </Link>
-            <CookieSettingsButton />
             <Link href="/login" className="text-fg-muted hover:text-fg">
               Sign in
             </Link>

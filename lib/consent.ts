@@ -3,8 +3,9 @@
 //
 // Model: OPT-OUT. Vercel Web Analytics is cookieless (a daily-rotating one-way
 // hash, no persistent id, no cross-site tracking, no PII stored), so it runs by
-// default. A visitor can opt out from the notice or the footer "Cookie settings"
-// control, and that choice is sticky.
+// default. A visitor opts out from the popup (Decline, or turning analytics off
+// under Manage) or later from the control on the Privacy Policy page; the
+// choice is sticky either way.
 
 export type ConsentCategory = "necessary" | "analytics";
 
@@ -27,16 +28,14 @@ const DEFAULT: ConsentState = Object.freeze({
 export const CONSENT_KEY = "hoa_cookie_consent";
 export const SESSION_DISMISS_KEY = "hoa_cookie_dismissed";
 /**
- * Bump when the disclosure materially changes: it re-shows the notice for
+ * Bump when the disclosure materially changes: it re-shows the popup for
  * everyone (clears `acknowledged`). An explicit opt-out is preserved across the
- * bump — see `parseConsent`. TODO when first bumping this: make the notice's
- * second button an explicit opt-*in* when the visitor is already opted out,
- * otherwise "Got it" silently keeps them out.
+ * bump — see `parseConsent` — and the re-shown popup still offers Accept, so an
+ * opted-out visitor can opt back in.
  */
 export const CONSENT_VERSION = 1;
 
 export const CONSENT_CHANGE_EVENT = "hoa:consent-change";
-export const CONSENT_OPEN_EVENT = "hoa:consent-open";
 
 /**
  * Pure: turn a stored consent string into state. Falls back to the default
@@ -59,8 +58,8 @@ export function parseConsent(
   const { version, analytics, at } = obj as Record<string, unknown>;
   const storedAt = typeof at === "string" ? at : null;
   // An explicit opt-out is a hard choice — it survives a disclosure-version
-  // bump. Only the notice is re-shown (acknowledged resets); analytics stays
-  // off until the visitor changes it from "Cookie settings".
+  // bump. Only the popup is re-shown (acknowledged resets); analytics stays off
+  // until the visitor opts back in (popup Accept, or the Privacy Policy control).
   if (analytics === false) {
     return {
       acknowledged: version === CONSENT_VERSION,
@@ -97,7 +96,8 @@ export function readConsent(): ConsentState {
   }
 }
 
-function persist(analytics: boolean): void {
+/** Returns whether the write actually landed (false if storage is blocked). */
+function persist(analytics: boolean): boolean {
   try {
     window.localStorage.setItem(
       CONSENT_KEY,
@@ -108,26 +108,22 @@ function persist(analytics: boolean): void {
       })
     );
     window.sessionStorage.removeItem(SESSION_DISMISS_KEY);
+    return true;
   } catch {
-    /* storage blocked — nothing else we can do */
+    return false;
   }
 }
 
-/** Opt in or out of analytics (from the notice or the "Cookie settings" panel). */
-export function setAnalytics(allowed: boolean): void {
-  if (typeof window === "undefined") return;
-  persist(allowed);
-  window.dispatchEvent(new Event(CONSENT_CHANGE_EVENT));
-}
-
 /**
- * Record that the visitor dismissed the notice without opting out — keeps
- * analytics at its current value (default on) and stops the notice returning.
+ * Opt in or out of analytics (from the popup, or the Privacy Policy control).
+ * Returns whether the choice was actually saved — `false` means storage is
+ * blocked and the change won't survive a reload.
  */
-export function acknowledgeNotice(): void {
-  if (typeof window === "undefined") return;
-  persist(readConsent().analytics);
+export function setAnalytics(allowed: boolean): boolean {
+  if (typeof window === "undefined") return false;
+  const saved = persist(allowed);
   window.dispatchEvent(new Event(CONSENT_CHANGE_EVENT));
+  return saved;
 }
 
 /** Closed without choosing (the X / Esc) — hide for this session, re-show next visit. */
@@ -147,10 +143,4 @@ export function wasDismissedThisSession(): boolean {
   } catch {
     return false;
   }
-}
-
-/** Re-open the notice (from the footer "Cookie settings" control). */
-export function openPreferences(): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(CONSENT_OPEN_EVENT));
 }

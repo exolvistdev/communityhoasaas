@@ -6,32 +6,11 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import {
-  CONSENT_CHANGE_EVENT,
-  CONSENT_OPEN_EVENT,
-  acknowledgeNotice,
   dismissForSession,
-  openPreferences,
   readConsent,
   setAnalytics,
   wasDismissedThisSession,
 } from "@/lib/consent";
-
-/** Footer control that re-opens the panel. */
-export function CookieSettingsButton({
-  children = "Cookie settings",
-}: {
-  children?: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={openPreferences}
-      className="text-fg-muted hover:text-fg"
-    >
-      {children}
-    </button>
-  );
-}
 
 export function CookieConsent() {
   const [mounted, setMounted] = useState(false);
@@ -40,7 +19,7 @@ export function CookieConsent() {
   const [manage, setManage] = useState(false);
   const [analytics, setAnalyticsState] = useState(true);
 
-  // Decide whether to show the first-visit notice, once, after mount (SSR-safe).
+  // Decide whether to show the first-visit popup, once, after mount (SSR-safe).
   useEffect(() => {
     setMounted(true);
     const c = readConsent();
@@ -48,19 +27,6 @@ export function CookieConsent() {
       setAnalyticsState(c.analytics);
       setOpen(true);
     }
-
-    const reopen = () => {
-      setAnalyticsState(readConsent().analytics);
-      setManage(true);
-      setOpen(true);
-    };
-    const onChange = () => setOpen(false);
-    window.addEventListener(CONSENT_OPEN_EVENT, reopen);
-    window.addEventListener(CONSENT_CHANGE_EVENT, onChange);
-    return () => {
-      window.removeEventListener(CONSENT_OPEN_EVENT, reopen);
-      window.removeEventListener(CONSENT_CHANGE_EVENT, onChange);
-    };
   }, []);
 
   useEffect(() => {
@@ -72,7 +38,7 @@ export function CookieConsent() {
     return () => cancelAnimationFrame(r);
   }, [open]);
 
-  // Esc = close without changing anything.
+  // Esc = close without choosing.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -84,6 +50,11 @@ export function CookieConsent() {
 
   if (!mounted || !open) return null;
 
+  function decide(allow: boolean) {
+    setAnalytics(allow);
+    setOpen(false);
+  }
+
   function close() {
     dismissForSession();
     setOpen(false);
@@ -92,7 +63,7 @@ export function CookieConsent() {
   return (
     <div
       role="dialog"
-      aria-label="Analytics choices"
+      aria-label="Cookie choices"
       className={cn(
         "fixed bottom-4 inset-x-4 z-50 sm:left-4 sm:right-auto sm:max-w-md",
         "rounded-lg border border-border bg-surface p-4 shadow-lg",
@@ -112,7 +83,7 @@ export function CookieConsent() {
       {!manage ? (
         <>
           <p className="pr-6 text-sm text-fg-muted">
-            We count visits with Vercel Web Analytics — no cookies, no cross-site
+            We count visits with Vercel Web Analytics — cookieless, no cross-site
             tracking, no profile of you. Sign-in cookies load only after you log
             in. See our{" "}
             <Link href="/privacy" className="text-brand-accent hover:underline">
@@ -121,30 +92,20 @@ export function CookieConsent() {
             .
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                acknowledgeNotice();
-                setOpen(false);
-              }}
-            >
-              Got it
+            <Button size="sm" onClick={() => decide(true)}>
+              Accept
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                setAnalytics(false);
-                setOpen(false);
-              }}
-            >
-              Opt out
+            <Button size="sm" variant="secondary" onClick={() => decide(false)}>
+              Decline
+            </Button>
+            <Button size="sm" variant="link" onClick={() => setManage(true)}>
+              Manage preferences
             </Button>
           </div>
         </>
       ) : (
         <>
-          <p className="pr-6 text-sm font-medium text-fg">Cookie settings</p>
+          <p className="pr-6 text-sm font-medium text-fg">Cookie preferences</p>
           <div className="mt-3 space-y-3 text-sm">
             <div className="flex items-start gap-2.5">
               <input
@@ -181,16 +142,14 @@ export function CookieConsent() {
             </label>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                setAnalytics(analytics);
-                setOpen(false);
-              }}
-            >
+            <Button size="sm" onClick={() => decide(analytics)}>
               Save
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setOpen(false)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setManage(false)}
+            >
               Cancel
             </Button>
           </div>

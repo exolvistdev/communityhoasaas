@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
+import { AnalyticsPreference } from "@/components/AnalyticsPreference";
 
 export const metadata = { title: "Privacy Policy · HOA SaaS" };
 
@@ -106,9 +107,9 @@ export default function PrivacyPolicyPage() {
           <strong className="font-medium text-fg">analytics choice</strong> — and
           whether you have dismissed the notice about it — in your browser, so we
           can respect that choice and not repeat the notice on every page. You
-          can change it at any time from the &ldquo;Cookie settings&rdquo; link in
-          the website footer.
+          can turn visit analytics on or off at any time.
         </p>
+        <AnalyticsPreference />
       </LegalSection>
 
       <LegalSection title="Why we use it">
