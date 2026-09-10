@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
 import { CONSENT_CHANGE_EVENT, readConsent } from "@/lib/consent";
 
 /**
