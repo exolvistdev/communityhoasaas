@@ -62,8 +62,8 @@ only on the next deploy** — redeploy after editing.
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | **secret** — invites, seed auth users, storage writes |
 | `NEXT_PUBLIC_SITE_URL` | ✅ | the deployed origin (`https://<project>.vercel.app` or your domain) — **never `localhost`**; used for links in outbound email |
 | `CRON_SECRET` | ✅ | gates the 3 cron routes; Vercel Cron sends it as a bearer token |
-| `RESEND_API_KEY` | ⬜ | email notifications no-op without it (in-app still works) |
-| `EMAIL_FROM` | ⬜ | must be on a domain verified in Resend, else sends bounce |
+| `POSTMARK_SERVER_TOKEN` | ⬜ | email no-ops without it *and* `EMAIL_FROM` (in-app still works) |
+| `EMAIL_FROM` | ⬜ | must be a verified Sender Signature / domain in Postmark, else the API rejects the send |
 | `DATABASE_URL_TEST` | ⬜ | CI only — never set in Vercel |
 
 Values come straight from your local `.env` (same Supabase project) — **except**

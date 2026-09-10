@@ -29,8 +29,8 @@ Work top to bottom. Details for each step are in `DEPLOYMENT.md`.
 
 - [ ] `NEXT_PUBLIC_SITE_URL` = the deployed origin, **not** the `localhost` value from
       `.env` (redeploy if you change it)
-- [ ] `RESEND_API_KEY` + `EMAIL_FROM` on a Resend-verified domain — or accept email
-      no-ops (in-app notifications still work)
+- [ ] `POSTMARK_SERVER_TOKEN` + `EMAIL_FROM` on a verified Postmark sender — or accept
+      email no-ops (in-app notifications still work)
 - [ ] Node version 22.x or 24.x (Project → Settings → General) — `@supabase/supabase-js`
       wants Node ≥ 22
 - [ ] Custom domain (optional)

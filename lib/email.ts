@@ -8,37 +8,48 @@ function emailOrigin() {
 }
 
 /**
- * Send a transactional email via Resend. Best-effort — never throws, and
- * no-ops (with a console line) when RESEND_API_KEY is unset, so the app runs
- * fine in dev without an email provider. Mirrors the invite flow's behaviour.
+ * Send a transactional email via Postmark. Best-effort — never throws, and
+ * no-ops (with a console line) when POSTMARK_SERVER_TOKEN or EMAIL_FROM is
+ * unset, so the app runs fine in dev without an email provider.
  */
 export async function sendEmail(msg: {
   to: string | string[];
   subject: string;
   html: string;
 }) {
-  const key = process.env.RESEND_API_KEY;
-  const to = Array.isArray(msg.to) ? msg.to : [msg.to];
-  if (!key) {
-    console.info("[email skipped]", msg.subject, "→", to.join(", "));
+  const token = process.env.POSTMARK_SERVER_TOKEN;
+  const from = process.env.EMAIL_FROM;
+  const to = Array.isArray(msg.to) ? msg.to.join(", ") : msg.to;
+  if (!token || !from) {
+    console.info("[email skipped]", msg.subject, "→", to);
     return;
   }
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.postmarkapp.com/email", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${key}`,
+        Accept: "application/json",
         "Content-Type": "application/json",
+        "X-Postmark-Server-Token": token,
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM ?? "HOA SaaS <onboarding@resend.dev>",
-        to,
-        subject: msg.subject,
-        html: msg.html,
+        From: from,
+        To: to,
+        Subject: msg.subject,
+        HtmlBody: msg.html,
+        MessageStream: "outbound",
       }),
     });
-    if (!res.ok) {
-      console.error("[email failed]", res.status, await res.text().catch(() => ""));
+    const body = (await res.json().catch(() => null)) as
+      | { ErrorCode?: number; Message?: string }
+      | null;
+    if (!res.ok || (body?.ErrorCode ?? 0) !== 0) {
+      console.error(
+        "[email failed]",
+        res.status,
+        body?.ErrorCode,
+        body?.Message ?? ""
+      );
     }
   } catch (e) {
     console.error("[email error]", (e as Error).message);

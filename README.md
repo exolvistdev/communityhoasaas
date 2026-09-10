@@ -72,8 +72,8 @@ DIRECT_URL="postgresql://…@…pooler.supabase.com:5432/postgres"              
 NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="…"                    # Supabase → Settings → API
 SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth users, marketplace photos, document library
-RESEND_API_KEY=""                                    # optional — email notifications no-op without it (in-app center still works)
-EMAIL_FROM="HOA SaaS <onboarding@resend.dev>"        # sender for notification emails
+POSTMARK_SERVER_TOKEN=""                             # optional — email no-ops without both this and EMAIL_FROM (in-app center still works)
+EMAIL_FROM="HOA Manager <noreply@yourhoadomain.ph>"  # a verified Postmark Sender Signature or domain
 CRON_SECRET=""                                       # optional — gates the daily sweeps GET /api/cron/overdue, /api/cron/late-fees and /api/cron/water-reminder (vercel.json)
 ```
 

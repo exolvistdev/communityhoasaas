@@ -53,8 +53,9 @@ async function sendInviteEmail(
 /**
  * Create (or re-issue) a Supabase invite for `email` and return the action link.
  * The link lands on /accept-invite where the person sets a password.
- * When `opts.orgName` is given, also emails the link via Resend (best-effort —
- * no-op without RESEND_API_KEY). The caller still gets the link to hand-deliver.
+ * When `opts.orgName` is given, also emails the link via Postmark (best-effort —
+ * no-op without POSTMARK_SERVER_TOKEN). The caller still gets the link to
+ * hand-deliver.
  */
 export async function generateInviteLink(
   email: string,
