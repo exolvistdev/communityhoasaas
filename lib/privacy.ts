@@ -26,6 +26,8 @@ export async function buildDataExport(userId: string, orgId: string) {
   });
   if (!user) return null;
 
+  const ownUnit = { property: { homeowners: { some: { userId } } } };
+
   const [
     homeowners,
     payments,
@@ -43,6 +45,16 @@ export async function buildDataExport(userId: string, orgId: string) {
     auditEvents,
     impersonations,
     requests,
+    violations,
+    maintenance,
+    meetingRsvps,
+    resolutionBallots,
+    electionBallots,
+    proxies,
+    trusteeTerms,
+    waterReadings,
+    documentsUploaded,
+    ownershipTransfers,
   ] = await Promise.all([
     prisma.homeowner.findMany({
       where: { userId },
@@ -205,6 +217,150 @@ export async function buildDataExport(userId: string, orgId: string) {
         createdAt: true,
       },
     }),
+    prisma.violation.findMany({
+      where: ownUnit,
+      orderBy: { occurredAt: "desc" },
+      select: {
+        category: true,
+        description: true,
+        status: true,
+        occurredAt: true,
+        cureByDate: true,
+        resolvedAt: true,
+        resolutionNote: true,
+        photos: true,
+        property: { select: { unitNumber: true } },
+        fineNotices: {
+          select: {
+            noticeNumber: true,
+            amount: true,
+            issuedAt: true,
+            dueDate: true,
+            note: true,
+          },
+        },
+      },
+    }),
+    prisma.maintenanceRequest.findMany({
+      where: { OR: [{ requesterId: userId }, ownUnit] },
+      orderBy: { createdAt: "desc" },
+      select: {
+        title: true,
+        description: true,
+        category: true,
+        location: true,
+        isCommonArea: true,
+        status: true,
+        createdAt: true,
+        resolvedAt: true,
+        photos: true,
+        property: { select: { unitNumber: true } },
+        // notes visible to the requester, plus any the user wrote
+        comments: {
+          where: { OR: [{ staffOnly: false }, { authorId: userId }] },
+          orderBy: { createdAt: "asc" },
+          select: { body: true, authorId: true, createdAt: true },
+        },
+      },
+    }),
+    prisma.meetingRsvp.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        response: true,
+        note: true,
+        createdAt: true,
+        meeting: { select: { title: true, scheduledAt: true } },
+      },
+    }),
+    prisma.ballot.findMany({
+      where: { castById: userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        choice: true,
+        createdAt: true,
+        vote: { select: { title: true } },
+        property: { select: { unitNumber: true } },
+      },
+    }),
+    prisma.electionBallot.findMany({
+      where: { castById: userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        abstain: true,
+        createdAt: true,
+        election: { select: { title: true } },
+        property: { select: { unitNumber: true } },
+        votes: { select: { candidate: { select: { name: true } } } },
+      },
+    }),
+    prisma.voteProxy.findMany({
+      where: {
+        OR: [
+          { holderUserId: userId },
+          { grantedById: userId },
+          { grantorProperty: { homeowners: { some: { userId } } } },
+        ],
+      },
+      orderBy: { grantedAt: "desc" },
+      select: {
+        note: true,
+        grantedAt: true,
+        revokedAt: true,
+        grantorProperty: { select: { unitNumber: true } },
+        holderUser: { select: { fullName: true } },
+      },
+    }),
+    prisma.trustee.findMany({
+      where: { OR: [{ userId }, { homeowner: { userId } }] },
+      orderBy: { termStart: "desc" },
+      select: {
+        name: true,
+        position: true,
+        termStart: true,
+        termEnd: true,
+        endedAt: true,
+      },
+    }),
+    prisma.meterReading.findMany({
+      where: { meter: { property: { homeowners: { some: { userId } } } } },
+      orderBy: { period: "desc" },
+      select: {
+        period: true,
+        readingDate: true,
+        priorReading: true,
+        currentReading: true,
+        consumption: true,
+        amount: true,
+        kind: true,
+        meter: { select: { property: { select: { unitNumber: true } } } },
+      },
+    }),
+    prisma.document.findMany({
+      where: { uploadedById: userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        title: true,
+        category: true,
+        fileName: true,
+        sizeBytes: true,
+        createdAt: true,
+      },
+    }),
+    prisma.ownershipTransfer.findMany({
+      where: ownUnit,
+      orderBy: { effectiveDate: "desc" },
+      select: {
+        previousOwnerName: true,
+        newOwnerName: true,
+        vacated: true,
+        finalBalance: true,
+        settlement: true,
+        effectiveDate: true,
+        note: true,
+        property: { select: { unitNumber: true } },
+      },
+    }),
   ]);
 
   const statements = await Promise.all(
@@ -220,9 +376,11 @@ export async function buildDataExport(userId: string, orgId: string) {
   return {
     exportedAt: new Date().toISOString(),
     notice:
-      "This file is the personal data your HOA holds that is linked to your account. " +
-      "Financial records are retained as required by Philippine tax and audit rules; " +
-      "other data is kept while you are a member and for a reasonable period after.",
+      "This file is the personal data your HOA holds that is linked to your account — " +
+      "billing, statements, gate passes, maintenance, violations, board voting, water " +
+      "readings, marketplace activity and more. Financial records are retained as " +
+      "required by Philippine tax and audit rules; other data is kept while you are a " +
+      "member and for a reasonable period after.",
     account: user,
     units: homeowners.map((h) => ({
       unitNumber: h.property.unitNumber,
@@ -309,5 +467,150 @@ export async function buildDataExport(userId: string, orgId: string) {
       ? { supportImpersonations: impersonations }
       : {}),
     dataRequests: requests,
+    ...(violations.length
+      ? {
+          violations: violations.map((v) => ({
+            unit: v.property.unitNumber,
+            category: v.category,
+            description: v.description,
+            status: v.status,
+            occurredAt: v.occurredAt,
+            cureByDate: v.cureByDate,
+            resolvedAt: v.resolvedAt,
+            resolutionNote: v.resolutionNote,
+            photoCount: v.photos.length,
+            fines: v.fineNotices.map((f) => ({
+              noticeNumber: f.noticeNumber,
+              amount: money(f.amount),
+              issuedAt: f.issuedAt,
+              dueDate: f.dueDate,
+              note: f.note,
+            })),
+          })),
+        }
+      : {}),
+    ...(maintenance.length
+      ? {
+          maintenanceRequests: maintenance.map((m) => ({
+            unit: m.property?.unitNumber ?? (m.isCommonArea ? "common area" : null),
+            title: m.title,
+            description: m.description,
+            category: m.category,
+            location: m.location,
+            status: m.status,
+            requestedAt: m.createdAt,
+            resolvedAt: m.resolvedAt,
+            photoCount: m.photos.length,
+            comments: m.comments.map((c) => ({
+              from: c.authorId === userId ? "you" : "staff / other",
+              body: c.body,
+              at: c.createdAt,
+            })),
+          })),
+        }
+      : {}),
+    ...(meetingRsvps.length ||
+    resolutionBallots.length ||
+    electionBallots.length ||
+    proxies.length ||
+    trusteeTerms.length
+      ? {
+          governance: {
+            ...(meetingRsvps.length
+              ? {
+                  meetingRsvps: meetingRsvps.map((r) => ({
+                    meeting: r.meeting.title,
+                    scheduledAt: r.meeting.scheduledAt,
+                    response: r.response,
+                    note: r.note,
+                    at: r.createdAt,
+                  })),
+                }
+              : {}),
+            ...(resolutionBallots.length
+              ? {
+                  resolutionVotes: resolutionBallots.map((b) => ({
+                    vote: b.vote.title,
+                    unit: b.property.unitNumber,
+                    choice: b.choice,
+                    castAt: b.createdAt,
+                  })),
+                }
+              : {}),
+            ...(electionBallots.length
+              ? {
+                  electionBallots: electionBallots.map((b) => ({
+                    election: b.election.title,
+                    unit: b.property.unitNumber,
+                    abstained: b.abstain,
+                    votedFor: b.votes.map((v) => v.candidate.name),
+                    castAt: b.createdAt,
+                  })),
+                }
+              : {}),
+            ...(proxies.length
+              ? {
+                  votingProxies: proxies.map((p) => ({
+                    unit: p.grantorProperty.unitNumber,
+                    holder: p.holderUser.fullName,
+                    note: p.note,
+                    grantedAt: p.grantedAt,
+                    revokedAt: p.revokedAt,
+                  })),
+                }
+              : {}),
+            ...(trusteeTerms.length
+              ? {
+                  boardTerms: trusteeTerms.map((t) => ({
+                    name: t.name,
+                    position: t.position,
+                    termStart: t.termStart,
+                    termEnd: t.termEnd,
+                    endedAt: t.endedAt,
+                  })),
+                }
+              : {}),
+          },
+        }
+      : {}),
+    ...(waterReadings.length
+      ? {
+          waterReadings: waterReadings.map((w) => ({
+            unit: w.meter.property?.unitNumber ?? null,
+            period: w.period,
+            readingDate: w.readingDate,
+            priorReading: money(w.priorReading),
+            currentReading: money(w.currentReading),
+            consumption: money(w.consumption),
+            amount: money(w.amount),
+            kind: w.kind,
+          })),
+        }
+      : {}),
+    ...(documentsUploaded.length
+      ? {
+          documentsYouUploaded: documentsUploaded.map((d) => ({
+            title: d.title,
+            category: d.category,
+            fileName: d.fileName,
+            sizeBytes: d.sizeBytes,
+            uploadedAt: d.createdAt,
+          })),
+        }
+      : {}),
+    ...(ownershipTransfers.length
+      ? {
+          ownershipTransfers: ownershipTransfers.map((o) => ({
+            unit: o.property.unitNumber,
+            previousOwner: o.previousOwnerName,
+            newOwner: o.newOwnerName,
+            vacated: o.vacated,
+            finalBalance: money(o.finalBalance),
+            settlement: o.settlement,
+            effectiveDate: o.effectiveDate,
+            note: o.note,
+          })),
+        }
+      : {}),
   };
 }
