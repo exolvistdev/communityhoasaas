@@ -38,6 +38,9 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             <Link href="/privacy" className="text-fg-muted hover:text-fg">
               Privacy
             </Link>
+            <Link href="/terms" className="text-fg-muted hover:text-fg">
+              Terms
+            </Link>
             <Link href="/login" className="text-fg-muted hover:text-fg">
               Sign in
             </Link>

@@ -136,6 +136,8 @@ export function PrivacySection({
           "Contact your HOA office."
         )}{" "}
         · <a href="/privacy" className="text-brand-accent hover:underline">Privacy policy</a>
+        {" · "}
+        <a href="/terms" className="text-brand-accent hover:underline">Terms of use</a>
       </p>
     </div>
   );

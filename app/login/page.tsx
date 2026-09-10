@@ -79,6 +79,15 @@ export default function LoginPage() {
             >
               Privacy
             </Link>
+            <span aria-hidden="true" className="text-slate-300">
+              •
+            </span>
+            <Link
+              href="/terms"
+              className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+            >
+              Terms
+            </Link>
           </div>
         </div>
       </div>
