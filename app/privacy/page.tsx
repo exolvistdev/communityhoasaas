@@ -98,14 +98,16 @@ export default function PrivacyPolicyPage() {
           On the public website we use{" "}
           <strong className="font-medium text-fg">Vercel Web Analytics</strong> to
           count page views in aggregate — without cookies, without cross-site
-          tracking, and without building a profile of you. It relies on a
-          short-lived, one-way hash rather than any identifier stored on your
-          device.
+          tracking, and without building a profile of you. It identifies a visit
+          with a short-lived, one-way hash and stores nothing on your device.
         </p>
         <p>
-          You can opt out at any time from the{" "}
-          &ldquo;Cookie settings&rdquo; link in the website footer; your choice is
-          then remembered in your browser.
+          Separately, we store your{" "}
+          <strong className="font-medium text-fg">analytics choice</strong> — and
+          whether you have dismissed the notice about it — in your browser, so we
+          can respect that choice and not repeat the notice on every page. You
+          can change it at any time from the &ldquo;Cookie settings&rdquo; link in
+          the website footer.
         </p>
       </LegalSection>
 

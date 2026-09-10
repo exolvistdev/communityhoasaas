@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseConsent, CONSENT_VERSION } from "@/lib/consent";
+import {
+  parseConsent,
+  readConsent,
+  CONSENT_VERSION,
+  STORAGE_UNAVAILABLE,
+} from "@/lib/consent";
 
 const NOW = new Date("2026-09-10T00:00:00Z");
 const store = (o: object) => JSON.stringify(o);
@@ -32,12 +37,21 @@ describe("parseConsent", () => {
     });
   });
 
-  it("re-shows the notice (default state) when the stored version is old", () => {
-    const raw = store({ version: 0, analytics: false, at: NOW.toISOString() });
+  it("re-prompts from the default when an old-version record was not an opt-out", () => {
+    const raw = store({ version: 0, analytics: true, at: NOW.toISOString() });
     expect(parseConsent(raw, NOW)).toEqual({
       acknowledged: false,
       analytics: true,
       at: null,
+    });
+  });
+
+  it("keeps an explicit opt-out across a version bump, re-showing only the notice", () => {
+    const raw = store({ version: 0, analytics: false, at: NOW.toISOString() });
+    expect(parseConsent(raw, NOW)).toEqual({
+      acknowledged: false,
+      analytics: false,
+      at: NOW.toISOString(),
     });
   });
 
@@ -57,5 +71,45 @@ describe("parseConsent", () => {
       analytics: false,
       at: null,
     });
+  });
+});
+
+describe("readConsent", () => {
+  const orig = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const stubWindow = (localStorage: unknown) => {
+    Object.defineProperty(globalThis, "window", {
+      value: { localStorage },
+      configurable: true,
+      writable: true,
+    });
+  };
+  const restore = () => {
+    if (orig) Object.defineProperty(globalThis, "window", orig);
+    else delete (globalThis as { window?: unknown }).window;
+  };
+
+  it("treats unreadable storage as a possible opt-out (no tracking, no notice)", () => {
+    stubWindow({
+      getItem() {
+        throw new Error("blocked");
+      },
+    });
+    try {
+      expect(readConsent()).toEqual(STORAGE_UNAVAILABLE);
+      expect(STORAGE_UNAVAILABLE.analytics).toBe(false);
+    } finally {
+      restore();
+    }
+  });
+
+  it("parses a stored opt-out from live storage", () => {
+    stubWindow({
+      getItem: () => store({ version: CONSENT_VERSION, analytics: false, at: NOW.toISOString() }),
+    });
+    try {
+      expect(readConsent()).toMatchObject({ acknowledged: true, analytics: false });
+    } finally {
+      restore();
+    }
   });
 });

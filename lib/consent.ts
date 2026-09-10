@@ -17,11 +17,22 @@ export type ConsentState = {
   at: string | null;
 };
 
-const DEFAULT: ConsentState = { acknowledged: false, analytics: true, at: null };
+// Frozen — these are returned by reference from parseConsent / readConsent.
+const DEFAULT: ConsentState = Object.freeze({
+  acknowledged: false,
+  analytics: true,
+  at: null,
+});
 
 export const CONSENT_KEY = "hoa_cookie_consent";
 export const SESSION_DISMISS_KEY = "hoa_cookie_dismissed";
-/** Bump when the disclosure materially changes — resets to default + re-shows the notice. */
+/**
+ * Bump when the disclosure materially changes: it re-shows the notice for
+ * everyone (clears `acknowledged`). An explicit opt-out is preserved across the
+ * bump — see `parseConsent`. TODO when first bumping this: make the notice's
+ * second button an explicit opt-*in* when the visitor is already opted out,
+ * otherwise "Got it" silently keeps them out.
+ */
 export const CONSENT_VERSION = 1;
 
 export const CONSENT_CHANGE_EVENT = "hoa:consent-change";
@@ -46,24 +57,43 @@ export function parseConsent(
   }
   if (!obj || typeof obj !== "object") return DEFAULT;
   const { version, analytics, at } = obj as Record<string, unknown>;
+  const storedAt = typeof at === "string" ? at : null;
+  // An explicit opt-out is a hard choice — it survives a disclosure-version
+  // bump. Only the notice is re-shown (acknowledged resets); analytics stays
+  // off until the visitor changes it from "Cookie settings".
+  if (analytics === false) {
+    return {
+      acknowledged: version === CONSENT_VERSION,
+      analytics: false,
+      at: storedAt,
+    };
+  }
+  // Anything else from an older version → re-prompt from the default.
   if (version !== CONSENT_VERSION) return DEFAULT;
-  // A record exists → the visitor has interacted with the notice. Only an
-  // explicit `analytics: false` opts out; anything else keeps analytics on.
-  return {
-    acknowledged: true,
-    analytics: analytics !== false,
-    at: typeof at === "string" ? at : null,
-  };
+  // A current record with analytics not opted out → acknowledged, analytics on.
+  return { acknowledged: true, analytics: true, at: storedAt };
 }
 
-/* ── browser I/O (all guarded, fail-safe to the default) ───────────────── */
+/* ── browser I/O ──────────────────────────────────────────────────────── */
+
+/**
+ * What to assume when `localStorage` can't be read (blocked site data, a
+ * sandboxed frame). We can't tell a first-time visitor from one who opted out
+ * on an earlier visit, so treat it as a possible opt-out: don't load analytics,
+ * and don't nag with the notice.
+ */
+export const STORAGE_UNAVAILABLE: ConsentState = Object.freeze({
+  acknowledged: true,
+  analytics: false,
+  at: null,
+});
 
 export function readConsent(): ConsentState {
   if (typeof window === "undefined") return DEFAULT;
   try {
     return parseConsent(window.localStorage.getItem(CONSENT_KEY));
   } catch {
-    return DEFAULT;
+    return STORAGE_UNAVAILABLE;
   }
 }
 
