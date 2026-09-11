@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { StaticImageData } from "next/image";
 import {
   Building2,
   Wallet,
@@ -10,6 +11,13 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CtaBand } from "@/components/marketing/CtaBand";
+import { BrowserFrame } from "@/components/marketing/BrowserFrame";
+import { PhoneFrame } from "@/components/marketing/PhoneFrame";
+import ledgerShot from "@/public/marketing/ledger.png";
+import portalShot from "@/public/marketing/portal.png";
+import gatePassesShot from "@/public/marketing/gate-passes.png";
+import portalPayShot from "@/public/marketing/portal-pay.png";
+import portalAmenitiesShot from "@/public/marketing/portal-amenities.png";
 
 export const metadata: Metadata = {
   title: "Features · HOA Manager",
@@ -24,21 +32,28 @@ function Feature({
   lede,
   points,
   beta = false,
+  image,
+  imageAlt,
+  imageUrl,
+  frame,
+  reverse = false,
 }: {
   icon: LucideIcon;
   title: string;
   lede: string;
   points: string[];
   beta?: boolean;
+  /** A real product screenshot to pair with this feature — omit for text-only. */
+  image?: StaticImageData;
+  imageAlt?: string;
+  /** Fake address bar text, for a "browser" frame. */
+  imageUrl?: string;
+  frame?: "browser" | "phone";
+  /** Put the screenshot on the left instead of the right (desktop only). */
+  reverse?: boolean;
 }) {
-  return (
-    <section
-      className={
-        beta
-          ? "rounded-lg border border-dashed border-border bg-surface p-6"
-          : ""
-      }
-    >
+  const copy = (
+    <div>
       <div className="flex items-center gap-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-subtle text-brand-accent">
           <Icon className="h-5 w-5" />
@@ -57,6 +72,43 @@ function Feature({
           </li>
         ))}
       </ul>
+    </div>
+  );
+
+  if (!image) {
+    return (
+      <section
+        className={
+          beta
+            ? "rounded-lg border border-dashed border-border bg-surface p-6"
+            : ""
+        }
+      >
+        {copy}
+      </section>
+    );
+  }
+
+  const shot =
+    frame === "phone" ? (
+      <PhoneFrame src={image} alt={imageAlt ?? title} className="max-w-[260px]" />
+    ) : (
+      <BrowserFrame
+        src={image}
+        alt={imageAlt ?? title}
+        url={imageUrl ?? "sample-hoa.hoasaas.ph"}
+      />
+    );
+
+  return (
+    <section
+      className={
+        "grid items-center gap-8 lg:grid-cols-2 lg:gap-12" +
+        (beta ? " rounded-lg border border-dashed border-border bg-surface p-6" : "")
+      }
+    >
+      <div className={reverse ? "lg:order-2" : undefined}>{copy}</div>
+      <div className={reverse ? "lg:order-1" : undefined}>{shot}</div>
     </section>
   );
 }
@@ -87,6 +139,9 @@ export default function FeaturesPage() {
             "Opt-in late fees applied by a daily sweep",
             "Every charge and payment posts to a double-entry ledger",
           ]}
+          image={ledgerShot}
+          imageAlt="The double-entry ledger's trial balance, with real HOA accounts, debits, credits and balances"
+          imageUrl="sample-hoa.hoasaas.ph/ledger"
         />
 
         <Feature
@@ -100,6 +155,10 @@ export default function FeaturesPage() {
             "Aging summary so residents can see how far behind they are",
             "One login can hold several units",
           ]}
+          image={portalShot}
+          imageAlt="The homeowner portal home screen, showing an amount due and quick links"
+          frame="phone"
+          reverse
         />
 
         <Feature
@@ -113,6 +172,9 @@ export default function FeaturesPage() {
             "Every scan — valid, expired, revoked — written to the visitor log",
             "Homeowners create passes for their own guests from the portal",
           ]}
+          image={gatePassesShot}
+          imageAlt="The admin gate-pass list, showing visitor names, properties, validity windows and statuses"
+          imageUrl="sample-hoa.hoasaas.ph/gate-passes"
         />
 
         <Feature
@@ -126,6 +188,10 @@ export default function FeaturesPage() {
             "Cash, check, and bank transfer recorded by staff too",
             "Confirmed payments post to the ledger and update the resident's balance",
           ]}
+          image={portalPayShot}
+          imageAlt="The portal's Pay Now screen, showing a GCash QR code and a reference-number field"
+          frame="phone"
+          reverse
         />
 
         <Feature
@@ -139,6 +205,9 @@ export default function FeaturesPage() {
             "A fee, when there is one, is invoiced automatically on approval",
             "Cancellations within the cutoff void an unpaid fee",
           ]}
+          image={portalAmenitiesShot}
+          imageAlt="The portal's Amenities screen, listing the basketball court and clubhouse function hall with their rules and fee"
+          frame="phone"
         />
 
         <Feature

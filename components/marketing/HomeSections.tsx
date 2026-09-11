@@ -8,7 +8,12 @@ import {
   Check,
 } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
+import { BrowserFrame } from "./BrowserFrame";
+import { PhoneFrame } from "./PhoneFrame";
 import { CtaBand } from "./CtaBand";
+import dashboardShot from "@/public/marketing/dashboard.png";
+import portalShot from "@/public/marketing/portal.png";
+import portalPayShot from "@/public/marketing/portal-pay.png";
 
 const PROBLEMS = [
   "Dues tracked in a spreadsheet only the treasurer really understands.",
@@ -69,27 +74,36 @@ export function HomeSections() {
     <>
       {/* Hero */}
       <section className="bg-brand bg-gradient-to-br from-brand-hi to-brand text-brand-fg">
-        <div className="mx-auto max-w-5xl px-5 py-20 sm:py-28">
-          <h1 className="font-display max-w-3xl text-3xl font-semibold leading-tight sm:text-5xl">
-            HOA and condo management, built for the Philippines.
-          </h1>
-          <p className="mt-5 max-w-2xl text-base text-brand-fg/80 sm:text-lg">
-            Dues billing, an auditable ledger, a resident portal, and gate
-            security in one system — for subdivisions, villages and
-            condominiums, and it speaks GCash, Maya, and pesos.
-          </p>
-          <div className="mt-8">
-            <Link
-              href="/contact"
-              className={buttonClass({
-                variant: "secondary",
-                size: "lg",
-                className: "w-full sm:w-auto",
-              })}
-            >
-              Request a demo
-            </Link>
+        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-20 sm:py-28 lg:grid-cols-2 lg:items-center lg:gap-8">
+          <div>
+            <h1 className="font-display max-w-3xl text-3xl font-semibold leading-tight sm:text-5xl">
+              HOA and condo management, built for the Philippines.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base text-brand-fg/80 sm:text-lg">
+              Dues billing, an auditable ledger, a resident portal, and gate
+              security in one system — for subdivisions, villages and
+              condominiums, and it speaks GCash, Maya, and pesos.
+            </p>
+            <div className="mt-8">
+              <Link
+                href="/contact"
+                className={buttonClass({
+                  variant: "secondary",
+                  size: "lg",
+                  className: "w-full sm:w-auto",
+                })}
+              >
+                Request a demo
+              </Link>
+            </div>
           </div>
+          <BrowserFrame
+            src={dashboardShot}
+            alt="The HOA Manager admin dashboard, showing properties, collections, and open items for Sample Subdivision HOA"
+            url="sample-hoa.hoasaas.ph/dashboard"
+            priority
+            className="lg:-mr-6"
+          />
         </div>
       </section>
 
@@ -142,6 +156,67 @@ export function HomeSections() {
               See each feature in detail →
             </Link>
           </p>
+        </div>
+      </section>
+
+      {/* Spotlights */}
+      <section className="mx-auto max-w-5xl space-y-16 px-5 py-16 sm:py-20">
+        <div className="grid items-center gap-10 sm:grid-cols-2 sm:gap-12">
+          <div className="order-2 sm:order-1">
+            <h2 className="text-2xl font-semibold text-fg">
+              Residents stop calling the office.
+            </h2>
+            <p className="mt-3 text-sm text-fg-muted">
+              Every homeowner signs in to see exactly what they owe, when
+              it&apos;s due, and their full payment history — no spreadsheet
+              lookups, no guessing.
+            </p>
+            <ul className="mt-6 space-y-3 text-sm text-fg-muted">
+              {[
+                "Balance, due date, and per-invoice breakdown at a glance",
+                "A printable, exportable statement of account",
+                "One login can hold several units",
+              ].map((line) => (
+                <li key={line} className="flex gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <PhoneFrame
+            src={portalShot}
+            alt="The homeowner portal home screen, showing an amount due, quick links, and a bottom navigation bar"
+            className="order-1 sm:order-2"
+          />
+        </div>
+        <div className="grid items-center gap-10 sm:grid-cols-2 sm:gap-12">
+          <PhoneFrame
+            src={portalPayShot}
+            alt="The portal's Pay Now screen, showing a GCash QR code, account name and number, and a reference-number field"
+          />
+          <div>
+            <h2 className="text-2xl font-semibold text-fg">
+              GCash and Maya, not a bank form.
+            </h2>
+            <p className="mt-3 text-sm text-fg-muted">
+              Residents pay in the app they already use, then submit the
+              reference number. The treasurer confirms it and the ledger
+              updates itself.
+            </p>
+            <ul className="mt-6 space-y-3 text-sm text-fg-muted">
+              {[
+                "GCash and Maya QR built right into the portal",
+                "A reconciliation queue — the treasurer confirms or rejects",
+                "Cash, check, and bank transfer recorded by staff too",
+              ].map((line) => (
+                <li key={line} className="flex gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
