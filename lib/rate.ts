@@ -3,9 +3,16 @@ import type { Prisma, PropertyType, DuesRateMode } from "@prisma/client";
 // Pure rate-resolution helpers — safe to import from client components.
 
 /**
- * Property rows that count toward the platform subscription and its rate band:
- * active (not archived) and not a parking slot. Used by the Settings "Plan" row
- * and the platform console so every surface counts the same thing.
+ * Property rows that count toward the *platform's own* subscription and its
+ * rate band: active (not archived) and not a parking slot. Used by the
+ * Settings "Plan" row and the platform console so every surface counts the
+ * same thing.
+ *
+ * Deliberately unrelated to what the org bills its own residents — HOA dues
+ * generation still invoices every active property, parking slots included
+ * (often at their own, lower `typeRateParking`). "Billable" here means
+ * "counts as a unit/lot" the way an admin would answer at signup, which is
+ * what the platform's own per-property SaaS rate is priced on.
  */
 export const BILLABLE_PROPERTY_WHERE: Prisma.PropertyWhereInput = {
   archivedAt: null,

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/cn";
 import { CtaBand } from "@/components/marketing/CtaBand";
 import { BrowserFrame } from "@/components/marketing/BrowserFrame";
 import { PhoneFrame } from "@/components/marketing/PhoneFrame";
@@ -75,18 +76,12 @@ function Feature({
     </div>
   );
 
+  const betaClass = beta
+    ? "rounded-lg border border-dashed border-border bg-surface p-6"
+    : "";
+
   if (!image) {
-    return (
-      <section
-        className={
-          beta
-            ? "rounded-lg border border-dashed border-border bg-surface p-6"
-            : ""
-        }
-      >
-        {copy}
-      </section>
-    );
+    return <section className={betaClass}>{copy}</section>;
   }
 
   const shot =
@@ -101,12 +96,7 @@ function Feature({
     );
 
   return (
-    <section
-      className={
-        "grid items-center gap-8 lg:grid-cols-2 lg:gap-12" +
-        (beta ? " rounded-lg border border-dashed border-border bg-surface p-6" : "")
-      }
-    >
+    <section className={cn("grid items-center gap-8 lg:grid-cols-2 lg:gap-12", betaClass)}>
       <div className={reverse ? "lg:order-2" : undefined}>{copy}</div>
       <div className={reverse ? "lg:order-1" : undefined}>{shot}</div>
     </section>

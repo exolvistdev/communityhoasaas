@@ -107,16 +107,14 @@ export default async function SettingsPage() {
   const usingEstimate = billableProperties === 0 && estimatedUnits > 0;
   const planCount = billableProperties || estimatedUnits;
   const planEst = monthlyEstimate(planCount);
+  const planUnitWord = planCount === 1 ? terms.unit : terms.units;
+  const planEstimateSuffix = usingEstimate ? " (estimated)" : "";
   const planValue =
     planCount === 0
       ? "No units yet"
-      : `${planCount.toLocaleString("en-PH")} ${
-          planCount === 1 ? terms.unit : terms.units
-        }${usingEstimate ? " (estimated)" : ""} · ${peso(planEst.rate, {
-          cents: false,
-        })}/${terms.unit}/mo · about ${peso(planEst.total, {
-          cents: false,
-        })}/month`;
+      : `${planCount.toLocaleString("en-PH")} ${planUnitWord}${planEstimateSuffix} · ` +
+        `${peso(planEst.rate, { cents: false })}/${terms.unit}/mo · ` +
+        `about ${peso(planEst.total, { cents: false })}/month`;
 
   return (
     <div className="max-w-2xl space-y-8">

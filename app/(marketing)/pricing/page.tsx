@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { CtaBand } from "@/components/marketing/CtaBand";
 import { PRICING_BANDS, bandRangeLabel } from "@/lib/pricing";
+import { peso } from "@/lib/format";
 
 const BANDS = PRICING_BANDS.map((b) => ({
-  rate: `₱${b.rate}`,
+  rate: peso(b.rate, { cents: false }),
   unit: "/ property / month",
   range: bandRangeLabel(b),
 }));
@@ -15,7 +16,7 @@ const BANDS = PRICING_BANDS.map((b) => ({
 export const metadata: Metadata = {
   title: "Pricing · HOA Manager",
   description: `One rate per property, per month: ${PRICING_BANDS.map(
-    (b) => `₱${b.rate} for ${bandRangeLabel(b, "")}`
+    (b) => `${peso(b.rate, { cents: false })} for ${bandRangeLabel(b, "")}`
   ).join(", ")} properties. Every feature at every tier.`,
   alternates: { canonical: "/pricing" },
 };

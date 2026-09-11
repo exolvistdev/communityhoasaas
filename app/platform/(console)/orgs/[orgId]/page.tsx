@@ -16,16 +16,18 @@ export default async function PlatformOrgPage({
 }) {
   await requirePlatformAdmin();
 
-  const org = await prisma.organization.findUnique({
-    where: { id: params.orgId },
-    include: {
-      users: { orderBy: { createdAt: "asc" } },
-      _count: { select: { properties: true } },
-    },
-  });
+  const [org, billableUnits] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: params.orgId },
+      include: {
+        users: { orderBy: { createdAt: "asc" } },
+        _count: { select: { properties: true } },
+      },
+    }),
+    billablePropertyCount(params.orgId),
+  ]);
   if (!org) notFound();
 
-  const billableUnits = await billablePropertyCount(org.id);
   const est = billableUnits > 0 ? monthlyEstimate(billableUnits) : null;
 
   return (
@@ -41,10 +43,9 @@ export default async function PlatformOrgPage({
         <p className="text-sm text-fg-muted">
           {org.subdomain} · {org._count.properties} properties
           {est
-            ? ` · ${billableUnits} billable · ₱${est.rate}/unit · about ${peso(
-                est.total,
-                { cents: false }
-              )}/mo`
+            ? ` · ${billableUnits} billable · ${peso(est.rate, {
+                cents: false,
+              })}/unit · about ${peso(est.total, { cents: false })}/mo`
             : " · no billable units yet"}
           {org.estimatedUnits != null &&
             ` · ${org.estimatedUnits.toLocaleString("en-PH")} at signup`}

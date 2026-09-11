@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePlatformAdmin } from "@/lib/platform";
 import { ratePerProperty } from "@/lib/pricing";
 import { BILLABLE_PROPERTY_WHERE } from "@/lib/rate";
+import { peso } from "@/lib/format";
 import { OrgStatusBadge } from "./OrgStatusBadge";
 
 export default async function PlatformDirectoryPage() {
@@ -74,7 +75,7 @@ export default async function PlatformDirectoryPage() {
                 </td>
                 <td className="px-4 py-2.5 text-fg-muted">{org.subdomain}</td>
                 <td className="px-4 py-2.5 text-fg-muted">
-                  {n > 0 ? `₱${ratePerProperty(n)}/unit` : "—"}
+                  {n > 0 ? `${peso(ratePerProperty(n), { cents: false })}/unit` : "—"}
                 </td>
                 <td className="px-4 py-2.5">
                   <OrgStatusBadge org={org} />
