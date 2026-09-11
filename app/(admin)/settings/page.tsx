@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
-import { PROPERTY_TYPES, TYPE_RATE_FIELD, BILLABLE_PROPERTY_WHERE } from "@/lib/rate";
+import { PROPERTY_TYPES, TYPE_RATE_FIELD } from "@/lib/rate";
+import { billablePropertyCount } from "@/lib/billing";
 import { paymentQrUrl } from "@/lib/payment-qr";
 import { OrgSettingsForm } from "./OrgSettingsForm";
 import { CommunityTypeForm } from "./CommunityTypeForm";
@@ -90,28 +91,32 @@ export default async function SettingsPage() {
     perSqmOffRate = Number(count);
   }
 
-  const unitsMissingFloorArea =
+  // Independent counts — run together rather than one after another.
+  const [unitsMissingFloorArea, billableProperties] = await Promise.all([
     org.voteWeightMode === "ONE_UNIT_ONE_VOTE"
-      ? 0
-      : await prisma.property.count({
+      ? Promise.resolve(0)
+      : prisma.property.count({
           where: { orgId: org.id, archivedAt: null, floorArea: null },
-        });
+        }),
+    billablePropertyCount(org.id),
+  ]);
 
   // Subscription band — the live billable-property count once units exist, else
   // the approximate figure given at signup (labelled as an estimate).
-  const billableProperties = await prisma.property.count({
-    where: { orgId: org.id, ...BILLABLE_PROPERTY_WHERE },
-  });
-  const usingEstimate = billableProperties === 0 && (org.estimatedUnits ?? 0) > 0;
-  const planCount = billableProperties || org.estimatedUnits || 0;
+  const estimatedUnits = Math.max(0, org.estimatedUnits ?? 0);
+  const usingEstimate = billableProperties === 0 && estimatedUnits > 0;
+  const planCount = billableProperties || estimatedUnits;
   const planEst = monthlyEstimate(planCount);
-  const planNoun = planCount === 1 ? terms.unit : terms.units;
-  const planValue = `${planCount.toLocaleString("en-PH")} ${planNoun}${
-    usingEstimate ? " (estimated)" : ""
-  } · ${peso(planEst.rate, { cents: false })}/${terms.unit}/mo · about ${peso(
-    planEst.total,
-    { cents: false }
-  )}/month`;
+  const planValue =
+    planCount === 0
+      ? "No units yet"
+      : `${planCount.toLocaleString("en-PH")} ${
+          planCount === 1 ? terms.unit : terms.units
+        }${usingEstimate ? " (estimated)" : ""} · ${peso(planEst.rate, {
+          cents: false,
+        })}/${terms.unit}/mo · about ${peso(planEst.total, {
+          cents: false,
+        })}/month`;
 
   return (
     <div className="max-w-2xl space-y-8">

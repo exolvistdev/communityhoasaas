@@ -164,6 +164,7 @@ function Step1({ onDone }: { onDone: (ct: CommunityType) => void }) {
           name="estimatedUnits"
           type="number"
           min={1}
+          max={1000000}
           inputMode="numeric"
           value={unitCount}
           onChange={(e) => setUnitCount(e.target.value.replace(/[^0-9]/g, ""))}

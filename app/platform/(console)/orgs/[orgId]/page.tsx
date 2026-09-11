@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePlatformAdmin } from "@/lib/platform";
 import { monthlyEstimate } from "@/lib/pricing";
-import { BILLABLE_PROPERTY_WHERE } from "@/lib/rate";
+import { billablePropertyCount } from "@/lib/billing";
 import { peso } from "@/lib/format";
 import { OrgStatusBadge } from "../../OrgStatusBadge";
 import { ImpersonateButton } from "./ImpersonateButton";
@@ -25,9 +25,7 @@ export default async function PlatformOrgPage({
   });
   if (!org) notFound();
 
-  const billableUnits = await prisma.property.count({
-    where: { orgId: org.id, ...BILLABLE_PROPERTY_WHERE },
-  });
+  const billableUnits = await billablePropertyCount(org.id);
   const est = billableUnits > 0 ? monthlyEstimate(billableUnits) : null;
 
   return (
