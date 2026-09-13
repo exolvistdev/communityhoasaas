@@ -161,7 +161,9 @@ export function TeamManager({
               <th className="px-4 py-2.5 font-medium">Email</th>
               <th className="px-4 py-2.5 font-medium">Role</th>
               <th className="px-4 py-2.5 font-medium">Status</th>
-              <th className="px-4 py-2.5 text-right font-medium"></th>
+              <th className="px-4 py-2.5 text-right font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -181,6 +183,7 @@ export function TeamManager({
                     onChange={(e) =>
                       act(() => updateMemberRole(m.id, e.target.value))
                     }
+                    aria-label={`Change ${m.fullName}'s role`}
                     className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-brand disabled:opacity-60"
                   >
                     {(m.role === "HOMEOWNER"

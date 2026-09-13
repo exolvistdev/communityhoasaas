@@ -10,7 +10,7 @@ export default async function ReportsLayout({
   await requireStaff(); // staff-only; homeowners see financials as documents
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8 print:max-w-none print:p-0">
+    <main className="mx-auto max-w-4xl px-6 py-8 print:max-w-none print:p-0">
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -23,6 +23,6 @@ export default async function ReportsLayout({
         }
       `}</style>
       {children}
-    </div>
+    </main>
   );
 }

@@ -60,13 +60,13 @@ export function PayablesInteractive({
     <>
       <div className="mt-4 flex gap-8 text-sm">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Vendors owed
           </div>
           <div className="font-medium">{count}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Total payable
           </div>
           <div className="font-medium tabular-nums">{peso(outstanding)}</div>
@@ -91,7 +91,7 @@ export function PayablesInteractive({
       )}
 
       {vendors.length === 0 ? (
-        <p className="mt-6 text-sm text-gray-400">No outstanding bills.</p>
+        <p className="mt-6 text-sm text-gray-600">No outstanding bills.</p>
       ) : (
         <TableFrame>
           <table className="mt-4 w-full border-collapse text-xs">
@@ -122,7 +122,7 @@ export function PayablesInteractive({
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td className="py-3 text-gray-400" colSpan={2 + COLS.length}>
+                  <td className="py-3 text-gray-600" colSpan={2 + COLS.length}>
                     No vendor has a balance in this bucket.
                   </td>
                 </tr>

@@ -153,6 +153,7 @@ export function TypeRatesForm({
                   step="0.01"
                   defaultValue={r.rate ?? ""}
                   placeholder="none"
+                  aria-label={`${PROPERTY_TYPE_LABEL[r.type]} monthly rate`}
                   className="w-32 rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
                 />
               </div>

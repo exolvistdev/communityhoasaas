@@ -32,6 +32,7 @@ export function WaterCostChart({
     <ChartFrame
       title="Resident charges vs. utility cost"
       note="Bars: billed to residents vs. the utility's bulk bill. Line: system loss %."
+      height={240}
     >
       <ComposedChart
         width={640}

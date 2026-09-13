@@ -43,7 +43,7 @@ export function BalanceSheetInteractive({
             Cash at the end of{" "}
             <span className="font-semibold">{periodLabel(drill.key)}</span>:{" "}
             <span className="font-semibold tabular-nums">{peso(drill.cash)}</span>
-            <span className="ml-1 text-xs text-gray-400">
+            <span className="ml-1 text-xs text-gray-600">
               (the statement below is as of {fmtDate(data.asOf)})
             </span>
           </p>

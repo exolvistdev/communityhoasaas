@@ -141,6 +141,7 @@ export function WaterSettingsForm({
                       onChange={(e) =>
                         setBand(i, { upToM3: Number(e.target.value) || 0 })
                       }
+                      aria-label={`Band ${i + 1} upper limit (m³)`}
                       className={`w-20 ${field}`}
                     />
                   )}
@@ -153,6 +154,7 @@ export function WaterSettingsForm({
                     onChange={(e) =>
                       setBand(i, { pricePerM3: Number(e.target.value) || 0 })
                     }
+                    aria-label={`Band ${i + 1} price per m³`}
                     className={`w-24 ${field}`}
                   />
                   {bands.length > 1 && (

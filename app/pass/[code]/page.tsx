@@ -72,7 +72,7 @@ export default async function VisitorPassPage({
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
-        <div className="text-xs uppercase tracking-wide text-gray-400">
+        <div className="text-xs uppercase tracking-wide text-gray-600">
           {pass.property.org.name}
         </div>
         <div className="mt-1 text-sm text-gray-500">Visitor gate pass</div>
@@ -95,7 +95,7 @@ export default async function VisitorPassPage({
           {pass.usedAt && <Row label="Used" value={fmt(pass.usedAt)} />}
         </dl>
 
-        <p className="mt-4 text-xs text-gray-400">
+        <p className="mt-4 text-xs text-gray-600">
           Show this screen to the guard at the gate.
         </p>
       </div>
@@ -106,7 +106,7 @@ export default async function VisitorPassPage({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-gray-400">{label}</dt>
+      <dt className="text-gray-600">{label}</dt>
       <dd className="text-gray-900">{value}</dd>
     </div>
   );

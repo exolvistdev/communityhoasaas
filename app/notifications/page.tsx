@@ -36,7 +36,7 @@ export default async function NotificationsPage() {
         <h1 className="mt-1 text-lg font-semibold text-fg">Notifications</h1>
         <p className="text-sm text-fg-muted">
           Manage what lands here in{" "}
-          <Link href="/account" className="text-brand-accent hover:underline">
+          <Link href="/account" className="text-brand-accent underline">
             account settings
           </Link>
           .

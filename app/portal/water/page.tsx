@@ -60,7 +60,12 @@ export default async function PortalWaterPage() {
             />
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <div
+            tabIndex={0}
+            role="region"
+            aria-label="Water reading history"
+            className="overflow-x-auto rounded-lg border border-border bg-surface"
+          >
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-fg-subtle">

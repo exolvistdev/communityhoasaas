@@ -29,7 +29,7 @@ export function MonthlyBarChart({
   const fmt = (v: number) => (unit === "peso" ? peso(v) : `${v} m³`);
   const tickFmt = (v: number) => (unit === "peso" ? compactPeso(v) : String(v));
   return (
-    <ChartFrame title={title} note={note}>
+    <ChartFrame title={title} note={note} height={220}>
       <BarChart
         width={640}
         height={220}

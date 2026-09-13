@@ -38,7 +38,7 @@ export function IncomeByCategoryChart({
   };
 
   return (
-    <ChartFrame title="Income by category">
+    <ChartFrame title="Income by category" height={230}>
       <BarChart
         width={640}
         height={230}

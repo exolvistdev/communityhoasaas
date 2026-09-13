@@ -56,6 +56,7 @@ export function BoardManager({ trustees }: { trustees: TrusteeRow[] }) {
                         )
                       )
                     }
+                    aria-label={`Officer position for ${t.name}`}
                     className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-brand disabled:opacity-50"
                   >
                     {positions.map((p) => (

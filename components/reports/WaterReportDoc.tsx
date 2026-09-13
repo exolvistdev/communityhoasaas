@@ -8,7 +8,15 @@ import { WaterCostChart } from "./charts/WaterCostChart";
 
 type Data = Awaited<ReturnType<typeof waterReport>>;
 
-export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data }) {
+export function WaterReportDoc({
+  orgName,
+  data,
+  headingLevel,
+}: {
+  orgName: string;
+  data: Data;
+  headingLevel?: "h1" | "h2";
+}) {
   const bulk = data.mode === "EXTERNAL_BULK";
 
   return (
@@ -16,6 +24,7 @@ export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data 
       orgName={orgName}
       title="Water"
       periodLabel={`${fmtDate(data.from)} – ${fmtDate(data.to)}`}
+      headingLevel={headingLevel}
     >
       <div className="mt-4 flex flex-wrap gap-8 text-sm">
         <Stat label="Consumption" value={formatConsumption(data.totals.consumption)} />
@@ -61,7 +70,7 @@ export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data 
       </div>
 
       {data.rows.length === 0 ? (
-        <p className="mt-6 text-sm text-gray-400">
+        <p className="mt-6 text-sm text-gray-600">
           No metered water use in this period.
         </p>
       ) : (
@@ -139,7 +148,7 @@ export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data 
       )}
 
       {bulk && (
-        <p className="mt-4 text-[11px] text-gray-400">
+        <p className="mt-4 text-[11px] text-gray-600">
           Net position = billed to residents − utility bulk bills for the period.
           A negative figure means the HOA absorbed system loss, common-area use
           or fees.
@@ -152,7 +161,7 @@ export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-gray-400">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-gray-600">{label}</div>
       <div className="font-medium tabular-nums">{value}</div>
     </div>
   );

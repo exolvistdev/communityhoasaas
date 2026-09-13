@@ -37,6 +37,7 @@ export function CollectionRateTrendChart({
           ? "Click a month to see its numbers below."
           : "Collected ÷ (opening receivables + amount billed), per month."
       }
+      height={220}
     >
       <LineChart
         width={640}

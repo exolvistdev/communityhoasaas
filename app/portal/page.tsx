@@ -176,6 +176,7 @@ export default async function PortalHome() {
 
   return (
     <div className="space-y-4">
+      <h1 className="sr-only">Home</h1>
       {/* balance card */}
       <div className={`rounded-xl border p-5 shadow-sm ${cardTone}`}>
         <div className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">

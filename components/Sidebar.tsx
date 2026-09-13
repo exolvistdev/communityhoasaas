@@ -176,7 +176,7 @@ function Brand({ orgName }: { orgName: string }) {
         <span className="block truncate text-sm font-semibold text-slate-50">
           HOA Manager
         </span>
-        <span className="block truncate text-xs text-slate-500">{orgName}</span>
+        <span className="block truncate text-xs text-slate-400">{orgName}</span>
       </span>
     </div>
   );
@@ -203,7 +203,7 @@ function Nav({
         if (items.length === 0) return null;
         return (
           <div key={g.label} className="space-y-1">
-            <div className="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            <div className="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               {g.label}
             </div>
             {items.map((item) => {

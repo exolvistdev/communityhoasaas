@@ -121,7 +121,7 @@ export default async function ViolationsPage() {
     },
     {
       key: "open",
-      header: "",
+      header: <span className="sr-only">Open</span>,
       align: "right",
       card: "action",
       cell: ({ v }) => (

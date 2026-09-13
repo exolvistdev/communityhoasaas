@@ -28,7 +28,7 @@ export function AssetsLiabilitiesEquityChart({
   ];
 
   return (
-    <ChartFrame title="Assets, liabilities & fund balance">
+    <ChartFrame title="Assets, liabilities & fund balance" height={180}>
       <BarChart
         width={560}
         height={180}
@@ -50,7 +50,7 @@ export function AssetsLiabilitiesEquityChart({
           width={84}
         />
         <Tooltip formatter={(v: number) => peso(v)} cursor={{ fill: CHART.grid }} />
-        <Bar dataKey="value" radius={[0, 2, 2, 0]}>
+        <Bar dataKey="value" radius={[0, 2, 2, 0]} isAnimationActive={false}>
           {data.map((d) => (
             <Cell key={d.name} fill={d.fill} />
           ))}

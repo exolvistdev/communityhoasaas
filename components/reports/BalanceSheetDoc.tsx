@@ -9,16 +9,19 @@ export function BalanceSheetDoc({
   orgName,
   data,
   cash = [],
+  headingLevel,
 }: {
   orgName: string;
   data: Data;
   cash?: CashMonth[];
+  headingLevel?: "h1" | "h2";
 }) {
   return (
     <ReportDoc
       orgName={orgName}
       title="Statement of Financial Position"
       periodLabel={`As of ${fmtDate(data.asOf)}`}
+      headingLevel={headingLevel}
     >
       <BalanceSheetInteractive
         key={data.asOf.toISOString()}

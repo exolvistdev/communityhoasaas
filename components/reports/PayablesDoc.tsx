@@ -4,12 +4,21 @@ import { PayablesInteractive } from "./PayablesInteractive";
 
 type Data = Awaited<ReturnType<typeof payablesAging>>;
 
-export function PayablesDoc({ orgName, data }: { orgName: string; data: Data }) {
+export function PayablesDoc({
+  orgName,
+  data,
+  headingLevel,
+}: {
+  orgName: string;
+  data: Data;
+  headingLevel?: "h1" | "h2";
+}) {
   return (
     <ReportDoc
       orgName={orgName}
       title="Accounts Payable Aging"
       periodLabel={`As of ${fmtDate(data.asOf)}`}
+      headingLevel={headingLevel}
     >
       <PayablesInteractive
         key={data.asOf.toISOString()}

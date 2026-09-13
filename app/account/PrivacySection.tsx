@@ -76,6 +76,7 @@ export function PrivacySection({
               rows={2}
               maxLength={1000}
               placeholder="Reason (optional)"
+              aria-label="Reason for deletion (optional)"
               className="w-full rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-brand"
             />
             <div className="flex gap-2">

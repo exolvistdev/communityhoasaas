@@ -6,28 +6,37 @@ import { CategoryDonut } from "./charts/CategoryDonut";
 
 type Data = Awaited<ReturnType<typeof vendorSpendReport>>;
 
-export function VendorSpendDoc({ orgName, data }: { orgName: string; data: Data }) {
+export function VendorSpendDoc({
+  orgName,
+  data,
+  headingLevel,
+}: {
+  orgName: string;
+  data: Data;
+  headingLevel?: "h1" | "h2";
+}) {
   return (
     <ReportDoc
       orgName={orgName}
       title="Vendor Spend"
       periodLabel={`${fmtDate(data.from)} – ${fmtDate(data.to)}`}
+      headingLevel={headingLevel}
     >
       <div className="mt-4 flex gap-8 text-sm">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Billed this period
           </div>
           <div className="font-medium tabular-nums">{peso(data.totalBilled)}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Paid this period
           </div>
           <div className="font-medium tabular-nums">{peso(data.totalPaid)}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Open balance
           </div>
           <div className="font-medium tabular-nums">{peso(data.openBalance)}</div>
@@ -53,7 +62,7 @@ export function VendorSpendDoc({ orgName, data }: { orgName: string; data: Data 
       </div>
 
       {data.vendors.length === 0 ? (
-        <p className="mt-6 text-sm text-gray-400">
+        <p className="mt-6 text-sm text-gray-600">
           No vendor bills in this period.
         </p>
       ) : (

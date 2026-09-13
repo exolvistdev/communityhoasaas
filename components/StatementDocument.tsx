@@ -29,11 +29,11 @@ export function StatementDocument({ statement: s }: { statement: Statement }) {
 
       <div className="mt-4 flex gap-8">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">Unit</div>
+          <div className="text-xs uppercase tracking-wide text-gray-600">Unit</div>
           <div className="font-medium">{s.unitNumber}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Homeowner
           </div>
           <div className="font-medium">{s.homeownerName ?? "—"}</div>
@@ -51,7 +51,7 @@ export function StatementDocument({ statement: s }: { statement: Statement }) {
           rows={s.lines}
           rowKey={(_l, i) => String(i)}
           empty={
-            <div className="px-4 py-4 text-gray-400">
+            <div className="px-4 py-4 text-gray-600">
               No activity in this period.
             </div>
           }

@@ -50,6 +50,7 @@ export function BucketBarChart({
     <ChartFrame
       title={title}
       note={clickable ? "Click a bar to filter the table below." : undefined}
+      height={220}
     >
       <BarChart
         width={560}

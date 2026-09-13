@@ -10,31 +10,34 @@ type Data = Awaited<ReturnType<typeof violationsReport>>;
 export function ViolationsReportDoc({
   orgName,
   data,
+  headingLevel,
 }: {
   orgName: string;
   data: Data;
+  headingLevel?: "h1" | "h2";
 }) {
   return (
     <ReportDoc
       orgName={orgName}
       title="Violations & Fines"
       periodLabel={`${fmtDate(data.from)} – ${fmtDate(data.to)}`}
+      headingLevel={headingLevel}
     >
       <div className="mt-4 flex gap-8 text-sm">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Logged this period
           </div>
           <div className="font-medium">{data.count}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Still open
           </div>
           <div className="font-medium">{data.openCount}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Fines charged
           </div>
           <div className="font-medium tabular-nums">{peso(data.totalFines)}</div>
@@ -60,7 +63,7 @@ export function ViolationsReportDoc({
       </div>
 
       {data.rows.length === 0 ? (
-        <p className="mt-6 text-sm text-gray-400">
+        <p className="mt-6 text-sm text-gray-600">
           No violations were logged in this period.
         </p>
       ) : (

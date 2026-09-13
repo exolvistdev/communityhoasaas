@@ -31,7 +31,7 @@ export function RankBarChart({
   const height = Math.max(120, data.length * 26 + 24);
 
   return (
-    <ChartFrame title={title} note={note}>
+    <ChartFrame title={title} note={note} height={height}>
       <BarChart
         width={560}
         height={height}

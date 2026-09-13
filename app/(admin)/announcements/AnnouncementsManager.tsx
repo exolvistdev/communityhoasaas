@@ -103,7 +103,7 @@ export function AnnouncementsManager({ items }: { items: Item[] }) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-fg">{a.title}</h3>
+                      <h2 className="font-medium text-fg">{a.title}</h2>
                       {a.publishedAt ? (
                         <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
                           Published {fmt(a.publishedAt)}

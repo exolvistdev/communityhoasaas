@@ -208,6 +208,7 @@ export function BulkWaterManager({
       onChange={(e) =>
         setInputs((c) => ({ ...c, [data.source!.id]: e.target.value }))
       }
+      aria-label="Master meter reading"
       className="w-32 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand"
     />
   );
@@ -342,7 +343,9 @@ export function BulkWaterManager({
                   <th className="min-w-[4.5rem] whitespace-nowrap px-3 py-2 text-right font-medium">
                     Used
                   </th>
-                  <th className="min-w-[12rem] px-3 py-2" />
+                  <th className="min-w-[12rem] px-3 py-2">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -373,6 +376,7 @@ export function BulkWaterManager({
                         onChange={(e) =>
                           setInputs((c) => ({ ...c, [r.id]: e.target.value }))
                         }
+                        aria-label={`Reading for unit ${r.unitNumber}`}
                         className="w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand disabled:opacity-50"
                       />
                       {!r.thisPeriodBilled && (
@@ -480,6 +484,7 @@ export function BulkWaterManager({
                         onChange={(e) =>
                           setInputs((c) => ({ ...c, [r.id]: e.target.value }))
                         }
+                        aria-label={`Reading for ${r.label ?? r.unitNumber}`}
                         className="w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand"
                       />
                     </td>

@@ -52,7 +52,9 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
               <th className="px-4 py-2.5 font-medium">Plan</th>
               <th className="px-4 py-2.5 text-right font-medium">Monthly rate</th>
               <th className="px-4 py-2.5 font-medium">Properties</th>
-              <th className="px-4 py-2.5 text-right font-medium"></th>
+              <th className="px-4 py-2.5 text-right font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>

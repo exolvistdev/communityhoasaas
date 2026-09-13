@@ -87,6 +87,7 @@ export function NotificationPreferences({
                 checked={master && grid[c.key].email}
                 disabled={!master}
                 onChange={() => toggle(c.key, "email")}
+                aria-label={`${c.label} — email`}
                 className="h-4 w-4 disabled:opacity-40"
               />
             </span>
@@ -95,6 +96,7 @@ export function NotificationPreferences({
                 type="checkbox"
                 checked={grid[c.key].inApp}
                 onChange={() => toggle(c.key, "inApp")}
+                aria-label={`${c.label} — in-app`}
                 className="h-4 w-4"
               />
             </span>

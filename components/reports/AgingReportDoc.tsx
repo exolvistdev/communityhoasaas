@@ -7,15 +7,18 @@ type Data = Awaited<ReturnType<typeof agingSnapshot>>;
 export function AgingReportDoc({
   orgName,
   data,
+  headingLevel,
 }: {
   orgName: string;
   data: Data;
+  headingLevel?: "h1" | "h2";
 }) {
   return (
     <ReportDoc
       orgName={orgName}
       title="Accounts Receivable Aging"
       periodLabel={`As of ${fmtDate(data.asOf)}`}
+      headingLevel={headingLevel}
     >
       <AgingInteractive
         key={data.asOf.toISOString()}

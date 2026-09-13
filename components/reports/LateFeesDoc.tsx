@@ -7,22 +7,31 @@ import { CHART } from "./charts/palette";
 
 type Data = Awaited<ReturnType<typeof lateFeesReport>>;
 
-export function LateFeesDoc({ orgName, data }: { orgName: string; data: Data }) {
+export function LateFeesDoc({
+  orgName,
+  data,
+  headingLevel,
+}: {
+  orgName: string;
+  data: Data;
+  headingLevel?: "h1" | "h2";
+}) {
   return (
     <ReportDoc
       orgName={orgName}
       title="Late Fees"
       periodLabel={`${fmtDate(data.from)} – ${fmtDate(data.to)}`}
+      headingLevel={headingLevel}
     >
       <div className="mt-4 flex gap-8 text-sm">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Late fees charged
           </div>
           <div className="font-medium">{data.count}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Total late-fee revenue
           </div>
           <div className="font-medium tabular-nums">{peso(data.total)}</div>
@@ -48,7 +57,7 @@ export function LateFeesDoc({ orgName, data }: { orgName: string; data: Data }) 
       </div>
 
       {data.rows.length === 0 ? (
-        <p className="mt-6 text-sm text-gray-400">
+        <p className="mt-6 text-sm text-gray-600">
           No late fees were charged in this period.
         </p>
       ) : (

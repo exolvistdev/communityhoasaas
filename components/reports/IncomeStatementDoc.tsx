@@ -9,10 +9,12 @@ export function IncomeStatementDoc({
   orgName,
   data,
   series = [],
+  headingLevel,
 }: {
   orgName: string;
   data: Data;
   series?: LedgerMonth[];
+  headingLevel?: "h1" | "h2";
 }) {
   const period = data.from
     ? `${fmtDate(data.from)} – ${fmtDate(data.to)}`
@@ -23,6 +25,7 @@ export function IncomeStatementDoc({
       orgName={orgName}
       title="Statement of Income & Expenses"
       periodLabel={period}
+      headingLevel={headingLevel}
     >
       <IncomeStatementInteractive
         key={`${data.from ? data.from.toISOString() : "all"}-${data.to.toISOString()}`}

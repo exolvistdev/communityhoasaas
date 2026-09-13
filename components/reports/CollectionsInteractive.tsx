@@ -125,7 +125,7 @@ export function CollectionsInteractive({
                   <tr key={m.method} className="border-b border-gray-100">
                     <td className="py-1.5 pr-4">
                       {METHOD_LABEL[m.method] ?? m.method}
-                      <span className="ml-2 text-xs text-gray-400">
+                      <span className="ml-2 text-xs text-gray-600">
                         {m.count} payment{m.count === 1 ? "" : "s"}
                       </span>
                     </td>

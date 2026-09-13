@@ -20,7 +20,7 @@ export function CollectedVsOutstandingChart({
   ];
 
   return (
-    <ChartFrame title="Collected vs. outstanding">
+    <ChartFrame title="Collected vs. outstanding" height={220}>
       <div className="relative" style={{ width: 300, height: 220 }}>
         <PieChart width={300} height={220}>
           <Pie
@@ -32,6 +32,8 @@ export function CollectedVsOutstandingChart({
             innerRadius={58}
             outerRadius={88}
             paddingAngle={2}
+            isAnimationActive={false}
+            rootTabIndex={-1} // ChartFrame marks the chart aria-hidden; nothing inside it should be tabbable either
           >
             {data.map((d) => (
               <Cell key={d.name} fill={d.fill} />
@@ -43,7 +45,7 @@ export function CollectedVsOutstandingChart({
           <span className="text-lg font-semibold text-gray-900">
             {rate != null ? `${(rate * 100).toFixed(1)}%` : "—"}
           </span>
-          <span className="text-[11px] text-gray-400">collection rate</span>
+          <span className="text-[11px] text-gray-600">collection rate</span>
         </div>
       </div>
     </ChartFrame>

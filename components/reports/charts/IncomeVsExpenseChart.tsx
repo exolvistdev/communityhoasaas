@@ -40,6 +40,7 @@ export function IncomeVsExpenseChart({
           ? "Click a month to drill the tables below into that month."
           : "Cash-basis, by the month each entry posts."
       }
+      height={230}
     >
       <BarChart
         width={640}

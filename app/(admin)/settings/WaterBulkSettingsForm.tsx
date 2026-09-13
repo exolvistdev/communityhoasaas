@@ -89,6 +89,9 @@ export function WaterBulkSettingsForm({
             </option>
           ))}
         </select>
+      </label>
+      <label className="block text-sm">
+        <span className="sr-only">New vendor name</span>
         <input
           value={newVendorName}
           onChange={(e) => {

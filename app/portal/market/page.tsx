@@ -120,6 +120,7 @@ export default async function MarketplacePage({
           <select
             name="cat"
             defaultValue={cat ?? ""}
+            aria-label="Category"
             className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
           >
             <option value="">All categories</option>
@@ -132,6 +133,7 @@ export default async function MarketplacePage({
           <select
             name="sort"
             defaultValue={sort}
+            aria-label="Sort by"
             className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
           >
             {LISTING_SORTS.map((s) => (

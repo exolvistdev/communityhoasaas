@@ -31,23 +31,31 @@ export function BoardPackDoc({ data }: { data: Data }) {
           orgName={org.name}
           data={data.income}
           series={data.ledgerSeries}
+          headingLevel="h2"
         />
       ),
     },
     {
       key: "balance",
       toc: "Statement of Financial Position",
-      node: <BalanceSheetDoc orgName={org.name} data={data.balance} cash={data.cash} />,
+      node: (
+        <BalanceSheetDoc
+          orgName={org.name}
+          data={data.balance}
+          cash={data.cash}
+          headingLevel="h2"
+        />
+      ),
     },
     {
       key: "aging",
       toc: "Accounts Receivable Aging",
-      node: <AgingReportDoc orgName={org.name} data={data.aging} />,
+      node: <AgingReportDoc orgName={org.name} data={data.aging} headingLevel="h2" />,
     },
     {
       key: "payables",
       toc: "Accounts Payable Aging",
-      node: <PayablesDoc orgName={org.name} data={data.payables} />,
+      node: <PayablesDoc orgName={org.name} data={data.payables} headingLevel="h2" />,
     },
     {
       key: "collections",
@@ -57,6 +65,7 @@ export function BoardPackDoc({ data }: { data: Data }) {
           orgName={org.name}
           data={data.collections}
           series={data.collectionSeries}
+          headingLevel="h2"
         />
       ),
     },
@@ -66,31 +75,45 @@ export function BoardPackDoc({ data }: { data: Data }) {
     sections.push({
       key: "late-fees",
       toc: "Late Fees",
-      node: <LateFeesDoc orgName={org.name} data={data.lateFees} />,
+      node: <LateFeesDoc orgName={org.name} data={data.lateFees} headingLevel="h2" />,
     });
   if (data.vendorSpend)
     sections.push({
       key: "vendor-spend",
       toc: "Vendor Spend",
-      node: <VendorSpendDoc orgName={org.name} data={data.vendorSpend} />,
+      node: (
+        <VendorSpendDoc
+          orgName={org.name}
+          data={data.vendorSpend}
+          headingLevel="h2"
+        />
+      ),
     });
   if (data.violations)
     sections.push({
       key: "violations",
       toc: "Violations & Fines",
-      node: <ViolationsReportDoc orgName={org.name} data={data.violations} />,
+      node: (
+        <ViolationsReportDoc
+          orgName={org.name}
+          data={data.violations}
+          headingLevel="h2"
+        />
+      ),
     });
   if (data.homeowners)
     sections.push({
       key: "homeowners",
       toc: "Homeowners",
-      node: <HomeownersDoc orgName={org.name} data={data.homeowners} />,
+      node: (
+        <HomeownersDoc orgName={org.name} data={data.homeowners} headingLevel="h2" />
+      ),
     });
   if (data.water)
     sections.push({
       key: "water",
       toc: "Water",
-      node: <WaterReportDoc orgName={org.name} data={data.water} />,
+      node: <WaterReportDoc orgName={org.name} data={data.water} headingLevel="h2" />,
     });
 
   if (data.documents.length > 0)
@@ -107,15 +130,15 @@ export function BoardPackDoc({ data }: { data: Data }) {
               <li key={d.id} className="flex items-center justify-between">
                 <span>
                   {d.title}
-                  <span className="ml-2 text-xs text-gray-400">
+                  <span className="ml-2 text-xs text-gray-600">
                     {CATEGORY_LABEL[d.category] ?? d.category}
                   </span>
                 </span>
-                <span className="text-xs text-gray-400">{fmtDate(d.createdAt)}</span>
+                <span className="text-xs text-gray-600">{fmtDate(d.createdAt)}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-xs text-gray-400">
+          <p className="mt-4 text-xs text-gray-600">
             Full files are in the HOA document library.
           </p>
         </article>
@@ -127,7 +150,7 @@ export function BoardPackDoc({ data }: { data: Data }) {
       {/* cover */}
       <article className="break-after-page bg-white p-8 text-gray-900 print:p-0">
         <div className="text-lg font-semibold">{org.name}</div>
-        <div className="mt-1 text-gray-500">Board Financial Pack</div>
+        <h1 className="mt-1 text-gray-500">Board Financial Pack</h1>
         <div className="mt-8 text-2xl font-semibold">{period}</div>
         <p className="mt-8 max-w-md text-sm text-gray-500">
           Prepared {fmtDate(new Date())}. Financial statements and analysis for

@@ -159,7 +159,9 @@ export function WaterManager({
                   <th className="min-w-[6rem] whitespace-nowrap px-3 py-2 text-right font-medium">
                     Charge
                   </th>
-                  <th className="min-w-[9rem] px-3 py-2" />
+                  <th className="min-w-[9rem] px-3 py-2">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -192,6 +194,7 @@ export function WaterManager({
                         onChange={(e) =>
                           setInputs((cur) => ({ ...cur, [r.id]: e.target.value }))
                         }
+                        aria-label={`Reading for unit ${r.unitNumber}`}
                         className="w-28 rounded-md border border-border px-2 py-1 text-right outline-none focus:border-brand disabled:opacity-50"
                       />
                       {!r.thisPeriodBilled && (

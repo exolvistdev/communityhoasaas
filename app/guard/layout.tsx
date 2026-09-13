@@ -33,9 +33,9 @@ export default async function GuardLayout({
               <ShieldCheck className="h-4 w-4" />
             </span>
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-fg">
+              <h1 className="truncate text-sm font-semibold text-fg">
                 {org.name}
-              </div>
+              </h1>
               <div className="text-xs text-fg-subtle">Gate security</div>
             </div>
           </div>

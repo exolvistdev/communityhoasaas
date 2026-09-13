@@ -34,6 +34,7 @@ export function CashTrendChart({
           ? "Click a month to see its cash balance below."
           : "Cash account balance at each month-end."
       }
+      height={220}
     >
       <LineChart
         width={640}

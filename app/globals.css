@@ -13,7 +13,8 @@
     --border-strong: 209 213 220;
     --fg: 16 20 30;
     --fg-muted: 82 88 102;
-    --fg-subtle: 141 148 163;
+    /* was 141 148 163 (~2.97:1 on white — fails WCAG AA); bumped for ~5.4:1 */
+    --fg-subtle: 100 106 122;
     --brand: 79 70 229;
     --brand-hi: 99 102 241;
     --brand-hover: 67 56 202;
@@ -50,7 +51,8 @@
     --border-strong: 63 63 73;
     --fg: 244 244 247;
     --fg-muted: 162 162 174;
-    --fg-subtle: 115 115 128;
+    /* was 115 115 128 (~3.86:1 on --surface — fails WCAG AA); bumped for ~4.77:1 */
+    --fg-subtle: 130 130 145;
     --brand: 99 102 241;
     --brand-hi: 129 140 248;
     --brand-hover: 129 140 248;

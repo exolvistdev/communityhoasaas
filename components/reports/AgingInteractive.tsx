@@ -60,13 +60,13 @@ export function AgingInteractive({
     <>
       <div className="mt-4 flex gap-8 text-sm">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Units with a balance
           </div>
           <div className="font-medium">{count}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">
+          <div className="text-xs uppercase tracking-wide text-gray-600">
             Total outstanding
           </div>
           <div className="font-medium tabular-nums">{peso(outstanding)}</div>
@@ -87,7 +87,7 @@ export function AgingInteractive({
       )}
 
       {units.length === 0 ? (
-        <p className="mt-6 text-sm text-gray-400">
+        <p className="mt-6 text-sm text-gray-600">
           No unit has an outstanding balance.
         </p>
       ) : (
@@ -122,7 +122,7 @@ export function AgingInteractive({
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td className="py-3 text-gray-400" colSpan={3 + COLS.length}>
+                  <td className="py-3 text-gray-600" colSpan={3 + COLS.length}>
                     No unit has a balance in this bucket.
                   </td>
                 </tr>

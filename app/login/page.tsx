@@ -28,7 +28,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-400">
           Multi-tenant HOA management · Philippine market
         </p>
       </div>

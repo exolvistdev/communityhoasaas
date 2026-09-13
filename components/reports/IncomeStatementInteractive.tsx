@@ -69,7 +69,7 @@ export function IncomeStatementInteractive({
           {peso(netSurplus)}
         </span>
       </div>
-      <p className="mt-4 text-xs text-gray-400">
+      <p className="mt-4 text-xs text-gray-600">
         Cash-basis. Dues and payments post on their transaction date; expenses
         and other income on the date recorded.
       </p>

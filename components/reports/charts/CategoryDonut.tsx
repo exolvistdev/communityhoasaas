@@ -23,7 +23,7 @@ export function CategoryDonut({
     .filter((d) => d.value > 0.005);
 
   return (
-    <ChartFrame title={title} note={note}>
+    <ChartFrame title={title} note={note} height={240}>
       <PieChart width={340} height={240}>
         <Pie
           data={shown}
@@ -35,6 +35,7 @@ export function CategoryDonut({
           outerRadius={84}
           paddingAngle={2}
           isAnimationActive={false}
+          rootTabIndex={-1} // ChartFrame marks the chart aria-hidden; nothing inside it should be tabbable either
         >
           {shown.map((d, i) => (
             <Cell key={d.name} fill={d.color ?? CHART_SERIES[i % CHART_SERIES.length]} />
