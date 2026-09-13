@@ -1,7 +1,7 @@
 import { peso } from "@/lib/format";
 import { formatConsumption } from "@/lib/water";
 import type { waterReport } from "@/lib/reports";
-import { ReportDoc, fmtDate } from "./shared";
+import { ReportDoc, TableFrame, fmtDate } from "./shared";
 import { MonthlyBarChart } from "./charts/MonthlyBarChart";
 import { RankBarChart } from "./charts/RankBarChart";
 import { WaterCostChart } from "./charts/WaterCostChart";
@@ -65,53 +65,55 @@ export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data 
           No metered water use in this period.
         </p>
       ) : (
-        <table className="mt-4 w-full border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-gray-300 text-left text-gray-500">
-              <th className="py-2 pr-3 font-medium">Unit</th>
-              <th className="py-2 pr-3 font-medium">Homeowner</th>
-              <th className="py-2 pr-3 font-medium">Meter</th>
-              <th className="py-2 pr-3 text-right font-medium">Latest month</th>
-              <th className="py-2 pr-3 text-right font-medium">Period m³</th>
-              <th className="py-2 pr-3 text-right font-medium">Period billed</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.rows.map((r) => (
-              <tr key={r.propertyId} className="border-b border-gray-100">
-                <td className="py-1.5 pr-3">{r.unitNumber}</td>
-                <td className="py-1.5 pr-3">{r.homeownerName ?? "—"}</td>
-                <td className="py-1.5 pr-3 text-gray-500">
-                  {r.serialNumber ? `#${r.serialNumber}` : "—"}
+        <TableFrame>
+          <table className="mt-4 w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-gray-300 text-left text-gray-500">
+                <th className="py-2 pr-3 font-medium">Unit</th>
+                <th className="py-2 pr-3 font-medium">Homeowner</th>
+                <th className="py-2 pr-3 font-medium">Meter</th>
+                <th className="py-2 pr-3 text-right font-medium">Latest month</th>
+                <th className="py-2 pr-3 text-right font-medium">Period m³</th>
+                <th className="py-2 pr-3 text-right font-medium">Period billed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((r) => (
+                <tr key={r.propertyId} className="border-b border-gray-100">
+                  <td className="py-1.5 pr-3">{r.unitNumber}</td>
+                  <td className="py-1.5 pr-3">{r.homeownerName ?? "—"}</td>
+                  <td className="py-1.5 pr-3 text-gray-500">
+                    {r.serialNumber ? `#${r.serialNumber}` : "—"}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {r.periodConsumption == null
+                      ? "—"
+                      : formatConsumption(r.periodConsumption)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {formatConsumption(r.rangeConsumption)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {peso(r.rangeBilled)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-gray-300 font-semibold">
+                <td className="py-2 pr-3" colSpan={4}>
+                  Total
                 </td>
-                <td className="py-1.5 pr-3 text-right tabular-nums">
-                  {r.periodConsumption == null
-                    ? "—"
-                    : formatConsumption(r.periodConsumption)}
+                <td className="py-2 pr-3 text-right tabular-nums">
+                  {formatConsumption(data.totals.consumption)}
                 </td>
-                <td className="py-1.5 pr-3 text-right tabular-nums">
-                  {formatConsumption(r.rangeConsumption)}
-                </td>
-                <td className="py-1.5 pr-3 text-right tabular-nums">
-                  {peso(r.rangeBilled)}
+                <td className="py-2 pr-3 text-right tabular-nums">
+                  {peso(data.totals.billed)}
                 </td>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-gray-300 font-semibold">
-              <td className="py-2 pr-3" colSpan={4}>
-                Total
-              </td>
-              <td className="py-2 pr-3 text-right tabular-nums">
-                {formatConsumption(data.totals.consumption)}
-              </td>
-              <td className="py-2 pr-3 text-right tabular-nums">
-                {peso(data.totals.billed)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+            </tfoot>
+          </table>
+        </TableFrame>
       )}
 
       {data.common.length > 0 && (
@@ -119,18 +121,20 @@ export function WaterReportDoc({ orgName, data }: { orgName: string; data: Data 
           <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
             Common-area meters
           </div>
-          <table className="w-full border-collapse text-xs">
-            <tbody>
-              {data.common.map((c) => (
-                <tr key={c.label} className="border-b border-gray-100">
-                  <td className="py-1.5 pr-3">{c.label}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">
-                    {formatConsumption(c.rangeConsumption)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TableFrame>
+            <table className="w-full border-collapse text-xs">
+              <tbody>
+                {data.common.map((c) => (
+                  <tr key={c.label} className="border-b border-gray-100">
+                    <td className="py-1.5 pr-3">{c.label}</td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums">
+                      {formatConsumption(c.rangeConsumption)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableFrame>
         </div>
       )}
 

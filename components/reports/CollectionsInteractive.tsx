@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { peso, periodLabel } from "@/lib/format";
 import type { collectionsSummary, CollectionMonth } from "@/lib/reports";
 import { pickMonth } from "@/lib/report-filter";
+import { TableFrame } from "./shared";
 import { CollectedVsOutstandingChart } from "./charts/CollectedVsOutstandingChart";
 import { CollectionRateTrendChart } from "./charts/CollectionRateTrendChart";
 import { FilterChip, useClearOnPrint } from "./interactive";
@@ -83,22 +84,24 @@ export function CollectionsInteractive({
         </>
       )}
 
-      <table className="mt-6 w-full border-collapse">
-        <tbody>
-          <Line label="Receivables at start of period" value={data.openingAR} />
-          <Line label="Dues billed" value={data.duesBilled} />
-          <Line label="Late fees billed" value={data.lateFeesBilled} />
-          {Math.abs(data.otherBilled) > 0.005 && (
-            <Line label="Other charges billed" value={data.otherBilled} />
-          )}
-          <Line label="Payments collected" value={-data.collected} />
-          <Line
-            label="Receivables at end of period"
-            value={data.closingAR}
-            strong
-          />
-        </tbody>
-      </table>
+      <TableFrame>
+        <table className="mt-6 w-full border-collapse">
+          <tbody>
+            <Line label="Receivables at start of period" value={data.openingAR} />
+            <Line label="Dues billed" value={data.duesBilled} />
+            <Line label="Late fees billed" value={data.lateFeesBilled} />
+            {Math.abs(data.otherBilled) > 0.005 && (
+              <Line label="Other charges billed" value={data.otherBilled} />
+            )}
+            <Line label="Payments collected" value={-data.collected} />
+            <Line
+              label="Receivables at end of period"
+              value={data.closingAR}
+              strong
+            />
+          </tbody>
+        </table>
+      </TableFrame>
 
       {data.collectionRate != null && (
         <p className="mt-4 text-sm text-gray-600">
@@ -115,23 +118,25 @@ export function CollectionsInteractive({
           <div className="mt-6 mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
             Payments by method
           </div>
-          <table className="w-full border-collapse text-sm">
-            <tbody>
-              {data.byMethod.map((m) => (
-                <tr key={m.method} className="border-b border-gray-100">
-                  <td className="py-1.5 pr-4">
-                    {METHOD_LABEL[m.method] ?? m.method}
-                    <span className="ml-2 text-xs text-gray-400">
-                      {m.count} payment{m.count === 1 ? "" : "s"}
-                    </span>
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums">
-                    {peso(m.amount)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TableFrame>
+            <table className="w-full border-collapse text-sm">
+              <tbody>
+                {data.byMethod.map((m) => (
+                  <tr key={m.method} className="border-b border-gray-100">
+                    <td className="py-1.5 pr-4">
+                      {METHOD_LABEL[m.method] ?? m.method}
+                      <span className="ml-2 text-xs text-gray-400">
+                        {m.count} payment{m.count === 1 ? "" : "s"}
+                      </span>
+                    </td>
+                    <td className="py-1.5 text-right tabular-nums">
+                      {peso(m.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableFrame>
         </>
       )}
     </>
