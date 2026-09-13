@@ -6,3 +6,9 @@ node_modules/
 *.tsbuildinfo
 next-env.d.ts
 .claude/
+
+# Playwright (test/e2e) — local run artifacts, never committed
+/test-results/
+/playwright-report/
+/blob-report/
+test/e2e/.auth/
