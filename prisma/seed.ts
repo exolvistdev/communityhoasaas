@@ -17,6 +17,7 @@ import { zonedInstant, zonedParts } from "../lib/amenity";
 import { generateOverdueNotifications } from "../lib/notifications";
 import { applyLateFees } from "../lib/late-fees";
 import { deleteOrgCascade } from "../lib/org-teardown";
+import { demoPassword } from "../lib/demo-password";
 import {
   ensureMarketplaceBucket,
   uploadListingPhotos,
@@ -50,8 +51,6 @@ import {
 } from "./seed-condo";
 
 const prisma = new PrismaClient();
-
-const DEMO_PASSWORD = "demo-password-123";
 
 const DEMO_STAFF = [
   { email: "admin@sample-hoa.ph", fullName: "Maria Santos", role: "ADMIN" as const },
@@ -112,7 +111,7 @@ async function createDemoAuthUsers(): Promise<SeededAuth> {
     if (existing) await admin.auth.admin.deleteUser(existing.id);
     const { data, error } = await admin.auth.admin.createUser({
       email: u.email,
-      password: DEMO_PASSWORD,
+      password: demoPassword(),
       email_confirm: true,
       user_metadata: { full_name: u.fullName },
     });
@@ -1708,7 +1707,7 @@ async function main() {
 
   console.log(`Seeded "${org.name}" (${org.subdomain})`);
   if (auth["admin@sample-hoa.ph"]) {
-    console.log(`  logins (password: ${DEMO_PASSWORD}):`);
+    console.log(`  logins (password: ${demoPassword()}):`);
     for (const s of DEMO_STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
     for (const h of DEMO_HOMEOWNERS)
       console.log(`    HOMEOWNER     ${h.email}`);
@@ -1719,7 +1718,7 @@ async function main() {
   const condo = await seedCondo(prisma, auth);
   console.log(`Seeded "${condo.name}" (${condo.subdomain})`);
   if (auth["admin@sample-condo.ph"]) {
-    console.log(`  logins (password: ${DEMO_PASSWORD}):`);
+    console.log(`  logins (password: ${demoPassword()}):`);
     for (const s of CONDO_STAFF) console.log(`    ${s.role.padEnd(12)} ${s.email}`);
     for (const h of CONDO_HOMEOWNERS)
       console.log(`    HOMEOWNER     ${h.email}`);

@@ -38,6 +38,7 @@ walkthrough of the admin app.
 | Board votes (RA 9904) — put a motion to the members, one ballot per unit (in favour / against / abstain), proxy assignment, quorum + threshold tracking, publish the result to the document library | ✅ |
 | Board elections (RA 9904) — multi-seat "vote for up to N" trustee elections: staff enter a candidate slate, members endorse up to N candidates per unit from the portal, top N win (ties for the last seat flagged for a runoff). Finalizing seats the winners on the **Board of Trustees roster** (`/board` + a portal "Your Board" view) with term dates and single-holder officer positions (chair / vice / secretary / treasurer), and can bump their role to Board Member. Staff can also appoint a trustee directly or end a term early. A configurable "months in arrears" setting (`electionArrearsMonths`) suspends a delinquent unit from voting or running — on elections *and* resolution votes: a delinquent member can't be added to a slate, and a candidate whose unit falls behind mid-election drops off the winner list (the next candidate takes the seat). Staff can download the full tally as CSV and reinstate a trustee whose term was ended early. Board meetings, votes and elections share a dedicated "Board & governance" notification category. | ✅ |
 | Water — asked at onboarding how the subdivision gets water (own source / one master meter from a utility / direct utility accounts); the last hides water billing entirely. **Own source** — tiered rate bands + a service charge, staff readings, a batch action bills each unit to 4400 Water Income. **Master meter** — the utility bill is a real Bill to 5150 Water Purchased; a sub-meter reading run splits it across units (loss distributed pro-rata or absorbed by the HOA, optional flat admin fee), snapshotted per period; common-area meters (clubhouse, park) are read, subtracted from loss, and HOA-funded. Meter replacement (retire + fresh baseline), suspicious-reading flag, estimated readings (trailing-3-average, auto true-up on the next actual), and a "correct a billed reading" action (over-bill → resident credit, under-bill → extra invoice). A daily cron nudges staff when readings are overdue. Residents see their readings, a 12-month consumption chart and a per-bill breakdown at `/portal/water`; staff get a `/reports/water` report. | ✅ |
+| Multi-community-type support — an org picks its community type at onboarding (subdivision / village / townhouse / condominium / mixed); a vocabulary layer (`useTerms()`) relabels the UI accordingly (e.g. condos read "condominium corporation" / "unit owner" / "Board of Directors"). Condos add a `Building` model, `CONDO_UNIT` / `PARKING_SLOT` property types, and floor area / common-area-share fields. Dues can bill **per square meter** (₱/sqm × floor area) instead of a flat rate, and vote weighting can follow floor area or common-area share (proxies inherit the delegate's weight) instead of one-unit-one-vote. Subdivisions are byte-identical to before — every change is behind a column default. | ✅ |
 | RBAC — ADMIN / TREASURER / BOARD_MEMBER / GUARD / HOMEOWNER | ✅ |
 | Password recovery (self-service + admin reset-link fallback), `/account` self-service profile/password/contact | ✅ |
 | Gate activity log + admin audit trail (`/gate-passes?view=activity`, `/audit`) | ✅ |
@@ -49,7 +50,7 @@ walkthrough of the admin app.
 | Amenity booking (Phase 2) — bookable amenities, time-slot reservations, staff approval, invoiced fees | ✅ |
 | Notifications — in-app center (bell + `/notifications`) and email for billing, announcements, amenities, marketplace, with a per-user preferences panel in `/account` | ✅ |
 | Document library — staff upload bylaws / minutes / financials / forms (`/documents`, private Storage bucket, optional staff-only); homeowners browse & download in the portal | ✅ |
-| Data privacy (RA 10173) — self-service data export (`/account/export`), account-deletion request queue for admins (`/data-requests`), public `/privacy` policy | ✅ |
+| Data privacy (RA 10173) — self-service data export (`/account/export`), account-deletion request queue for admins (`/data-requests`), public `/privacy` policy + `/terms` of use | ✅ |
 
 Payments: no PayMongo. Homeowners pay via GCash/Maya — the HOA uploads its
 "Receive Money" QR in Settings (a scannable QR can't be derived from a phone
@@ -75,6 +76,7 @@ SUPABASE_SERVICE_ROLE_KEY="…"                        # invites, seed auth user
 POSTMARK_SERVER_TOKEN=""                             # optional — email no-ops without both this and EMAIL_FROM (in-app center still works)
 EMAIL_FROM="HOA Manager <noreply@yourhoadomain.ph>"  # a verified Postmark Sender Signature or domain
 CRON_SECRET=""                                       # optional — gates the daily sweeps GET /api/cron/overdue, /api/cron/late-fees and /api/cron/water-reminder (vercel.json)
+SEED_PASSWORD=""                                     # optional — overrides the password `db:seed` sets on every demo login (see "Seed logins" below); leave unset for local dev
 ```
 
 Use the **transaction-mode pooler** (`:6543`, `pgbouncer=true`) for `DATABASE_URL`
@@ -95,7 +97,10 @@ npm run dev
 
 ### Seed logins
 
-All use password `demo-password-123`:
+All use password `demo-password-123` — unless `SEED_PASSWORD` is set in `.env`,
+in which case every seeded account uses that instead (do this before running
+`db:seed` against any Supabase project that isn't a disposable local/dev
+instance; see `DEPLOYMENT.md` §6):
 
 | Role | Email |
 | --- | --- |
@@ -165,6 +170,27 @@ CI (`.github/workflows/ci.yml`) runs three jobs on every push / PR and blocks on
 them: **check** (typecheck + lint + unit tests), **integration** (a `postgres:16` service
 + `prisma migrate deploy` + the integration suite), and **build** (`next build`).
 
+### End-to-end (Playwright, local / on-demand — not wired into CI)
+
+`test/e2e/` drives a real browser against the built app (admin / portal / guard /
+platform — the marketing site is excluded): a crawl of every route (loads cleanly +
+an axe-core accessibility scan) plus a handful of deeper functional flows per surface
+(log a violation, confirm a payment, submit a maintenance request, cast a ballot, all
+4 gate-pass verdicts, …). `test/e2e/responsive/` re-crawls every route across a
+9-device breakpoint matrix (phones, foldables, tablets) checking for horizontal
+overflow, with full-page screenshots for the Reports tab.
+
+```bash
+npm run build && npm run start -- -p 4321   # once, in one terminal
+npm run test:e2e                            # in another — desktop crawl/flows + all 9 device projects
+npm run test:e2e:report                     # opens the HTML report (traces, screenshots, video per failure)
+node scripts/summarize-e2e.mjs              # accessibility + responsive-overflow rollup, and any skipped tests
+```
+
+Runs serially (`workers: 1`) to stay under the login rate limiter. The flow specs
+mutate real seeded data — run `npm run db:seed` afterward to restore a clean demo
+org (the local `.env` and the deployed app point at the same Supabase project).
+
 ## Deployment
 
 **App** on Vercel, **Postgres + Auth + Storage** on Supabase. Full runbook —
@@ -179,6 +205,13 @@ is in [`docs/rls-design.md`](docs/rls-design.md).
 - `npm run db:seed` refuses to run when `NODE_ENV=production` or `VERCEL` is set.
 
 ## Scripts
+
+Both `dev` and `start` bind to `127.0.0.1` only, not every network interface —
+this machine's `.env` can hold production database/service-role credentials
+(see `DEPLOYMENT.md`), so a locally-run server shouldn't be reachable from the
+rest of your network by default. Need it reachable anyway (e.g. testing from a
+phone on the same Wi-Fi)? Run `next dev -H 0.0.0.0` / `next start -H 0.0.0.0`
+directly instead of the npm script, and only on a network you trust.
 
 | | |
 | --- | --- |

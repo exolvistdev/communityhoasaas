@@ -3,23 +3,35 @@
  * Re-run this after a UI redesign to refresh the marketing images.
  *
  * Prerequisites:
- *   1. `npm run build && npx next start -p 3019` (a production build — no dev
- *      overlay, matches what a real visitor's screenshot would look like)
+ *   1. `npm run build && npx next start -H 127.0.0.1 -p 3019` (a production
+ *      build — no dev overlay, matches what a real visitor's screenshot
+ *      would look like — bound to loopback: this machine's `.env` may hold
+ *      production credentials, see SECURITY_FINDINGS.md M8)
  *   2. `npm i -D playwright` (already a devDependency) + a cached browser:
  *      `npx playwright install chromium` (one-time, ~150–300MB, not committed)
  *   3. The `sample-hoa` demo org seeded (`npm run db:seed`) against whatever
  *      DATABASE_URL is active for that server.
  *
  * Run:  npx tsx scripts/capture-marketing-screenshots.ts [baseUrl]
- *       (baseUrl defaults to http://localhost:3019)
+ *       (baseUrl defaults to http://127.0.0.1:3019)
  */
 import { chromium, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
+import { demoPassword } from "../lib/demo-password";
 
-const BASE_URL = process.argv[2] ?? "http://localhost:3019";
+// `loadEnvFile` needs Node 20.6+ — skip on anything older rather than crash
+// (SEED_PASSWORD is optional; its absence just means the default applies).
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile();
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
+}
+
+const BASE_URL = process.argv[2] ?? "http://127.0.0.1:3019";
 const OUT_DIR = path.join(__dirname, "..", "public", "marketing");
-const PASSWORD = "demo-password-123";
 
 const DESKTOP = { width: 1440, height: 900 };
 const PHONE = { width: 390, height: 844 };
@@ -81,7 +93,7 @@ const SHOTS: Shot[] = [
 async function login(page: Page, email: string) {
   await page.goto(`${BASE_URL}/login`);
   await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(PASSWORD);
+  await page.getByLabel(/password/i).fill(demoPassword());
   await page.getByRole("button", { name: /sign in/i }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"), {
     timeout: 15_000,

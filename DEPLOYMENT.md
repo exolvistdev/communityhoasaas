@@ -158,6 +158,30 @@ response.
 1. `openssl rand -hex 32` → new value.
 2. Update it in Vercel. Vercel Cron uses the new value on the next deploy.
 
+### `POSTMARK_SERVER_TOKEN`
+
+1. Postmark → Servers → your server → API Tokens → **rotate**. It's a per-server
+   token (can't manage servers/domains/sender signatures), but it can read
+   outbound message bodies via Postmark's Messages API, so treat it as sensitive.
+2. Update `POSTMARK_SERVER_TOKEN` in Vercel + local.
+
+### Seeded demo accounts (do this before any real HOA data goes into this project)
+
+`npm run db:seed` creates real Supabase Auth users on whatever project `.env`
+points at — including a platform-operator login (`superadmin@hoasaas.ph`) — all
+sharing one password that has been in this **public** repo's history since the
+first commit. If this Supabase project has ever had `db:seed` run against it
+while also being (or about to become) the production project:
+
+1. Supabase → Authentication → Users — delete every seeded account: the sample-hoa
+   staff/homeowner logins, the sample-condo set, and `superadmin@hoasaas.ph`.
+2. Supabase → Table Editor → `platform_admins` — delete the row for
+   `superadmin@hoasaas.ph`.
+3. Re-provision the real platform operator with a unique password.
+4. Going forward, set `SEED_PASSWORD` (`.env.example`) to a non-public value
+   before ever running `db:seed` against a project that isn't a disposable
+   local/dev instance.
+
 After any rotation, re-run the §5 smoke test. Existing user sessions stay valid — the JWT
 signing secret is separate and is not rotated here.
 

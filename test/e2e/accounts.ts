@@ -1,6 +1,6 @@
 // Seed logins (prisma/seed.ts) — password is the same for every demo account.
 // Re-seed with `npm run db:seed` if these ever stop working.
-export const DEMO_PASSWORD = "demo-password-123";
+export { demoPassword } from "../../lib/demo-password";
 
 export const ACCOUNTS = {
   admin: { email: "admin@sample-hoa.ph", role: "ADMIN" },

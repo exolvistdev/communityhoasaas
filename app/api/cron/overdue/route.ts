@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateOverdueNotifications } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,16 +11,8 @@ export const dynamic = "force-dynamic";
  * Runs for every org; deduped to at most one INVOICE_OVERDUE per user / 25 days.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json(
-      { error: "CRON_SECRET not configured" },
-      { status: 503 }
-    );
-  }
-  if (req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = requireCronAuth(req);
+  if (denied) return denied;
 
   const { sent } = await generateOverdueNotifications();
 

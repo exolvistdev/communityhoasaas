@@ -1,5 +1,24 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Playwright's own process doesn't auto-load `.env` the way `prisma/seed.ts`
+// does (Prisma Client's constructor has a bundled dotenv side-effect; nothing
+// in this suite instantiates one). test/e2e/accounts.ts reads
+// `process.env.SEED_PASSWORD` to stay in sync with whatever `db:seed` was run
+// with, so this must run before any spec file (which happens naturally —
+// Playwright evaluates the config before loading specs). `loadEnvFile` needs
+// Node 20.6+ — skip on anything older rather than crash the whole config
+// (SEED_PASSWORD is optional; its absence just means the default applies).
+// Once loaded, only swallow "file doesn't exist" (CI, where the vars are
+// injected directly) — any other error (e.g. a malformed .env) should fail
+// loudly rather than silently leave SEED_PASSWORD unset.
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile();
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
+}
+
 // End-to-end inspection/testing of the built application (admin app, resident
 // portal, guard console, platform console) — deliberately excludes the
 // marketing site. Separate from vitest (test/unit, test/integration) — this
@@ -11,7 +30,11 @@ import { defineConfig, devices } from "@playwright/test";
 // or just `npm run test:e2e` on its own — the webServer block below will
 // build + start it for you if nothing is already listening on the port.
 const PORT = 4321;
-const BASE_URL = `http://localhost:${PORT}`;
+// `127.0.0.1`, not `localhost` — `npm run start`/`dev` bind to 127.0.0.1
+// explicitly (see package.json), and resolving "localhost" can land on ::1
+// first on some hosts, which would make this webServer's readiness probe
+// (and every test navigation) fail to connect even though the server is up.
+const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 // Device/breakpoint matrix for test/e2e/responsive/ — chosen to bracket
 // Tailwind's sm(640)/md(768)/lg(1024) breakpoints with real phone, tablet and

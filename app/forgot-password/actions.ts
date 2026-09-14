@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimitByIpAndEmail } from "@/lib/rate-limit";
 
 const schema = z.object({ email: z.string().trim().email() });
 
@@ -15,15 +15,15 @@ const schema = z.object({ email: z.string().trim().email() });
 export async function requestPasswordReset(input: unknown): Promise<{ ok: true }> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: true };
-  const email = parsed.data.email.toLowerCase();
 
-  const byIp = await rateLimit("password-reset", { max: 5, windowMs: 15 * 60_000 });
-  const byEmail = await rateLimit("password-reset", {
-    max: 3,
-    windowMs: 60 * 60_000,
-    extra: email,
+  const limited = await rateLimitByIpAndEmail("password-reset", {
+    ipMax: 5,
+    ipWindowMs: 15 * 60_000,
+    emailMax: 3,
+    emailWindowMs: 60 * 60_000,
+    email: parsed.data.email,
   });
-  if (!byIp.ok || !byEmail.ok) return { ok: true };
+  if (!limited.ok) return { ok: true };
 
   const origin =
     headers().get("origin") ??

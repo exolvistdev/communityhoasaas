@@ -38,10 +38,16 @@ Work top to bottom. Details for each step are in `DEPLOYMENT.md`.
       until this is enabled
 - [ ] Custom domain (optional)
 
-## Secrets — precautionary (`.env` was never committed, so not urgent)
+## Secrets
 
-- [ ] Rotate DB password / `SUPABASE_SERVICE_ROLE_KEY` / `CRON_SECRET` per
-      `DEPLOYMENT.md §6` — do it before anyone else can clone the repo
+- [ ] Rotate DB password / `SUPABASE_SERVICE_ROLE_KEY` / `CRON_SECRET` /
+      `POSTMARK_SERVER_TOKEN` per `DEPLOYMENT.md §6` (`.env` itself was never
+      committed, so this half is precautionary)
+- [ ] **Urgent, not precautionary:** delete every seeded demo Auth user —
+      including the platform-operator `superadmin@hoasaas.ph` — from this
+      Supabase project if `db:seed` has ever run against it. They all share a
+      password that's been in this public repo's history since the first
+      commit; see `DEPLOYMENT.md §6 "Seeded demo accounts"`.
 
 ## Smoke test (post-deploy)
 

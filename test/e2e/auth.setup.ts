@@ -1,5 +1,5 @@
 import { test as setup, expect } from "@playwright/test";
-import { ACCOUNTS, DEMO_PASSWORD, authFile } from "./accounts";
+import { ACCOUNTS, demoPassword, authFile } from "./accounts";
 
 // Logs in once per role through the real UI and saves the resulting session
 // cookies, so every other spec can `test.use({ storageState: authFile(...) })`
@@ -12,7 +12,7 @@ async function login(
 ) {
   await page.goto(loginPath);
   await page.locator('input[name="email"]').fill(email);
-  await page.locator('input[name="password"]').fill(DEMO_PASSWORD);
+  await page.locator('input[name="password"]').fill(demoPassword());
   await page.getByRole("button", { name: /sign in/i }).click();
 }
 
