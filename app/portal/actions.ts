@@ -9,6 +9,7 @@ import { getHomeownerContext, ACTIVE_UNIT_COOKIE } from "@/lib/portal";
 import { generateGatePassCode } from "@/lib/gatepass";
 import { deliver, staffRecipients } from "@/lib/notifications";
 import { logSystemAudit } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -46,6 +47,17 @@ export async function submitPayment(input: unknown): Promise<Result> {
 
   const { user, org, property } = await getHomeownerContext();
   if (!property) return { ok: false, error: "Your account isn't linked to a unit yet" };
+
+  const limited = await rateLimit("payment-submit", {
+    max: 5,
+    windowMs: 60 * 60_000,
+    extra: user.id,
+  });
+  if (!limited.ok)
+    return {
+      ok: false,
+      error: "Too many payment submissions — please try again later.",
+    };
 
   // Apply to the oldest still-open invoice for the unit.
   const invoice = await prisma.invoice.findFirst({

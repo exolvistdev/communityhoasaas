@@ -7,6 +7,7 @@ import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 import { postInvoiceIssued, postInvoiceVoided } from "@/lib/ledger";
+import { invoicePaid } from "@/lib/invoice";
 import { fmtSlot } from "@/lib/amenity";
 import {
   notifyBookingDecision,
@@ -150,7 +151,16 @@ async function orgBooking(id: string) {
     where: { id, orgId: org.id },
     include: {
       amenity: true,
-      invoice: { include: { payments: true } },
+      invoice: {
+        include: {
+          payments: true,
+          allocations: {
+            where: { payment: { status: "CONFIRMED" } },
+            select: { amount: true },
+          },
+          creditApplications: { select: { amount: true } },
+        },
+      },
       requester: { select: { fullName: true } },
     },
   });
@@ -280,7 +290,14 @@ export async function cancelBookingAsStaff(
     return { ok: false, error: "This booking can't be cancelled" };
 
   if (booking.invoice) {
-    if (booking.invoice.payments.some((p) => p.status === "CONFIRMED"))
+    // `payments` only sees a Payment created directly against this invoice —
+    // a resident's dues payment can also spill onto it via oldest-first
+    // cross-invoice allocation, settling it without ever creating one. Check
+    // both, same as `voidInvoice`.
+    if (
+      booking.invoice.payments.some((p) => p.status === "CONFIRMED") ||
+      invoicePaid(booking.invoice) > 0.005
+    )
       return {
         ok: false,
         error:
@@ -288,15 +305,17 @@ export async function cancelBookingAsStaff(
       };
     if (booking.invoice.payments.some((p) => p.status === "PENDING"))
       return { ok: false, error: "Reject the pending payment on the fee first." };
-    await postInvoiceVoided(booking.invoice.id);
-    await prisma.invoice.update({
-      where: { id: booking.invoice.id },
-      data: {
-        status: "VOID",
-        voidedAt: new Date(),
-        voidReason: "Amenity booking cancelled by staff",
-      },
-    });
+    if (booking.invoice.status !== "VOID") {
+      await postInvoiceVoided(booking.invoice.id);
+      await prisma.invoice.update({
+        where: { id: booking.invoice.id },
+        data: {
+          status: "VOID",
+          voidedAt: new Date(),
+          voidReason: "Amenity booking cancelled by staff",
+        },
+      });
+    }
   }
 
   await prisma.amenityBooking.update({

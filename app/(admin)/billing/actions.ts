@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
@@ -10,13 +11,13 @@ import {
   postInvoiceVoided,
   postInvoiceVoidedToCredit,
   postPaymentReceived,
-  postCreditApplied,
 } from "@/lib/ledger";
 import { logAudit } from "@/lib/audit";
 import { periodLabel } from "@/lib/format";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 import { allocateOldestFirst } from "@/lib/allocation";
 import { invoicePaid } from "@/lib/invoice";
+import { applyCreditToInvoice } from "@/lib/credit";
 
 const periodSchema = z
   .string()
@@ -85,26 +86,15 @@ export async function generateMonthlyInvoices(
       created++;
 
       // Auto-apply any resident credit this unit is carrying.
-      const avail = Number(property.creditBalance);
-      if (avail > 0.005) {
-        const applied =
-          Math.round(Math.min(avail, Number(invoice.amount)) * 100) / 100;
-        const ca = await prisma.creditApplication.create({
-          data: {
-            orgId: org.id,
-            propertyId: property.id,
-            invoiceId: invoice.id,
-            amount: applied,
-            appliedById: user.id,
-          },
-        });
-        await prisma.property.update({
-          where: { id: property.id },
-          data: { creditBalance: { decrement: applied } },
-        });
-        await postCreditApplied(ca.id);
-        creditApplied += applied;
-      }
+      const applied = await applyCreditToInvoice({
+        orgId: org.id,
+        propertyId: property.id,
+        invoiceId: invoice.id,
+        invoiceAmount: Number(invoice.amount),
+        avail: Number(property.creditBalance),
+        appliedById: user.id,
+      });
+      creditApplied += applied;
 
       for (const h of property.homeowners) if (h.user) notify.push(h.user);
     } catch (e: any) {
@@ -185,7 +175,7 @@ export async function recordPayment(
       where: {
         status: "CONFIRMED",
         method,
-        reference,
+        reference: { equals: ref, mode: "insensitive" },
         invoice: { property: { orgId: org.id } },
       },
       include: {
@@ -228,18 +218,33 @@ export async function recordPayment(
     }))
   );
 
-  const payment = await prisma.payment.create({
-    data: {
-      invoiceId,
-      amount,
-      method,
-      reference: reference || null,
-      status: "CONFIRMED",
-      confirmedById: user.id,
-      confirmedAt: new Date(),
-      allocations: { create: allocations },
-    },
-  });
+  let payment;
+  try {
+    payment = await prisma.payment.create({
+      data: {
+        invoiceId,
+        amount,
+        method,
+        reference: reference || null,
+        status: "CONFIRMED",
+        confirmedById: user.id,
+        confirmedAt: new Date(),
+        allocations: { create: allocations },
+      },
+    });
+  } catch (e) {
+    // Last-resort race guard — the pre-check above already caught the common
+    // case; this catches a duplicate recorded concurrently, right before the
+    // DB constraint fired.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")
+      return {
+        ok: false,
+        error: ref
+          ? `Reference ${ref} was just recorded elsewhere.`
+          : "This payment was just recorded elsewhere.",
+      };
+    throw e;
+  }
   await postPaymentReceived(payment.id);
 
   revalidatePath("/billing");

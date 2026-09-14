@@ -18,6 +18,9 @@ import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
+/** Sentinel thrown inside the refund transaction when the guarded decrement loses a race. */
+class InsufficientCreditError extends Error {}
+
 function revalidateProperty(id: string) {
   revalidatePath(`/properties/${id}`);
   revalidatePath("/properties");
@@ -218,24 +221,36 @@ export async function issueRefund(
       )} of resident credit is available to refund.`,
     };
 
-  const refund = await prisma.$transaction(async (tx) => {
-    const r = await tx.refund.create({
-      data: {
-        orgId: org.id,
-        propertyId,
-        amount,
-        method: d.method,
-        reference: d.reference || null,
-        reason: d.reason,
-        refundedById: user.id,
-      },
+  let refund;
+  try {
+    refund = await prisma.$transaction(async (tx) => {
+      // Guarded by creditBalance >= amount so a concurrent refund/credit-spend
+      // reading the same stale balance can't also pass and drive it negative.
+      const { count } = await tx.property.updateMany({
+        where: { id: propertyId, creditBalance: { gte: amount } },
+        data: { creditBalance: { decrement: amount } },
+      });
+      if (count === 0) throw new InsufficientCreditError();
+      return tx.refund.create({
+        data: {
+          orgId: org.id,
+          propertyId,
+          amount,
+          method: d.method,
+          reference: d.reference || null,
+          reason: d.reason,
+          refundedById: user.id,
+        },
+      });
     });
-    await tx.property.update({
-      where: { id: propertyId },
-      data: { creditBalance: { decrement: amount } },
-    });
-    return r;
-  });
+  } catch (e) {
+    if (e instanceof InsufficientCreditError)
+      return {
+        ok: false,
+        error: "That much resident credit is no longer available to refund.",
+      };
+    throw e;
+  }
   await postRefund(refund.id);
 
   await logAudit({
@@ -321,6 +336,7 @@ export async function addHomeowner(
   });
 
   revalidateProperty(propertyId);
+  await logAudit({ action: "homeowner.add", target: d.fullName });
   return { ok: true };
 }
 
@@ -352,6 +368,11 @@ export async function updateHomeowner(
   });
 
   revalidateProperty(person.propertyId);
+  await logAudit({
+    action: "homeowner.update",
+    target: d.fullName,
+    detail: d.fullName !== person.fullName ? `was ${person.fullName}` : undefined,
+  });
   return { ok: true };
 }
 
@@ -373,6 +394,7 @@ export async function setPrimaryHomeowner(id: string): Promise<Result> {
   ]);
 
   revalidateProperty(person.propertyId);
+  await logAudit({ action: "homeowner.set_primary", target: person.fullName });
   return { ok: true };
 }
 
@@ -469,5 +491,6 @@ export async function removeHomeowner(id: string): Promise<Result> {
   }
 
   revalidateProperty(person.propertyId);
+  await logAudit({ action: "homeowner.remove", target: person.fullName });
   return { ok: true };
 }

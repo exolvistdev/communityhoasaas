@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { siteOrigin } from "@/lib/url";
 import { sendEmail } from "@/lib/email";
-import { esc } from "@/lib/notifications";
+import { esc } from "@/lib/html";
 
 export type InviteLinkResult =
   | { ok: true; authId: string; actionLink: string | null }

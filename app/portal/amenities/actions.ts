@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getHomeownerContext } from "@/lib/portal";
 import { bookingRuleViolations, MAX_UPCOMING_PER_USER } from "@/lib/amenity";
 import { postInvoiceIssued } from "@/lib/ledger";
+import { invoicePaid } from "@/lib/invoice";
 import { notifyBookingRequested, notifyBookingCancelled } from "@/lib/notify";
 import { fmtSlot } from "@/lib/amenity";
 
@@ -131,7 +132,16 @@ export async function cancelBooking(id: string): Promise<Result> {
     where: { id },
     include: {
       amenity: { select: { cancellationCutoffHours: true } },
-      invoice: { include: { payments: true } },
+      invoice: {
+        include: {
+          payments: true,
+          allocations: {
+            where: { payment: { status: "CONFIRMED" } },
+            select: { amount: true },
+          },
+          creditApplications: { select: { amount: true } },
+        },
+      },
     },
   });
   if (!booking || booking.requesterId !== user.id)
@@ -142,7 +152,11 @@ export async function cancelBooking(id: string): Promise<Result> {
     return { ok: false, error: "This booking has already started" };
 
   if (booking.invoice) {
-    if (booking.invoice.payments.length > 0)
+    // `payments.length` only sees a Payment created directly against this
+    // invoice — a resident's dues payment can also spill onto it via
+    // oldest-first cross-invoice allocation, settling it without ever
+    // creating one. Check both, same as `voidInvoice`.
+    if (booking.invoice.payments.length > 0 || invoicePaid(booking.invoice) > 0.005)
       return {
         ok: false,
         error:
@@ -155,19 +169,21 @@ export async function cancelBooking(id: string): Promise<Result> {
         ok: false,
         error: `Cancellations within ${booking.amenity.cancellationCutoffHours} hours of the booking must go through the HOA office.`,
       };
-    const { postInvoiceVoided } = await import("@/lib/ledger");
-    await postInvoiceVoided(booking.invoice.id);
-    await prisma.invoice.update({
-      where: { id: booking.invoice.id },
-      data: {
-        status: "VOID",
-        voidedAt: new Date(),
-        voidReason: "Amenity booking cancelled by resident",
-      },
-    });
-    revalidatePath("/billing");
-    revalidatePath("/ledger");
-    if (booking.propertyId) revalidatePath(`/properties/${booking.propertyId}`);
+    if (booking.invoice.status !== "VOID") {
+      const { postInvoiceVoided } = await import("@/lib/ledger");
+      await postInvoiceVoided(booking.invoice.id);
+      await prisma.invoice.update({
+        where: { id: booking.invoice.id },
+        data: {
+          status: "VOID",
+          voidedAt: new Date(),
+          voidReason: "Amenity booking cancelled by resident",
+        },
+      });
+      revalidatePath("/billing");
+      revalidatePath("/ledger");
+      if (booking.propertyId) revalidatePath(`/properties/${booking.propertyId}`);
+    }
   }
 
   await prisma.amenityBooking.update({

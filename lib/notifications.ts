@@ -1,6 +1,7 @@
 import type { NotificationType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, emailShell } from "@/lib/email";
+import { esc } from "@/lib/html";
 
 /* ── catalog ────────────────────────────────────────────────────────── */
 
@@ -111,10 +112,7 @@ export async function staffRecipients(
 
 /* ── delivery ───────────────────────────────────────────────────────── */
 
-export const esc = (s: string) =>
-  s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!)
-  );
+export { esc };
 
 /**
  * Fan out one event to a set of recipients across the enabled channels,

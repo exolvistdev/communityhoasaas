@@ -2,10 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { periodLabel } from "@/lib/format";
 import {
   postWaterChargeIssued,
-  postCreditApplied,
   postBillIssued,
   postManualEntry,
 } from "@/lib/ledger";
+import { applyCreditToInvoice } from "@/lib/credit";
 import { logAudit } from "@/lib/audit";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 import {
@@ -423,24 +423,14 @@ export async function billReadings(
       });
       created++;
 
-      const avail = Number(property.creditBalance);
-      if (avail > 0.005) {
-        const applied = r2(Math.min(avail, Number(invoice.amount)));
-        const ca = await prisma.creditApplication.create({
-          data: {
-            orgId,
-            propertyId: property.id,
-            invoiceId: invoice.id,
-            amount: applied,
-            appliedById: actorId,
-          },
-        });
-        await prisma.property.update({
-          where: { id: property.id },
-          data: { creditBalance: { decrement: applied } },
-        });
-        await postCreditApplied(ca.id);
-      }
+      await applyCreditToInvoice({
+        orgId,
+        propertyId: property.id,
+        invoiceId: invoice.id,
+        invoiceAmount: Number(invoice.amount),
+        avail: Number(property.creditBalance),
+        appliedById: actorId,
+      });
 
       for (const h of property.homeowners) if (h.user) notify.push(h.user);
     } catch (e: any) {
@@ -738,24 +728,14 @@ export async function billBulk(input: {
       });
       created++;
 
-      const avail = Number(property.creditBalance);
-      if (avail > 0.005) {
-        const applied = r2(Math.min(avail, Number(invoice.amount)));
-        const ca = await prisma.creditApplication.create({
-          data: {
-            orgId: org.id,
-            propertyId: property.id,
-            invoiceId: invoice.id,
-            amount: applied,
-            appliedById: input.actorId,
-          },
-        });
-        await prisma.property.update({
-          where: { id: property.id },
-          data: { creditBalance: { decrement: applied } },
-        });
-        await postCreditApplied(ca.id);
-      }
+      await applyCreditToInvoice({
+        orgId: org.id,
+        propertyId: property.id,
+        invoiceId: invoice.id,
+        invoiceAmount: Number(invoice.amount),
+        avail: Number(property.creditBalance),
+        appliedById: input.actorId,
+      });
 
       for (const h of property.homeowners) if (h.user) notify.push(h.user);
     } catch (e: any) {

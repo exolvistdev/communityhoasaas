@@ -1,3 +1,5 @@
+import { esc } from "@/lib/html";
+
 /**
  * Origin for links inside emails. Unlike `siteOrigin()` this never touches
  * `headers()` — email is often sent from a detached promise where the request
@@ -56,7 +58,12 @@ export async function sendEmail(msg: {
   }
 }
 
-/** Minimal, inline-styled HTML wrapper with a single call-to-action button. */
+/**
+ * Minimal, inline-styled HTML wrapper with a single call-to-action button.
+ * `heading` and `ctaLabel` are escaped here since callers pass plain text
+ * (titles, names) that can originate from residents. `bodyHtml` is the one
+ * field callers are expected to hand pre-escaped/composed HTML for.
+ */
 export function emailShell(opts: {
   heading: string;
   bodyHtml: string;
@@ -67,10 +74,10 @@ export function emailShell(opts: {
     ? opts.ctaHref
     : `${emailOrigin()}${opts.ctaHref}`;
   return `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111827">
-  <h1 style="font-size:18px;margin:0 0 12px">${opts.heading}</h1>
+  <h1 style="font-size:18px;margin:0 0 12px">${esc(opts.heading)}</h1>
   <div style="font-size:14px;line-height:1.5;color:#374151">${opts.bodyHtml}</div>
   <p style="margin:20px 0 8px">
-    <a href="${href}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:500;padding:10px 16px;border-radius:8px">${opts.ctaLabel}</a>
+    <a href="${href}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:500;padding:10px 16px;border-radius:8px">${esc(opts.ctaLabel)}</a>
   </p>
   <p style="font-size:12px;color:#9ca3af;margin-top:24px">
     You can turn these emails off in your

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
@@ -52,7 +53,7 @@ export async function confirmPayment(id: string): Promise<Result> {
         id: { not: id },
         status: "CONFIRMED",
         method: payment.method,
-        reference: payment.reference,
+        reference: { equals: ref, mode: "insensitive" },
         invoice: { property: { orgId: org.id } },
       },
       include: {
@@ -95,19 +96,33 @@ export async function confirmPayment(id: string): Promise<Result> {
     }))
   );
 
-  await prisma.$transaction([
-    prisma.payment.update({
-      where: { id },
-      data: { status: "CONFIRMED", confirmedById: user.id, confirmedAt: new Date() },
-    }),
-    prisma.paymentAllocation.createMany({
-      data: allocations.map((a) => ({
-        paymentId: id,
-        invoiceId: a.invoiceId,
-        amount: a.amount,
-      })),
-    }),
-  ]);
+  try {
+    await prisma.$transaction([
+      prisma.payment.update({
+        where: { id },
+        data: { status: "CONFIRMED", confirmedById: user.id, confirmedAt: new Date() },
+      }),
+      prisma.paymentAllocation.createMany({
+        data: allocations.map((a) => ({
+          paymentId: id,
+          invoiceId: a.invoiceId,
+          amount: a.amount,
+        })),
+      }),
+    ]);
+  } catch (e) {
+    // Last-resort race guard — the pre-check above already caught the common
+    // case; this catches a duplicate confirmed concurrently, right before
+    // the DB constraint fired.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")
+      return {
+        ok: false,
+        error: ref
+          ? `Reference ${ref} was just confirmed elsewhere. Reject this one if it's a duplicate.`
+          : "This payment was just confirmed elsewhere.",
+      };
+    throw e;
+  }
   await postPaymentReceived(id); // posts the ledger entry + recalculates status
 
   revalidate();
