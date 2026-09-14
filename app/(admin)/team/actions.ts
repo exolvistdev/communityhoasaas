@@ -7,7 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateInviteLink, generateRecoveryLink } from "@/lib/invites";
+import {
+  generateInviteLink,
+  generateRecoveryLink,
+  findUserByEmailInsensitive,
+} from "@/lib/invites";
 import { ROLE_LABEL } from "@/lib/roles";
 import { logAudit } from "@/lib/audit";
 
@@ -36,7 +40,10 @@ export async function inviteMember(
 
   const { org } = await getCurrentOrgContext();
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  // The `PlatformAdmin` case is rejected centrally in `generateInviteLink`
+  // below — a platform operator belongs to no org, so this User-table check
+  // can't see them regardless.
+  const existing = await findUserByEmailInsensitive(email);
   if (existing?.orgId === org.id)
     return { ok: false, error: "Someone with that email is already on the team" };
   if (existing)

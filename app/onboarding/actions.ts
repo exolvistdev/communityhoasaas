@@ -29,7 +29,7 @@ const step1Schema = z.object({
     .positive("Enter an approximate number of units")
     .max(1_000_000, "That seems too high — contact us for a large portfolio"),
   fullName: z.string().trim().min(2, "Enter your full name"),
-  email: z.string().trim().email("Enter a valid email"),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
   password: strongPasswordSchema,
   waterSource: z.enum(["INTERNAL", "EXTERNAL_BULK", "EXTERNAL_DIRECT"], {
     errorMap: () => ({ message: "Choose how your community gets water" }),

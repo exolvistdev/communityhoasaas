@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrgContext } from "@/lib/tenant";
 import { denyUnless } from "@/lib/rbac";
-import { generateInviteLink } from "@/lib/invites";
+import { generateInviteLink, findUserByEmailInsensitive } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
 import {
   resolvePropertyRate,
@@ -267,7 +267,13 @@ export async function issueRefund(
 const personSchema = z.object({
   fullName: z.string().trim().min(2, "Name is required"),
   role: z.enum(["OWNER", "CO_OWNER", "RENTER"]),
-  email: z.string().trim().email("Invalid email").optional().or(z.literal("")),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Invalid email")
+    .optional()
+    .or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
   makePrimary: z.boolean().optional(),
 });
@@ -387,9 +393,10 @@ export async function inviteHomeowner(
     return { ok: false, error: "Add an email for this person first" };
   if (person.userId) return { ok: false, error: "Already invited" };
 
-  const existing = await prisma.user.findUnique({
-    where: { email: person.email },
-  });
+  // The `PlatformAdmin` case is rejected centrally in `generateInviteLink`
+  // below — a platform operator belongs to no org, so this User-table check
+  // can't see them regardless.
+  const existing = await findUserByEmailInsensitive(person.email);
   if (existing) {
     // Same email already has a login in this HOA — a co-owner, or a staff
     // member who also lives here. Link this record to it (no new invite, no

@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { siteOrigin } from "@/lib/url";
 import { sendEmail } from "@/lib/email";
@@ -6,6 +7,23 @@ import { esc } from "@/lib/notifications";
 export type InviteLinkResult =
   | { ok: true; authId: string; actionLink: string | null }
   | { ok: false; error: string };
+
+/**
+ * Case-insensitive `User` lookup by email, shared by every invite path
+ * (`inviteMember`, `inviteHomeowner`) so the dedup/ordering rule can't drift
+ * between them. Case-insensitive because `email` is lowercased by the
+ * calling schema going forward, but a row written before that normalization
+ * existed could still be stored mixed-case. `orderBy` makes the pick
+ * deterministic if more than one such stale duplicate ever exists for the
+ * same address — there's no DB-level case-insensitive uniqueness constraint
+ * — preferring the oldest, most-likely-authoritative row.
+ */
+export function findUserByEmailInsensitive(email: string) {
+  return prisma.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
+    orderBy: { createdAt: "asc" },
+  });
+}
 
 type InviteEmailOpts = { orgName: string; role?: string };
 
@@ -62,6 +80,17 @@ export async function generateInviteLink(
   fullName?: string,
   opts?: InviteEmailOpts
 ): Promise<InviteLinkResult> {
+  // A platform operator belongs to no org, so a caller's own "does a local
+  // User already exist" pre-check can never see them — reject here, in the
+  // one function every invite path funnels through, rather than trusting
+  // every current and future caller to duplicate this check itself.
+  const platformAdmin = await prisma.platformAdmin.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
+  });
+  if (platformAdmin) {
+    return { ok: false, error: "Couldn't send an invite to that address." };
+  }
+
   const admin = createAdminClient();
   const redirectTo = `${siteOrigin()}/accept-invite`;
 
@@ -75,20 +104,19 @@ export async function generateInviteLink(
   });
 
   if (error || !data.user) {
-    // user may already exist as a Supabase auth user — fall back to a magic link
-    const { data: mag, error: magErr } = await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: { redirectTo },
-    });
-    if (magErr || !mag.user)
-      return {
-        ok: false,
-        error: error?.message ?? magErr?.message ?? "Could not create invite",
-      };
-    const actionLink = mag.properties?.action_link ?? null;
-    await sendInviteEmail(email, actionLink, opts);
-    return { ok: true, authId: mag.user.id, actionLink };
+    // Most commonly: `email` already has a Supabase auth account (its own
+    // account-enumeration risk in the raw Supabase error text, hence the
+    // generic message). This must NEVER fall back to a magic link — a
+    // magic link is a working login for whatever account already owns that
+    // address, and every caller of this function only reaches this branch
+    // *after* its own "does a local User already exist for this email"
+    // check has already missed. An address can have a Supabase auth account
+    // with no local `User` row for entirely legitimate reasons (a
+    // `PlatformAdmin` — which by design belongs to no org — or a
+    // previously-removed member whose Supabase account failed to delete),
+    // and handing back a login link for either case to whoever typed that
+    // email into an invite form is a full account takeover.
+    return { ok: false, error: "Couldn't send an invite to that address." };
   }
 
   const actionLink = data.properties?.action_link ?? null;
