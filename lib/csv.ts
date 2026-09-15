@@ -1,13 +1,36 @@
 import { z } from "zod";
 import type { PropertyType, DuesRateMode } from "@prisma/client";
 import { typeDefaultRate, perSqmRate, type TypeRateDefaults } from "@/lib/rate";
+import { safeFilename } from "@/lib/download";
 
 /* ── CSV writing ──────────────────────────────────────────────────────
  * Shared by every downloadable-CSV route handler. */
 
-/** Quote a cell if it contains a comma, quote or newline; double embedded quotes. */
+/** A cell that's just a plain number (incl. `-4500.00` from `.toFixed()`) — not a formula. */
+const PLAIN_NUMBER = /^[+-]?\d+(\.\d+)?$/;
+
+/**
+ * A cell that needs the formula-injection guard: `=`, `+`, `-`, `@` are the
+ * classic Excel/Sheets formula triggers; a leading tab or CR is also on
+ * OWASP's CSV-injection trigger list (legacy DDE) *and*, more immediately,
+ * would otherwise let a value like `"\t=cmd|...`" slip past a check that
+ * only inspected the very first character.
+ */
+const FORMULA_TRIGGER = /^[\t\r=+\-@]/;
+
+/**
+ * Quote a cell if it contains a comma, quote or newline; double embedded
+ * quotes. A `string` value matching `FORMULA_TRIGGER` gets a leading `'` —
+ * Excel/Sheets otherwise parse the cell as a formula (CSV formula
+ * injection) rather than text. Exempts a plain numeric string (many report
+ * exports pre-format amounts via `.toFixed()`, producing e.g. `"-4500.00"`
+ * for an ordinary negative figure — not a formula, and guarding it would
+ * silently turn that column to text in a spreadsheet).
+ */
 export function csvCell(v: string | number | null | undefined) {
-  const s = v == null ? "" : String(v);
+  let s = v == null ? "" : String(v);
+  if (typeof v === "string" && FORMULA_TRIGGER.test(s) && !PLAIN_NUMBER.test(s))
+    s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -21,7 +44,7 @@ export function csvResponse(csv: string, filename: string) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="${safeFilename(filename)}"`,
     },
   });
 }

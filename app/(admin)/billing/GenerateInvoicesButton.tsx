@@ -22,7 +22,8 @@ export function GenerateInvoicesButton({ period }: { period: string }) {
     setDone(null);
     startPreview(async () => {
       const p = await previewGeneration(period);
-      setPreview(p);
+      if (p.ok) setPreview(p);
+      else setError(p.error);
     });
   }
 

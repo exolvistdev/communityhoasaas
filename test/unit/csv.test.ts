@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { csvCell, toCsvString, validateRows, type RawRow } from "@/lib/csv";
+import { csvCell, csvResponse, toCsvString, validateRows, type RawRow } from "@/lib/csv";
 
 describe("csvCell", () => {
   it("leaves a plain value untouched", () => {
@@ -14,6 +14,27 @@ describe("csvCell", () => {
     expect(csvCell('say "hi"')).toBe('"say ""hi"""');
     expect(csvCell("line1\nline2")).toBe('"line1\nline2"');
   });
+
+  it("neutralizes a leading formula trigger in a string cell", () => {
+    expect(csvCell("=SUM(A1:A9)")).toBe("'=SUM(A1:A9)");
+    expect(csvCell("+1 555 0100")).toBe("'+1 555 0100");
+    expect(csvCell("-alarming")).toBe("'-alarming");
+    expect(csvCell("@mention")).toBe("'@mention");
+  });
+
+  it("does not touch a negative number — only string cells get the formula guard", () => {
+    expect(csvCell(-50)).toBe("-50");
+  });
+
+  it("does not guard a pre-formatted negative-number string (report exports pass .toFixed() strings)", () => {
+    expect(csvCell((-4500).toFixed(2))).toBe("-4500.00");
+    expect(csvCell((1200.5).toFixed(2))).toBe("1200.50");
+  });
+
+  it("still guards a formula trigger hidden behind a leading tab/CR", () => {
+    expect(csvCell("\t=1+1")).toBe("'\t=1+1");
+    expect(csvCell("\r@mention")).toBe("'\r@mention");
+  });
 });
 
 describe("toCsvString", () => {
@@ -24,6 +45,15 @@ describe("toCsvString", () => {
         ["A, 1", 1500],
       ])
     ).toBe('unit,rate\r\n"A, 1",1500');
+  });
+});
+
+describe("csvResponse", () => {
+  it("strips a DB-sourced filename to a safe charset before it hits the header", () => {
+    const res = csvResponse("a,b", 'ledger "2026" report.csv');
+    expect(res.headers.get("Content-Disposition")).toBe(
+      'attachment; filename="ledger__2026__report.csv"'
+    );
   });
 });
 

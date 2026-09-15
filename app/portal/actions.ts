@@ -10,6 +10,7 @@ import { generateGatePassCode } from "@/lib/gatepass";
 import { deliver, staffRecipients } from "@/lib/notifications";
 import { logSystemAudit } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import { moneyAmountSchema } from "@/lib/money";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -34,7 +35,7 @@ export async function setActiveUnit(propertyId: string): Promise<Result> {
 /* ─────────────────────────── submit payment ──────────────────────── */
 
 const paymentSchema = z.object({
-  amount: z.coerce.number().positive("Enter the amount you paid"),
+  amount: moneyAmountSchema("Enter the amount you paid"),
   method: z.enum(["GCASH", "MAYA"]),
   reference: z.string().trim().min(3, "Enter the reference number"),
   note: z.string().trim().max(300).optional().or(z.literal("")),

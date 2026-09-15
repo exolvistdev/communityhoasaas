@@ -23,7 +23,7 @@ async function guard(): Promise<{ ok: false; error: string } | null> {
 
 const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  fullName: z.string().trim().min(2, "Enter their name"),
+  fullName: z.string().trim().min(2, "Enter their name").max(120),
   role: z.enum(["ADMIN", "TREASURER", "BOARD_MEMBER", "GUARD"]),
 });
 

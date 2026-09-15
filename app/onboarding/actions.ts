@@ -28,7 +28,7 @@ const step1Schema = z.object({
     .int("Enter a whole number")
     .positive("Enter an approximate number of units")
     .max(1_000_000, "That seems too high — contact us for a large portfolio"),
-  fullName: z.string().trim().min(2, "Enter your full name"),
+  fullName: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
   password: strongPasswordSchema,
   waterSource: z.enum(["INTERNAL", "EXTERNAL_BULK", "EXTERNAL_DIRECT"], {

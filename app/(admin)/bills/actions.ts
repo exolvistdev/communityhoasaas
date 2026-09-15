@@ -8,6 +8,7 @@ import { denyUnless } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 import { postBillIssued, postBillPayment, postBillVoided } from "@/lib/ledger";
 import { BILL_PAYMENT_METHODS } from "@/lib/bill";
+import { moneyAmountSchema } from "@/lib/money";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -32,7 +33,7 @@ const billSchema = z.object({
   vendorId: z.string().uuid("Pick a vendor"),
   description: z.string().trim().min(3, "Describe the bill").max(500),
   billNumber: z.string().trim().max(80).optional().or(z.literal("")),
-  amount: z.coerce.number().positive("Enter an amount").max(100_000_000),
+  amount: moneyAmountSchema("Enter an amount", 100_000_000),
   billDate: z.string().min(1, "Set the bill date"),
   dueDate: z.string().min(1, "Set the due date"),
   expenseAccountCode: z.string().trim().min(1, "Pick an expense account"),
@@ -91,7 +92,7 @@ export async function recordBill(input: unknown): Promise<Result<{ id: string }>
 /* ─────────────────────────── pay a bill ─────────────────────────── */
 
 const paySchema = z.object({
-  amount: z.coerce.number().positive("Enter an amount"),
+  amount: moneyAmountSchema("Enter an amount"),
   method: z.enum(BILL_PAYMENT_METHODS),
   reference: z.string().trim().max(120).optional().or(z.literal("")),
   paidAt: z.string().min(1, "Set the payment date"),

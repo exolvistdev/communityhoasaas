@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { signIn } from "./actions";
+import { safeRelativePath } from "@/lib/safe-redirect";
 
 const inputClass =
   "h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600";
@@ -11,7 +12,7 @@ const inputClass =
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/";
+  const next = safeRelativePath(params.get("next"));
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 

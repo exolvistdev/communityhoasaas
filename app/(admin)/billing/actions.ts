@@ -18,13 +18,20 @@ import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 import { allocateOldestFirst } from "@/lib/allocation";
 import { invoicePaid } from "@/lib/invoice";
 import { applyCreditToInvoice } from "@/lib/credit";
+import { moneyAmountSchema } from "@/lib/money";
 
 const periodSchema = z
   .string()
   .regex(/^\d{4}-\d{2}$/, "Invalid billing period");
 
 /** Properties that would get a new invoice for this period, and the total. */
-export async function previewGeneration(period: string) {
+export async function previewGeneration(period: string): Promise<
+  | { ok: true; count: number; total: number; creditToApply: number }
+  | { ok: false; error: string }
+> {
+  const denied = await denyUnless("billing:write");
+  if (denied) return denied;
+
   const { org } = await getCurrentOrgContext();
   periodSchema.parse(period);
 
@@ -38,7 +45,7 @@ export async function previewGeneration(period: string) {
     (s, p) => s + Math.min(Number(p.creditBalance), Number(p.monthlyRate)),
     0
   );
-  return { count: properties.length, total, creditToApply };
+  return { ok: true, count: properties.length, total, creditToApply };
 }
 
 export type GenerateResult =
@@ -137,7 +144,7 @@ export async function generateMonthlyInvoices(
 
 const paymentSchema = z.object({
   invoiceId: z.string().uuid(),
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  amount: moneyAmountSchema("Amount must be greater than 0"),
   method: z.enum(["CASH", "CHECK", "BANK_TRANSFER", "GCASH", "MAYA"]),
   reference: z.string().trim().optional(),
 });

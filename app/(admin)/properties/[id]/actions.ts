@@ -11,9 +11,11 @@ import {
   resolvePropertyRate,
   toTypeRateDefaults,
   toDuesRateContext,
+  PROPERTY_TYPE_LABEL,
 } from "@/lib/rate";
 import { resolveBuildingId } from "@/lib/buildings";
 import { postRefund } from "@/lib/ledger";
+import { moneyAmountSchema } from "@/lib/money";
 import { deliver, recipientSelect, type Recipient } from "@/lib/notifications";
 
 type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
@@ -165,12 +167,20 @@ export async function updateProperty(
   });
 
   const rateChanged = Number(property.monthlyRate) !== monthlyRate;
+  const typeChanged = d.type !== property.type;
+  const details = [
+    rateChanged ? `dues ₱${Number(property.monthlyRate)} → ₱${monthlyRate}` : null,
+    // A type change can zero out this unit's platform-billable count
+    // (PARKING_SLOT is excluded — see BILLABLE_PROPERTY_WHERE) without
+    // touching resident billing at all, so it's worth its own audit trail.
+    typeChanged
+      ? `type ${PROPERTY_TYPE_LABEL[property.type]} → ${PROPERTY_TYPE_LABEL[d.type]}`
+      : null,
+  ].filter(Boolean);
   await logAudit({
     action: "property.update",
     target: d.unitNumber,
-    detail: rateChanged
-      ? `dues ₱${Number(property.monthlyRate)} → ₱${monthlyRate}`
-      : undefined,
+    detail: details.length ? details.join("; ") : undefined,
   });
 
   revalidateProperty(id);
@@ -180,7 +190,7 @@ export async function updateProperty(
 /* ───────────────────────────── refunds ───────────────────────────── */
 
 const refundSchema = z.object({
-  amount: z.coerce.number().positive("Enter an amount greater than 0"),
+  amount: moneyAmountSchema(),
   method: z.enum(["CASH", "CHECK", "BANK_TRANSFER", "GCASH", "MAYA"]),
   reference: z.string().trim().max(120).optional().or(z.literal("")),
   reason: z.string().trim().min(3, "Give a reason").max(500),
@@ -280,7 +290,7 @@ export async function issueRefund(
 /* ───────────────────────────── people ────────────────────────────── */
 
 const personSchema = z.object({
-  fullName: z.string().trim().min(2, "Name is required"),
+  fullName: z.string().trim().min(2, "Name is required").max(120),
   role: z.enum(["OWNER", "CO_OWNER", "RENTER"]),
   email: z
     .string()

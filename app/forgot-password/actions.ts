@@ -1,9 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitByIpAndEmail } from "@/lib/rate-limit";
+import { siteOrigin } from "@/lib/url";
 
 const schema = z.object({ email: z.string().trim().email() });
 
@@ -25,15 +25,10 @@ export async function requestPasswordReset(input: unknown): Promise<{ ok: true }
   });
   if (!limited.ok) return { ok: true };
 
-  const origin =
-    headers().get("origin") ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    "http://localhost:3000";
-
   const supabase = createClient();
   await supabase.auth
     .resetPasswordForEmail(parsed.data.email, {
-      redirectTo: `${origin}/reset-password`,
+      redirectTo: `${siteOrigin()}/reset-password`,
     })
     .catch(() => {});
 

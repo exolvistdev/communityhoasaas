@@ -36,8 +36,8 @@ async function notifyPublished(
 }
 
 const contentSchema = z.object({
-  title: z.string().trim().min(3, "Give it a title"),
-  body: z.string().trim().min(1, "Write something"),
+  title: z.string().trim().min(3, "Give it a title").max(120),
+  body: z.string().trim().min(1, "Write something").max(4000),
 });
 
 function revalidate() {

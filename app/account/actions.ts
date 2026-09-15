@@ -18,7 +18,7 @@ function revalidateShells() {
 }
 
 const profileSchema = z.object({
-  fullName: z.string().trim().min(2, "Enter your name"),
+  fullName: z.string().trim().min(2, "Enter your name").max(120),
 });
 
 export async function updateProfile(input: unknown): Promise<Result> {

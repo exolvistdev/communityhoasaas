@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { PasswordChecklist } from "@/components/PasswordChecklist";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password";
+import { setOwnPassword } from "@/app/reset-password/actions";
 
 export function ChangePasswordForm() {
   const [pending, start] = useTransition();
@@ -21,9 +21,10 @@ export function ChangePasswordForm() {
       return;
     }
     start(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) setError(error.message);
+      // Server-side action re-checks the strong-password rule against the
+      // session on the request cookies — a direct API call can't set a weak one.
+      const res = await setOwnPassword(password);
+      if (!res.ok) setError(res.error);
       else {
         setSaved(true);
         form.reset();
