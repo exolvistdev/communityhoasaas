@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { trusteePositionLabel } from "@/lib/election";
 import { useTerms } from "@/components/TermsProvider";
 import type { TrusteeRow } from "@/lib/board";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { reactivateTrusteeAction } from "./actions";
 
 const fmt = (d: Date) =>
@@ -31,42 +35,56 @@ export function PastTrustees({ trustees }: { trustees: TrusteeRow[] }) {
     });
   }
 
+  const columns: ResponsiveColumn<TrusteeRow>[] = [
+    {
+      key: "name",
+      header: "Name",
+      card: "title",
+      className: "text-fg",
+      cell: (t) => t.name,
+    },
+    {
+      key: "position",
+      header: "Position",
+      className: "text-fg-muted",
+      cell: (t) => trusteePositionLabel(t.position, terms),
+    },
+    {
+      key: "term",
+      header: "Term",
+      card: "full",
+      className: "text-xs text-fg-subtle",
+      cell: (t) =>
+        `${fmt(t.termStart)} – ${fmt(t.termEnd)}${
+          t.endedAt ? ` · ended ${fmt(t.endedAt)}` : ""
+        }`,
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      card: "action",
+      cell: (t) => {
+        const canReactivate =
+          t.endedAt != null && new Date(t.termEnd).getTime() > now;
+        return (
+          canReactivate && (
+            <button
+              onClick={() => reactivate(t.id, t.name)}
+              disabled={pending}
+              className="text-xs text-brand-accent hover:underline disabled:opacity-50"
+            >
+              reactivate
+            </button>
+          )
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <tbody>
-            {trustees.map((t) => {
-              // ended early and the term hasn't run out yet → can be reinstated
-              const canReactivate =
-                t.endedAt != null && new Date(t.termEnd).getTime() > now;
-              return (
-                <tr key={t.id} className="border-t border-border first:border-t-0">
-                  <td className="px-4 py-2 text-fg">{t.name}</td>
-                  <td className="px-4 py-2 text-fg-muted">
-                    {trusteePositionLabel(t.position, terms)}
-                  </td>
-                  <td className="px-4 py-2 text-xs text-fg-subtle">
-                    {fmt(t.termStart)} – {fmt(t.termEnd)}
-                    {t.endedAt ? ` · ended ${fmt(t.endedAt)}` : ""}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    {canReactivate && (
-                      <button
-                        onClick={() => reactivate(t.id, t.name)}
-                        disabled={pending}
-                        className="text-xs text-brand-accent hover:underline disabled:opacity-50"
-                      >
-                        reactivate
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable columns={columns} rows={trustees} rowKey={(t) => t.id} hideHeader />
       {error && <p className="text-sm text-danger-fg">{error}</p>}
     </div>
   );

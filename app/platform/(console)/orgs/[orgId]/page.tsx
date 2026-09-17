@@ -8,6 +8,10 @@ import { peso } from "@/lib/format";
 import { OrgStatusBadge } from "../../OrgStatusBadge";
 import { ImpersonateButton } from "./ImpersonateButton";
 import { ActivateOrgButton } from "./ActivateOrgButton";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export default async function PlatformOrgPage({
   params,
@@ -29,6 +33,53 @@ export default async function PlatformOrgPage({
   if (!org) notFound();
 
   const est = billableUnits > 0 ? monthlyEstimate(billableUnits) : null;
+
+  const columns: ResponsiveColumn<(typeof org.users)[number]>[] = [
+    {
+      key: "name",
+      header: "Name",
+      card: "title",
+      className: "font-medium text-fg",
+      cell: (u) => u.fullName,
+    },
+    {
+      key: "email",
+      header: "Email",
+      className: "text-fg-muted",
+      cell: (u) => u.email,
+    },
+    {
+      key: "role",
+      header: "Role",
+      className: "text-fg-muted",
+      cell: (u) => u.role,
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (u) =>
+        u.acceptedAt ? (
+          <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
+            Active
+          </span>
+        ) : (
+          <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
+            Invited
+          </span>
+        ),
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Actions</span>,
+      align: "right",
+      card: "action",
+      cell: (u) =>
+        u.acceptedAt ? (
+          <ImpersonateButton userId={u.id} userName={u.fullName} />
+        ) : null,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -59,55 +110,16 @@ export default async function PlatformOrgPage({
         {org.status !== "ACTIVE" && <ActivateOrgButton orgId={org.id} />}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-2 text-left text-fg-muted">
-            <tr>
-              <th className="px-4 py-2.5 font-medium">Name</th>
-              <th className="px-4 py-2.5 font-medium">Email</th>
-              <th className="px-4 py-2.5 font-medium">Role</th>
-              <th className="px-4 py-2.5 font-medium">Status</th>
-              <th className="px-4 py-2.5 text-right font-medium">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {org.users.map((u) => (
-              <tr key={u.id} className="border-t border-border">
-                <td className="px-4 py-2.5 font-medium text-fg">
-                  {u.fullName}
-                </td>
-                <td className="px-4 py-2.5 text-fg-muted">{u.email}</td>
-                <td className="px-4 py-2.5 text-fg-muted">{u.role}</td>
-                <td className="px-4 py-2.5">
-                  {u.acceptedAt ? (
-                    <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
-                      Invited
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-2.5 text-right">
-                  {u.acceptedAt && (
-                    <ImpersonateButton userId={u.id} userName={u.fullName} />
-                  )}
-                </td>
-              </tr>
-            ))}
-            {org.users.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-fg-subtle">
-                  No users yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable
+        columns={columns}
+        rows={org.users}
+        rowKey={(u) => u.id}
+        empty={
+          <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-fg-subtle">
+            No users yet.
+          </div>
+        }
+      />
     </div>
   );
 }

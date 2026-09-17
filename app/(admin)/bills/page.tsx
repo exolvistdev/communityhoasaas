@@ -5,6 +5,10 @@ import { peso } from "@/lib/format";
 import { billStatus, BILL_STATUS_BADGE, effectiveBillStatus } from "@/lib/bill";
 import { PageHeader } from "@/components/PageHeader";
 import { NavPill, NavPills } from "@/components/ui/nav-pill";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { AddBillForm } from "./AddBillForm";
 
 export const metadata = { title: "Bills · HOA SaaS" };
@@ -70,6 +74,60 @@ export default async function BillsPage({
       r.b.dueDate.getTime() < now + 7 * 86_400_000
   ).length;
 
+  const columns: ResponsiveColumn<(typeof rows)[number]>[] = [
+    {
+      key: "vendor",
+      header: "Vendor / description",
+      card: "title",
+      cell: ({ b }) => (
+        <>
+          <Link
+            href={`/bills/${b.id}`}
+            className="font-medium text-fg hover:underline"
+          >
+            {b.vendor.name}
+          </Link>
+          <div className="text-xs text-fg-subtle">{b.description}</div>
+        </>
+      ),
+    },
+    {
+      key: "due",
+      header: "Due",
+      className: "text-fg-muted",
+      cell: ({ b }) => fmtDate(b.dueDate),
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      cell: ({ b }) => peso(Number(b.amount)),
+    },
+    {
+      key: "outstanding",
+      header: "Outstanding",
+      align: "right",
+      className: "text-fg-muted",
+      cell: ({ outstanding }) =>
+        outstanding > 0.005 ? peso(outstanding) : "—",
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: ({ display }) => {
+        const badge = BILL_STATUS_BADGE[display];
+        return (
+          <span
+            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+          >
+            {badge.label}
+          </span>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -108,53 +166,7 @@ export default async function BillsPage({
           {filter === "open" ? "No open bills. 🎉" : "No bills recorded yet."}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Vendor / description</th>
-                <th className="px-4 py-2.5 font-medium">Due</th>
-                <th className="px-4 py-2.5 text-right font-medium">Amount</th>
-                <th className="px-4 py-2.5 text-right font-medium">Outstanding</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ b, outstanding, display }) => {
-                const badge = BILL_STATUS_BADGE[display];
-                return (
-                  <tr key={b.id} className="border-t border-border">
-                    <td className="px-4 py-2.5">
-                      <Link
-                        href={`/bills/${b.id}`}
-                        className="font-medium text-fg hover:underline"
-                      >
-                        {b.vendor.name}
-                      </Link>
-                      <div className="text-xs text-fg-subtle">{b.description}</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {fmtDate(b.dueDate)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      {peso(Number(b.amount))}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-fg-muted">
-                      {outstanding > 0.005 ? peso(outstanding) : "—"}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                      >
-                        {badge.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable columns={columns} rows={rows} rowKey={({ b }) => b.id} />
       )}
     </div>
   );

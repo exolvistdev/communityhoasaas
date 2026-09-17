@@ -9,6 +9,10 @@ import { toTypeRateDefaults, PROPERTY_TYPE_LABEL } from "@/lib/rate";
 import { effectiveGatePassStatus } from "@/lib/gatepass";
 import { buildStatement, parseStatementRange } from "@/lib/soa";
 import { InvoiceStatusBadge, GatePassStatusBadge } from "@/components/StatusBadge";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { RecordPaymentButton } from "../../billing/RecordPaymentButton";
 import { VoidInvoiceButton } from "../../billing/VoidInvoiceButton";
 import { CreateGatePassForm } from "../../gate-passes/CreateGatePassForm";
@@ -73,6 +77,69 @@ export default async function PropertyDetailPage({
   ]);
 
   const balance = statement?.closingBalance ?? 0;
+
+  const gatePassRows = property.gatePasses.map((gp) => {
+    const display = effectiveGatePassStatus(gp);
+    const active = display === "ACTIVE" && !gp.usedAt;
+    return { gp, display, active };
+  });
+
+  const gatePassColumns: ResponsiveColumn<(typeof gatePassRows)[number]>[] = [
+    {
+      key: "code",
+      header: "Code",
+      className: "font-mono font-medium",
+      cell: ({ gp }) => (
+        <Link
+          href={`/pass/${gp.code}`}
+          target="_blank"
+          className="text-fg underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+        >
+          {gp.code}
+        </Link>
+      ),
+    },
+    {
+      key: "visitor",
+      header: "Visitor",
+      card: "title",
+      cell: ({ gp }) => gp.visitorName,
+    },
+    {
+      key: "valid",
+      header: "Valid",
+      className: "text-fg-muted",
+      cell: ({ gp }) => `${fmtDate(gp.validFrom)} – ${fmtDate(gp.validUntil)}`,
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      className: "whitespace-nowrap",
+      cell: ({ gp, display }) => (
+        <>
+          <GatePassStatusBadge status={display} />
+          {gp.usedAt && (
+            <span className="ml-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-fg-muted">
+              Used {fmtDate(gp.usedAt)}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      card: "action",
+      cell: ({ gp, active }) =>
+        canWrite && active ? (
+          <RevokeGatePassButton id={gp.id} />
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -286,57 +353,7 @@ export default async function PropertyDetailPage({
             No gate passes for this property.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-2 text-left text-fg-muted">
-                <tr>
-                  <th className="px-4 py-2.5 font-medium">Code</th>
-                  <th className="px-4 py-2.5 font-medium">Visitor</th>
-                  <th className="px-4 py-2.5 font-medium">Valid</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {property.gatePasses.map((gp) => {
-                  const display = effectiveGatePassStatus(gp);
-                  const active = display === "ACTIVE" && !gp.usedAt;
-                  return (
-                    <tr key={gp.id} className="border-t border-border">
-                      <td className="px-4 py-2.5 font-mono font-medium">
-                        <Link
-                          href={`/pass/${gp.code}`}
-                          target="_blank"
-                          className="text-fg underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
-                        >
-                          {gp.code}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-2.5">{gp.visitorName}</td>
-                      <td className="px-4 py-2.5 text-fg-muted">
-                        {fmtDate(gp.validFrom)} – {fmtDate(gp.validUntil)}
-                      </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap">
-                        <GatePassStatusBadge status={display} />
-                        {gp.usedAt && (
-                          <span className="ml-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-fg-muted">
-                            Used {fmtDate(gp.usedAt)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        {canWrite && active ? (
-                          <RevokeGatePassButton id={gp.id} />
-                        ) : (
-                          <span className="text-fg-subtle">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable columns={gatePassColumns} rows={gatePassRows} rowKey={({ gp }) => gp.id} />
         )}
       </section>
     </div>

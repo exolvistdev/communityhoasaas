@@ -8,6 +8,10 @@ import {
 } from "@/lib/marketplace";
 import { PageHeader } from "@/components/PageHeader";
 import { NavPill, NavPills } from "@/components/ui/nav-pill";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export const metadata = { title: "Marketplace · HOA SaaS" };
 
@@ -62,6 +66,72 @@ export default async function AdminMarketplacePage({
     }),
   ]);
 
+  const columns: ResponsiveColumn<(typeof rows)[number]>[] = [
+    {
+      key: "listing",
+      header: "Listing",
+      card: "title",
+      cell: (l) => (
+        <>
+          <Link
+            href={`/marketplace/${l.id}`}
+            className="font-medium text-fg hover:underline"
+          >
+            {l.title}
+          </Link>
+          <div className="text-xs text-fg-subtle">
+            {CATEGORY_LABEL[l.category]}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "seller",
+      header: "Seller",
+      className: "text-fg-muted",
+      cell: (l) => l.seller.fullName,
+    },
+    {
+      key: "price",
+      header: "Price",
+      className: "text-fg-muted",
+      cell: (l) => priceLabel(Number(l.price)),
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (l) => {
+        const badge = LISTING_STATUS_BADGE[l.status];
+        return (
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+          >
+            {badge.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "reports",
+      header: "Reports",
+      cell: (l) =>
+        l._count.reports > 0 ? (
+          <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger-fg">
+            {l._count.reports}
+          </span>
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
+    {
+      key: "posted",
+      header: "Posted",
+      className: "text-fg-muted",
+      cell: (l) => fmt(l.createdAt),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -98,65 +168,7 @@ export default async function AdminMarketplacePage({
           Nothing here.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Listing</th>
-                <th className="px-4 py-2.5 font-medium">Seller</th>
-                <th className="px-4 py-2.5 font-medium">Price</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-                <th className="px-4 py-2.5 font-medium">Reports</th>
-                <th className="px-4 py-2.5 font-medium">Posted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((l) => {
-                const badge = LISTING_STATUS_BADGE[l.status];
-                return (
-                  <tr key={l.id} className="border-t border-border">
-                    <td className="px-4 py-2.5">
-                      <Link
-                        href={`/marketplace/${l.id}`}
-                        className="font-medium text-fg hover:underline"
-                      >
-                        {l.title}
-                      </Link>
-                      <div className="text-xs text-fg-subtle">
-                        {CATEGORY_LABEL[l.category]}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {l.seller.fullName}
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {priceLabel(Number(l.price))}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                      >
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      {l._count.reports > 0 ? (
-                        <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger-fg">
-                          {l._count.reports}
-                        </span>
-                      ) : (
-                        <span className="text-fg-subtle">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {fmt(l.createdAt)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable columns={columns} rows={rows} rowKey={(l) => l.id} />
       )}
     </div>
   );

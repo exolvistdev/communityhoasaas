@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { peso } from "@/lib/format";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { createVendor, updateVendor, setVendorArchived } from "./actions";
 
 type Vendor = {
@@ -39,10 +43,75 @@ export function VendorsManager({ vendors }: { vendors: Vendor[] }) {
     });
   }
 
+  const editing = editingId ? vendors.find((v) => v.id === editingId) : undefined;
+
+  const columns: ResponsiveColumn<Vendor>[] = [
+    {
+      key: "name",
+      header: "Vendor",
+      card: "title",
+      className: "font-medium",
+      cell: (v) => (
+        <>
+          <Link href={`/vendors/${v.id}`} className="hover:underline">
+            {v.name}
+          </Link>
+          {v.archived && (
+            <span className="ml-2 rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted">
+              Archived
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      className: "text-fg-muted",
+      cell: (v) => v.contactName || v.email || v.phone || "—",
+    },
+    {
+      key: "outstanding",
+      header: "Outstanding",
+      align: "right",
+      className: "text-fg-muted",
+      cell: (v) =>
+        v.owed > 0
+          ? `${peso(v.owed)} · ${v.openBills} bill${v.openBills === 1 ? "" : "s"}`
+          : "—",
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Actions</span>,
+      align: "right",
+      card: "action",
+      cell: (v) => (
+        <>
+          <button
+            onClick={() => {
+              setEditingId(v.id);
+              setAdding(false);
+            }}
+            className="text-xs text-fg-muted underline hover:text-fg"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => act(() => setVendorArchived(v.id, !v.archived))}
+            disabled={pending}
+            className="ml-3 text-xs text-fg-muted underline hover:text-fg disabled:opacity-50"
+          >
+            {v.archived ? "Restore" : "Archive"}
+          </button>
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-3">
       <div className="flex sm:justify-end">
-        {!adding && (
+        {!adding && !editing && (
           <button
             onClick={() => {
               setAdding(true);
@@ -64,99 +133,36 @@ export function VendorsManager({ vendors }: { vendors: Vendor[] }) {
         />
       )}
 
+      {editing && (
+        <VendorForm
+          initial={{
+            name: editing.name,
+            contactName: editing.contactName ?? "",
+            email: editing.email ?? "",
+            phone: editing.phone ?? "",
+            notes: editing.notes ?? "",
+          }}
+          pending={pending}
+          onCancel={() => setEditingId(null)}
+          onSave={(d) => act(() => updateVendor(editing.id, d))}
+        />
+      )}
+
       {error && <p className="text-sm text-danger-fg">{error}</p>}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-2 text-left text-fg-muted">
-            <tr>
-              <th className="px-4 py-2.5 font-medium">Vendor</th>
-              <th className="px-4 py-2.5 font-medium">Contact</th>
-              <th className="px-4 py-2.5 text-right font-medium">Outstanding</th>
-              <th className="px-4 py-2.5">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {vendors.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-fg-subtle">
-                  No vendors yet.
-                </td>
-              </tr>
-            )}
-            {vendors.map((v) =>
-              editingId === v.id ? (
-                <tr key={v.id} className="border-t border-border">
-                  <td colSpan={4} className="px-4 py-3">
-                    <VendorForm
-                      initial={{
-                        name: v.name,
-                        contactName: v.contactName ?? "",
-                        email: v.email ?? "",
-                        phone: v.phone ?? "",
-                        notes: v.notes ?? "",
-                      }}
-                      pending={pending}
-                      onCancel={() => setEditingId(null)}
-                      onSave={(d) => act(() => updateVendor(v.id, d))}
-                    />
-                  </td>
-                </tr>
-              ) : (
-                <tr
-                  key={v.id}
-                  className={`border-t border-border ${
-                    v.archived ? "text-fg-subtle" : ""
-                  }`}
-                >
-                  <td className="px-4 py-2.5 font-medium">
-                    <Link href={`/vendors/${v.id}`} className="hover:underline">
-                      {v.name}
-                    </Link>
-                    {v.archived && (
-                      <span className="ml-2 rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted">
-                        Archived
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {v.contactName || v.email || v.phone || "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-fg-muted">
-                    {v.owed > 0
-                      ? `${peso(v.owed)} · ${v.openBills} bill${
-                          v.openBills === 1 ? "" : "s"
-                        }`
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <button
-                      onClick={() => {
-                        setEditingId(v.id);
-                        setAdding(false);
-                      }}
-                      className="text-xs text-fg-muted underline hover:text-fg"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() =>
-                        act(() => setVendorArchived(v.id, !v.archived))
-                      }
-                      disabled={pending}
-                      className="ml-3 text-xs text-fg-muted underline hover:text-fg disabled:opacity-50"
-                    >
-                      {v.archived ? "Restore" : "Archive"}
-                    </button>
-                  </td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable
+        columns={columns}
+        rows={editingId ? vendors.filter((v) => v.id !== editingId) : vendors}
+        rowKey={(v) => v.id}
+        rowClassName={(v) => (v.archived ? "text-fg-subtle" : undefined)}
+        empty={
+          !adding && !editing ? (
+            <div className="rounded-lg border border-border bg-surface px-4 py-8 text-center text-sm text-fg-subtle">
+              No vendors yet.
+            </div>
+          ) : undefined
+        }
+      />
     </div>
   );
 }

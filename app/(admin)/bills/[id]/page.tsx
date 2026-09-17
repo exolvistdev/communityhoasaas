@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { peso } from "@/lib/format";
 import { billStatus, BILL_STATUS_BADGE, effectiveBillStatus } from "@/lib/bill";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { BillActions } from "./BillActions";
 
 const fmtDate = (d: Date) =>
@@ -47,6 +51,32 @@ export default async function BillDetailPage({
           dueDate: bill.dueDate,
         });
   const badge = BILL_STATUS_BADGE[display];
+
+  const paymentColumns: ResponsiveColumn<(typeof bill.payments)[number]>[] = [
+    {
+      key: "date",
+      header: "Date",
+      className: "text-fg-muted",
+      cell: (p) => fmtDate(p.paidAt),
+    },
+    {
+      key: "method",
+      header: "Method",
+      card: "title",
+      className: "text-fg-muted",
+      cell: (p) =>
+        `${p.method.replace("_", " ").toLowerCase()}${
+          p.reference ? ` · ${p.reference}` : ""
+        }`,
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      className: "font-medium",
+      cell: (p) => peso(Number(p.amount)),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -96,26 +126,12 @@ export default async function BillDetailPage({
       {bill.payments.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Payments</h2>
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {bill.payments.map((p) => (
-                  <tr key={p.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 text-fg-muted">
-                      {fmtDate(p.paidAt)}
-                    </td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      {p.method.replace("_", " ").toLowerCase()}
-                      {p.reference ? ` · ${p.reference}` : ""}
-                    </td>
-                    <td className="px-4 py-2 text-right font-medium">
-                      {peso(Number(p.amount))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            columns={paymentColumns}
+            rows={bill.payments}
+            rowKey={(p) => p.id}
+            hideHeader
+          />
         </section>
       )}
 

@@ -4,6 +4,10 @@ import { can } from "@/lib/permissions";
 import { peso, periodLabel } from "@/lib/format";
 import { ReconciliationActions } from "./ReconciliationActions";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export const metadata = { title: "Reconciliation · HOA SaaS" };
 
@@ -56,6 +60,120 @@ export default async function ReconciliationPage() {
     }),
   ]);
 
+  const pendingColumns: ResponsiveColumn<(typeof pending)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "font-medium text-fg",
+      cell: (p) => p.invoice.property.unitNumber,
+    },
+    {
+      key: "period",
+      header: "Period",
+      className: "text-fg-muted",
+      cell: (p) => (p.invoice.period ? periodLabel(p.invoice.period) : "—"),
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      cell: (p) => peso(Number(p.amount)),
+    },
+    {
+      key: "method",
+      header: "Method / ref",
+      className: "text-fg-muted",
+      cell: (p) => (
+        <>
+          {METHOD_LABEL[p.method]}
+          {p.reference ? ` · ${p.reference}` : ""}
+          {p.note ? <div className="text-xs text-fg-subtle">{p.note}</div> : null}
+        </>
+      ),
+    },
+    {
+      key: "submitted",
+      header: "Submitted",
+      className: "text-fg-muted",
+      cell: (p) => (
+        <>
+          {fmt(p.paidAt)}
+          {p.submittedBy ? (
+            <div className="text-xs text-fg-subtle">{p.submittedBy.fullName}</div>
+          ) : null}
+        </>
+      ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      card: "action",
+      cell: (p) =>
+        canWrite ? (
+          <ReconciliationActions id={p.id} />
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
+  ];
+
+  const recentColumns: ResponsiveColumn<(typeof recent)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "font-medium text-fg",
+      cell: (p) => p.invoice.property.unitNumber,
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      className: "text-fg-muted",
+      cell: (p) => peso(Number(p.amount)),
+    },
+    {
+      key: "method",
+      header: "Method / ref",
+      className: "text-fg-muted",
+      cell: (p) => (
+        <>
+          {METHOD_LABEL[p.method]}
+          {p.reference ? ` · ${p.reference}` : ""}
+        </>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (p) =>
+        p.status === "CONFIRMED" ? (
+          <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
+            Confirmed
+          </span>
+        ) : (
+          <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger-fg">
+            Rejected
+          </span>
+        ),
+    },
+    {
+      key: "confirmed",
+      header: "Confirmed",
+      align: "right",
+      className: "text-xs text-fg-subtle",
+      cell: (p) => (
+        <>
+          {p.confirmedAt ? fmt(p.confirmedAt) : ""}
+          {p.confirmedBy ? ` · ${p.confirmedBy.fullName}` : ""}
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -68,57 +186,12 @@ export default async function ReconciliationPage() {
           Nothing to reconcile. 🎉
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Unit</th>
-                <th className="px-4 py-2.5 font-medium">Period</th>
-                <th className="px-4 py-2.5 text-right font-medium">Amount</th>
-                <th className="px-4 py-2.5 font-medium">Method / ref</th>
-                <th className="px-4 py-2.5 font-medium">Submitted</th>
-                <th className="px-4 py-2.5 text-right font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pending.map((p) => (
-                <tr key={p.id} className="border-t border-border align-top">
-                  <td className="px-4 py-2.5 font-medium text-fg">
-                    {p.invoice.property.unitNumber}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {p.invoice.period ? periodLabel(p.invoice.period) : "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {peso(Number(p.amount))}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {METHOD_LABEL[p.method]}
-                    {p.reference ? ` · ${p.reference}` : ""}
-                    {p.note ? (
-                      <div className="text-xs text-fg-subtle">{p.note}</div>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {fmt(p.paidAt)}
-                    {p.submittedBy ? (
-                      <div className="text-xs text-fg-subtle">
-                        {p.submittedBy.fullName}
-                      </div>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {canWrite ? (
-                      <ReconciliationActions id={p.id} />
-                    ) : (
-                      <span className="text-fg-subtle">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          columns={pendingColumns}
+          rows={pending}
+          rowKey={(p) => p.id}
+          rowClassName={() => "align-top"}
+        />
       )}
 
       {recent.length > 0 && (
@@ -126,41 +199,12 @@ export default async function ReconciliationPage() {
           <h2 className="mb-2 text-sm font-semibold text-fg">
             Recently processed
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {recent.map((p) => (
-                  <tr key={p.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 font-medium text-fg">
-                      {p.invoice.property.unitNumber}
-                    </td>
-                    <td className="px-4 py-2 text-right text-fg-muted">
-                      {peso(Number(p.amount))}
-                    </td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      {METHOD_LABEL[p.method]}
-                      {p.reference ? ` · ${p.reference}` : ""}
-                    </td>
-                    <td className="px-4 py-2">
-                      {p.status === "CONFIRMED" ? (
-                        <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
-                          Confirmed
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger-fg">
-                          Rejected
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-right text-xs text-fg-subtle">
-                      {p.confirmedAt ? fmt(p.confirmedAt) : ""}
-                      {p.confirmedBy ? ` · ${p.confirmedBy.fullName}` : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            columns={recentColumns}
+            rows={recent}
+            rowKey={(p) => p.id}
+            hideHeader
+          />
         </div>
       )}
     </div>

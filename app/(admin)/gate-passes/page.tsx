@@ -248,45 +248,53 @@ async function ActivityLog({ orgId }: { orgId: string }) {
     );
   }
 
+  const columns: ResponsiveColumn<(typeof scans)[number]>[] = [
+    {
+      key: "time",
+      header: "Time",
+      className: "text-fg-muted",
+      cell: (s) => fmt(s.scannedAt),
+    },
+    {
+      key: "code",
+      header: "Code",
+      className: "font-mono",
+      cell: (s) => s.code,
+    },
+    {
+      key: "visitor",
+      header: "Visitor / unit",
+      card: "title",
+      className: "text-fg-muted",
+      cell: (s) =>
+        s.gatePass
+          ? `${s.gatePass.visitorName} · ${s.gatePass.property.unitNumber}`
+          : "—",
+    },
+    {
+      key: "result",
+      header: "Result",
+      card: "status",
+      cell: (s) => (
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            RESULT_CHIP[s.result] ?? "bg-surface-2 text-fg"
+          }`}
+        >
+          {s.result === "VALID" ? "Valid" : s.result.replace(/_/g, " ")}
+        </span>
+      ),
+    },
+    {
+      key: "guard",
+      header: "Guard",
+      className: "text-fg-muted",
+      cell: (s) => s.scannedBy.fullName,
+    },
+  ];
+
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full text-sm">
-        <thead className="bg-surface-2 text-left text-fg-muted">
-          <tr>
-            <th className="px-4 py-2.5 font-medium">Time</th>
-            <th className="px-4 py-2.5 font-medium">Code</th>
-            <th className="px-4 py-2.5 font-medium">Visitor / unit</th>
-            <th className="px-4 py-2.5 font-medium">Result</th>
-            <th className="px-4 py-2.5 font-medium">Guard</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scans.map((s) => (
-            <tr key={s.id} className="border-t border-border">
-              <td className="px-4 py-2.5 text-fg-muted">{fmt(s.scannedAt)}</td>
-              <td className="px-4 py-2.5 font-mono">{s.code}</td>
-              <td className="px-4 py-2.5 text-fg-muted">
-                {s.gatePass
-                  ? `${s.gatePass.visitorName} · ${s.gatePass.property.unitNumber}`
-                  : "—"}
-              </td>
-              <td className="px-4 py-2.5">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    RESULT_CHIP[s.result] ?? "bg-surface-2 text-fg"
-                  }`}
-                >
-                  {s.result === "VALID" ? "Valid" : s.result.replace(/_/g, " ")}
-                </span>
-              </td>
-              <td className="px-4 py-2.5 text-fg-muted">
-                {s.scannedBy.fullName}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ResponsiveTable columns={columns} rows={scans} rowKey={(s) => s.id} />
   );
 }
 

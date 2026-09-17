@@ -11,6 +11,10 @@ import {
   updateMemberRole,
 } from "./actions";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 type Member = {
   id: string;
@@ -66,6 +70,108 @@ export function TeamManager({
       })
     );
   }
+
+  const columns: ResponsiveColumn<Member>[] = [
+    {
+      key: "name",
+      header: "Name",
+      card: "title",
+      className: "font-medium text-fg",
+      cell: (m) => (
+        <>
+          {m.fullName}
+          {m.id === selfId && (
+            <span className="ml-1 text-xs text-fg-subtle">(you)</span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "email",
+      header: "Email",
+      className: "text-fg-muted",
+      cell: (m) => m.email,
+    },
+    {
+      key: "role",
+      header: "Role",
+      cell: (m) => (
+        <select
+          defaultValue={m.role}
+          disabled={pending || m.role === "HOMEOWNER"}
+          onChange={(e) => act(() => updateMemberRole(m.id, e.target.value))}
+          aria-label={`Change ${m.fullName}'s role`}
+          className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-brand disabled:opacity-60"
+        >
+          {(m.role === "HOMEOWNER"
+            ? (["HOMEOWNER"] as UserRole[])
+            : ASSIGNABLE
+          ).map((r) => (
+            <option key={r} value={r}>
+              {ROLE_LABEL[r]}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (m) =>
+        m.accepted ? (
+          <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
+            Active
+          </span>
+        ) : (
+          <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
+            Invited
+          </span>
+        ),
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Actions</span>,
+      align: "right",
+      className: "whitespace-nowrap",
+      card: "action",
+      cell: (m) => (
+        <>
+          {!m.accepted ? (
+            <button
+              onClick={() => act(() => resendInvite(m.id))}
+              className="text-xs text-fg-muted underline hover:text-fg"
+            >
+              Invite link
+            </button>
+          ) : (
+            <button
+              onClick={() => act(() => sendResetLink(m.id))}
+              className="text-xs text-fg-muted underline hover:text-fg"
+            >
+              Reset link
+            </button>
+          )}
+          {m.id !== selfId && (
+            <button
+              onClick={() => {
+                if (
+                  !confirm(
+                    `Remove ${m.fullName}? Their login is revoked. If they have marketplace history, the account is kept (deactivated) and their active listings are withdrawn.`
+                  )
+                )
+                  return;
+                act(() => removeMember(m.id));
+              }}
+              className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
+            >
+              Remove
+            </button>
+          )}
+        </>
+      ),
+    },
+  ];
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -153,98 +259,7 @@ export function TeamManager({
         </form>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-2 text-left text-fg-muted">
-            <tr>
-              <th className="px-4 py-2.5 font-medium">Name</th>
-              <th className="px-4 py-2.5 font-medium">Email</th>
-              <th className="px-4 py-2.5 font-medium">Role</th>
-              <th className="px-4 py-2.5 font-medium">Status</th>
-              <th className="px-4 py-2.5 text-right font-medium">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => (
-              <tr key={m.id} className="border-t border-border">
-                <td className="px-4 py-2.5 font-medium text-fg">
-                  {m.fullName}
-                  {m.id === selfId && (
-                    <span className="ml-1 text-xs text-fg-subtle">(you)</span>
-                  )}
-                </td>
-                <td className="px-4 py-2.5 text-fg-muted">{m.email}</td>
-                <td className="px-4 py-2.5">
-                  <select
-                    defaultValue={m.role}
-                    disabled={pending || m.role === "HOMEOWNER"}
-                    onChange={(e) =>
-                      act(() => updateMemberRole(m.id, e.target.value))
-                    }
-                    aria-label={`Change ${m.fullName}'s role`}
-                    className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-brand disabled:opacity-60"
-                  >
-                    {(m.role === "HOMEOWNER"
-                      ? (["HOMEOWNER"] as UserRole[])
-                      : ASSIGNABLE
-                    ).map((r) => (
-                      <option key={r} value={r}>
-                        {ROLE_LABEL[r]}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-4 py-2.5">
-                  {m.accepted ? (
-                    <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs font-medium text-success-fg">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
-                      Invited
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                  {!m.accepted ? (
-                    <button
-                      onClick={() => act(() => resendInvite(m.id))}
-                      className="text-xs text-fg-muted underline hover:text-fg"
-                    >
-                      Invite link
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => act(() => sendResetLink(m.id))}
-                      className="text-xs text-fg-muted underline hover:text-fg"
-                    >
-                      Reset link
-                    </button>
-                  )}
-                  {m.id !== selfId && (
-                    <button
-                      onClick={() => {
-                        if (
-                          !confirm(
-                            `Remove ${m.fullName}? Their login is revoked. If they have marketplace history, the account is kept (deactivated) and their active listings are withdrawn.`
-                          )
-                        )
-                          return;
-                        act(() => removeMember(m.id));
-                      }}
-                      className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable columns={columns} rows={members} rowKey={(m) => m.id} />
     </div>
   );
 }

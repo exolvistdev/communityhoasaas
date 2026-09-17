@@ -1,5 +1,23 @@
 import { cn } from "@/lib/cn";
 
+/** A cell that rendered nothing worth showing — filtered out of the mobile card. */
+function isEmptyCell(value: React.ReactNode): boolean {
+  return (
+    value === null ||
+    value === undefined ||
+    value === false ||
+    value === "" ||
+    (Array.isArray(value) && value.length === 0)
+  );
+}
+
+/** Cells for `cols` that have visible content for this `row`, paired with their column. */
+function visibleCells<T>(cols: ResponsiveColumn<T>[], row: T) {
+  return cols
+    .map((col) => ({ col, value: col.cell(row) }))
+    .filter(({ value }) => !isEmptyCell(value));
+}
+
 /**
  * A data table that keeps a real `<table>` from `sm:` up and renders a stacked
  * list of cards on mobile — one card per row: the `card: "title"` column as the
@@ -146,15 +164,7 @@ export function ResponsiveTable<T>({
             </div>
 
             {(() => {
-              const kv = kvCols
-                .map((col) => ({ col, value: col.cell(row) }))
-                .filter(
-                  ({ value }) =>
-                    value !== null &&
-                    value !== undefined &&
-                    value !== false &&
-                    value !== ""
-                );
+              const kv = visibleCells(kvCols, row);
               if (kv.length === 0) return null;
               return (
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -173,13 +183,17 @@ export function ResponsiveTable<T>({
               );
             })()}
 
-            {actionCols.length > 0 && (
-              <div className="flex flex-wrap gap-4 border-t border-border pt-2 text-sm">
-                {actionCols.map((col) => (
-                  <div key={col.key}>{col.cell(row)}</div>
-                ))}
-              </div>
-            )}
+            {(() => {
+              const actions = visibleCells(actionCols, row);
+              if (actions.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-4 border-t border-border pt-2 text-sm">
+                  {actions.map(({ col, value }) => (
+                    <div key={col.key}>{value}</div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>

@@ -127,12 +127,12 @@ export function WaterSettingsForm({
             {bands.map((b, i) => {
               const last = i === bands.length - 1;
               return (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="text-fg-subtle">
+                <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="shrink-0 whitespace-nowrap text-fg-subtle">
                     {i === 0 ? "0" : bands[i - 1].upToM3 ?? "—"} –
                   </span>
                   {last ? (
-                    <span className="w-20 text-fg-muted">above</span>
+                    <span className="w-20 shrink-0 text-fg-muted">above</span>
                   ) : (
                     <input
                       type="number"
@@ -142,10 +142,12 @@ export function WaterSettingsForm({
                         setBand(i, { upToM3: Number(e.target.value) || 0 })
                       }
                       aria-label={`Band ${i + 1} upper limit (m³)`}
-                      className={`w-20 ${field}`}
+                      className={`w-20 shrink-0 ${field}`}
                     />
                   )}
-                  <span className="text-fg-subtle">m³ @ ₱</span>
+                  <span className="shrink-0 whitespace-nowrap text-fg-subtle">
+                    m³ @ ₱
+                  </span>
                   <input
                     type="number"
                     min="0"
@@ -155,13 +157,13 @@ export function WaterSettingsForm({
                       setBand(i, { pricePerM3: Number(e.target.value) || 0 })
                     }
                     aria-label={`Band ${i + 1} price per m³`}
-                    className={`w-24 ${field}`}
+                    className={`w-24 shrink-0 ${field}`}
                   />
                   {bands.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeBand(i)}
-                      className="text-xs text-danger-fg hover:underline"
+                      className="shrink-0 text-xs text-danger-fg hover:underline"
                     >
                       remove
                     </button>

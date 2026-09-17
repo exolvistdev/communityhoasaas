@@ -102,7 +102,7 @@ async function TrialBalance({ orgId }: { orgId: string }) {
             {tb.rows.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="px-4 py-2.5 font-mono text-fg-muted">{r.code}</td>
-                <td className="px-4 py-2.5 text-fg">{r.name}</td>
+                <td className="whitespace-nowrap px-4 py-2.5 text-fg">{r.name}</td>
                 <td className="px-4 py-2.5 text-fg-muted">
                   {TYPE_LABEL[r.type]}
                 </td>
@@ -319,7 +319,7 @@ async function Journal({
                         <td className="px-4 py-1.5 font-mono text-fg-muted">
                           {l.account.code}
                         </td>
-                        <td className="px-4 py-1.5 text-fg">
+                        <td className="whitespace-nowrap px-4 py-1.5 text-fg">
                           {l.account.name}
                         </td>
                         <td className="px-4 py-1.5 text-right">
@@ -365,7 +365,7 @@ async function ChartOfAccounts({ orgId }: { orgId: string }) {
           {accounts.map((a) => (
             <tr key={a.id} className="border-t border-border">
               <td className="px-4 py-2.5 font-mono text-fg-muted">{a.code}</td>
-              <td className="px-4 py-2.5 text-fg">{a.name}</td>
+              <td className="whitespace-nowrap px-4 py-2.5 text-fg">{a.name}</td>
               <td className="px-4 py-2.5 text-fg-muted">{TYPE_LABEL[a.type]}</td>
               <td className="px-4 py-2.5 text-right text-fg-muted">
                 {a._count.journalLines}

@@ -223,7 +223,7 @@ export function WaterManager({
                     <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {est || r.amount == null ? "—" : peso(r.amount)}
                     </td>
-                    <td className="px-3 py-2 text-right text-xs">
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
                       {r.latest?.period === period && r.latest.flag === "low" ? (
                         <span className="text-warning-fg" title="Below the prior reading">
                           ⚠ below prior

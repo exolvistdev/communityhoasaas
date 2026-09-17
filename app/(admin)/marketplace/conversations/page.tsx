@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { PageHeader } from "@/components/PageHeader";
 import { NavPill, NavPills } from "@/components/ui/nav-pill";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export const metadata = { title: "Reported conversations · HOA SaaS" };
 
@@ -41,6 +45,63 @@ export default async function ReportedConversationsPage({
     },
   });
 
+  const columns: ResponsiveColumn<(typeof reports)[number]>[] = [
+    {
+      key: "reason",
+      header: "Reason",
+      card: "full",
+      className: "text-fg",
+      cell: (r) => (
+        <>
+          {r.reason}
+          {r.resolvedAt && (
+            <span className="ml-2 text-xs text-fg-subtle">resolved</span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "reportedBy",
+      header: "Reported by",
+      className: "text-fg-muted",
+      cell: (r) => r.reporter.fullName,
+    },
+    {
+      key: "thread",
+      header: "Thread",
+      card: "title",
+      className: "text-fg-muted",
+      cell: (r) => (
+        <>
+          {r.conversation.buyer.fullName} ↔ {r.conversation.seller.fullName}
+          <div className="text-xs text-fg-subtle">
+            re: {r.conversation.listing.title}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "when",
+      header: "When",
+      className: "text-fg-muted",
+      cell: (r) => fmt(r.createdAt),
+    },
+    {
+      key: "read",
+      header: "",
+      align: "right",
+      card: "action",
+      cell: (r) => (
+        <Link
+          href={`/marketplace/conversations/${r.conversationId}`}
+          className="text-sm text-fg hover:underline"
+        >
+          Read thread →
+        </Link>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -62,52 +123,7 @@ export default async function ReportedConversationsPage({
           Nothing here.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Reason</th>
-                <th className="px-4 py-2.5 font-medium">Reported by</th>
-                <th className="px-4 py-2.5 font-medium">Thread</th>
-                <th className="px-4 py-2.5 font-medium">When</th>
-                <th className="px-4 py-2.5 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.map((r) => (
-                <tr key={r.id} className="border-t border-border">
-                  <td className="px-4 py-2.5 text-fg">
-                    {r.reason}
-                    {r.resolvedAt && (
-                      <span className="ml-2 text-xs text-fg-subtle">resolved</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {r.reporter.fullName}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {r.conversation.buyer.fullName} ↔{" "}
-                    {r.conversation.seller.fullName}
-                    <div className="text-xs text-fg-subtle">
-                      re: {r.conversation.listing.title}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {fmt(r.createdAt)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <Link
-                      href={`/marketplace/conversations/${r.conversationId}`}
-                      className="text-sm text-fg hover:underline"
-                    >
-                      Read thread →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable columns={columns} rows={reports} rowKey={(r) => r.id} />
       )}
     </div>
   );

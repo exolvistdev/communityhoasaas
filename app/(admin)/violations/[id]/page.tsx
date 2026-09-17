@@ -7,6 +7,10 @@ import {
   VIOLATION_CATEGORY_LABEL,
   VIOLATION_STATUS_BADGE,
 } from "@/lib/violation";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { ViolationActions } from "./ViolationActions";
 
 const fmtDate = (d: Date) =>
@@ -64,6 +68,42 @@ export default async function ViolationDetailPage({
     return { fn, outstanding, voided: inv?.status === "VOID" };
   });
   const totalOutstanding = notices.reduce((s, n) => s + n.outstanding, 0);
+
+  const noticeColumns: ResponsiveColumn<(typeof notices)[number]>[] = [
+    {
+      key: "notice",
+      header: "Notice",
+      card: "title",
+      className: "text-fg",
+      cell: ({ fn }) => (
+        <>
+          #{fn.noticeNumber}
+          {fn.note ? (
+            <div className="text-xs text-fg-subtle">{fn.note}</div>
+          ) : null}
+        </>
+      ),
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      cell: ({ fn }) => peso(Number(fn.amount)),
+    },
+    {
+      key: "due",
+      header: "Due",
+      className: "text-fg-muted",
+      cell: ({ fn }) => fmtDate(fn.dueDate),
+    },
+    {
+      key: "status",
+      header: "Status",
+      className: "text-fg-muted",
+      cell: ({ outstanding, voided }) =>
+        voided ? "Voided" : outstanding > 0.005 ? `${peso(outstanding)} due` : "Paid",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -160,39 +200,7 @@ export default async function ViolationDetailPage({
             No fine served yet.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-2 text-left text-fg-muted">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Notice</th>
-                  <th className="px-4 py-2 text-right font-medium">Amount</th>
-                  <th className="px-4 py-2 font-medium">Due</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notices.map(({ fn, outstanding, voided }) => (
-                  <tr key={fn.id} className="border-t border-border">
-                    <td className="px-4 py-2 text-fg">
-                      #{fn.noticeNumber}
-                      {fn.note ? (
-                        <div className="text-xs text-fg-subtle">{fn.note}</div>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-2 text-right">{peso(Number(fn.amount))}</td>
-                    <td className="px-4 py-2 text-fg-muted">{fmtDate(fn.dueDate)}</td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      {voided
-                        ? "Voided"
-                        : outstanding > 0.005
-                        ? `${peso(outstanding)} due`
-                        : "Paid"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable columns={noticeColumns} rows={notices} rowKey={({ fn }) => fn.id} />
         )}
       </section>
 

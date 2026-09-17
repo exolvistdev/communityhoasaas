@@ -11,6 +11,10 @@ import { StatementsButton } from "./StatementsButton";
 import { PageHeader } from "@/components/PageHeader";
 import { NavPill, NavPills } from "@/components/ui/nav-pill";
 import { VoidInvoiceButton } from "./VoidInvoiceButton";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export const metadata = { title: "Billing · HOA SaaS" };
 
@@ -58,6 +62,78 @@ export default async function BillingPage({
 
   const visible =
     filter === "overdue" ? rows.filter((r) => r.display === "OVERDUE") : rows;
+
+  const columns: ResponsiveColumn<(typeof rows)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "font-medium text-fg",
+      cell: ({ inv }) => inv.property.unitNumber,
+    },
+    {
+      key: "period",
+      header: "Period",
+      className: "text-fg-muted",
+      cell: ({ inv }) => inv.period ?? "—",
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      cell: ({ inv }) => peso(Number(inv.amount)),
+    },
+    {
+      key: "dueDate",
+      header: "Due date",
+      className: "text-fg-muted",
+      cell: ({ inv }) =>
+        inv.dueDate.toLocaleDateString("en-PH", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: ({ display }) => <InvoiceStatusBadge status={display} />,
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      card: "action",
+      cell: ({ inv, outstanding, display }) =>
+        display === "PAID" || display === "VOID" ? (
+          <Link
+            href={`/statements/${inv.propertyId}`}
+            className="text-sm font-medium text-fg underline underline-offset-2"
+          >
+            View SOA
+          </Link>
+        ) : (
+          <span className="flex items-center justify-end gap-3">
+            {canWrite && (
+              <>
+                <RecordPaymentButton
+                  invoiceId={inv.id}
+                  outstanding={Number(outstanding.toFixed(2))}
+                />
+                <VoidInvoiceButton invoiceId={inv.id} />
+              </>
+            )}
+            <Link
+              href={`/statements/${inv.propertyId}`}
+              className="text-xs text-fg-subtle underline underline-offset-2"
+            >
+              SOA
+            </Link>
+          </span>
+        ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -107,83 +183,16 @@ export default async function BillingPage({
           for {periodLabel(period)}.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Unit</th>
-                <th className="px-4 py-2.5 font-medium">Period</th>
-                <th className="px-4 py-2.5 text-right font-medium">Amount</th>
-                <th className="px-4 py-2.5 font-medium">Due date</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-                <th className="px-4 py-2.5 text-right font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map(({ inv, outstanding, display }) => (
-                <tr key={inv.id} className="border-t border-border">
-                  <td className="px-4 py-2.5 font-medium text-fg">
-                    {inv.property.unitNumber}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {inv.period ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {peso(Number(inv.amount))}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {inv.dueDate.toLocaleDateString("en-PH", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <InvoiceStatusBadge status={display} />
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {display === "PAID" || display === "VOID" ? (
-                      <Link
-                        href={`/statements/${inv.propertyId}`}
-                        className="text-sm font-medium text-fg underline underline-offset-2"
-                      >
-                        View SOA
-                      </Link>
-                    ) : (
-                      <span className="flex items-center justify-end gap-3">
-                        {canWrite && (
-                          <>
-                            <RecordPaymentButton
-                              invoiceId={inv.id}
-                              outstanding={Number(outstanding.toFixed(2))}
-                            />
-                            <VoidInvoiceButton invoiceId={inv.id} />
-                          </>
-                        )}
-                        <Link
-                          href={`/statements/${inv.propertyId}`}
-                          className="text-xs text-fg-subtle underline underline-offset-2"
-                        >
-                          SOA
-                        </Link>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {visible.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-fg-subtle"
-                  >
-                    Nothing overdue. 🎉
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          columns={columns}
+          rows={visible}
+          rowKey={({ inv }) => inv.id}
+          empty={
+            <div className="rounded-lg border border-border bg-surface px-4 py-8 text-center text-sm text-fg-subtle">
+              Nothing overdue. 🎉
+            </div>
+          }
+        />
       )}
     </div>
   );

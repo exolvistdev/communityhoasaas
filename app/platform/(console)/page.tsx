@@ -5,6 +5,10 @@ import { ratePerProperty } from "@/lib/pricing";
 import { BILLABLE_PROPERTY_WHERE } from "@/lib/rate";
 import { peso } from "@/lib/format";
 import { OrgStatusBadge } from "./OrgStatusBadge";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export default async function PlatformDirectoryPage() {
   await requirePlatformAdmin();
@@ -40,6 +44,105 @@ export default async function PlatformDirectoryPage() {
       minute: "2-digit",
     });
 
+  const orgColumns: ResponsiveColumn<(typeof orgs)[number]>[] = [
+    {
+      key: "name",
+      header: "Name",
+      card: "title",
+      cell: (org) => (
+        <Link href={`/platform/orgs/${org.id}`} className="font-medium text-fg hover:underline">
+          {org.name}
+        </Link>
+      ),
+    },
+    {
+      key: "subdomain",
+      header: "Subdomain",
+      className: "text-fg-muted",
+      cell: (org) => org.subdomain,
+    },
+    {
+      key: "rate",
+      header: "Rate",
+      className: "text-fg-muted",
+      cell: (org) => {
+        const n = billable.get(org.id) ?? 0;
+        return n > 0 ? `${peso(ratePerProperty(n), { cents: false })}/unit` : "—";
+      },
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (org) => <OrgStatusBadge org={org} />,
+    },
+    {
+      key: "billable",
+      header: "Billable",
+      align: "right",
+      className: "text-fg-muted",
+      cell: (org) => billable.get(org.id) ?? 0,
+    },
+    {
+      key: "properties",
+      header: "Properties",
+      align: "right",
+      className: "text-fg-muted",
+      cell: (org) => org._count.properties,
+    },
+    {
+      key: "users",
+      header: "Users",
+      align: "right",
+      className: "text-fg-muted",
+      cell: (org) => org._count.users,
+    },
+    {
+      key: "created",
+      header: "Created",
+      className: "text-fg-muted",
+      cell: (org) => fmt(org.createdAt),
+    },
+  ];
+
+  const impersonationColumns: ResponsiveColumn<(typeof recentImpersonations)[number]>[] = [
+    {
+      key: "who",
+      header: "Impersonation",
+      card: "title",
+      cell: (e) => (
+        <>
+          {e.platformAdmin.fullName} → {e.targetUser.fullName} ({e.targetUser.role})
+        </>
+      ),
+    },
+    {
+      key: "org",
+      header: "Org",
+      className: "text-fg-subtle",
+      cell: (e) => e.targetOrgName,
+    },
+    {
+      key: "startedAt",
+      header: "Started",
+      className: "text-fg-subtle",
+      cell: (e) => fmt(e.startedAt),
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (e) =>
+        e.endedAt ? (
+          <span className="text-xs text-fg-subtle">ended</span>
+        ) : (
+          <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
+            ongoing
+          </span>
+        ),
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
@@ -49,99 +152,28 @@ export default async function PlatformDirectoryPage() {
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-2 text-left text-fg-muted">
-            <tr>
-              <th className="px-4 py-2.5 font-medium">Name</th>
-              <th className="px-4 py-2.5 font-medium">Subdomain</th>
-              <th className="px-4 py-2.5 font-medium">Rate</th>
-              <th className="px-4 py-2.5 font-medium">Status</th>
-              <th className="px-4 py-2.5 text-right font-medium">Billable</th>
-              <th className="px-4 py-2.5 text-right font-medium">Properties</th>
-              <th className="px-4 py-2.5 text-right font-medium">Users</th>
-              <th className="px-4 py-2.5 font-medium">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orgs.map((org) => {
-              const n = billable.get(org.id) ?? 0;
-              return (
-              <tr key={org.id} className="border-t border-border">
-                <td className="px-4 py-2.5 font-medium text-fg">
-                  <Link href={`/platform/orgs/${org.id}`} className="hover:underline">
-                    {org.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-2.5 text-fg-muted">{org.subdomain}</td>
-                <td className="px-4 py-2.5 text-fg-muted">
-                  {n > 0 ? `${peso(ratePerProperty(n), { cents: false })}/unit` : "—"}
-                </td>
-                <td className="px-4 py-2.5">
-                  <OrgStatusBadge org={org} />
-                </td>
-                <td className="px-4 py-2.5 text-right text-fg-muted">{n}</td>
-                <td className="px-4 py-2.5 text-right text-fg-muted">
-                  {org._count.properties}
-                </td>
-                <td className="px-4 py-2.5 text-right text-fg-muted">
-                  {org._count.users}
-                </td>
-                <td className="px-4 py-2.5 text-fg-muted">
-                  {fmt(org.createdAt)}
-                </td>
-              </tr>
-              );
-            })}
-            {orgs.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-fg-subtle">
-                  No organizations yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable
+        columns={orgColumns}
+        rows={orgs}
+        rowKey={(org) => org.id}
+        empty={
+          <div className="rounded-lg border border-border bg-surface px-4 py-8 text-center text-sm text-fg-subtle">
+            No organizations yet.
+          </div>
+        }
+      />
 
       <div>
         <h2 className="mb-2 text-sm font-semibold text-fg">
           Recent impersonations
         </h2>
-        {recentImpersonations.length === 0 ? (
-          <p className="text-sm text-fg-subtle">None yet.</p>
-        ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {recentImpersonations.map((e) => (
-                  <tr key={e.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 text-fg-muted">
-                      {e.platformAdmin.fullName}
-                    </td>
-                    <td className="px-4 py-2 text-fg-muted">as</td>
-                    <td className="px-4 py-2 text-fg">
-                      {e.targetUser.fullName} ({e.targetUser.role})
-                    </td>
-                    <td className="px-4 py-2 text-fg-subtle">{e.targetOrgName}</td>
-                    <td className="px-4 py-2 text-fg-subtle">
-                      {fmt(e.startedAt)}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      {e.endedAt ? (
-                        <span className="text-xs text-fg-subtle">ended</span>
-                      ) : (
-                        <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-fg">
-                          ongoing
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <ResponsiveTable
+          columns={impersonationColumns}
+          rows={recentImpersonations}
+          rowKey={(e) => e.id}
+          hideHeader
+          empty={<p className="text-sm text-fg-subtle">None yet.</p>}
+        />
       </div>
     </div>
   );

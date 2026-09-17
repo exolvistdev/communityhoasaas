@@ -9,6 +9,10 @@ import {
 } from "@/lib/election";
 import { electionSummary } from "@/lib/elections";
 import { orgUnitStanding } from "@/lib/good-standing";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { ElectionsManager } from "../ElectionsManager";
 import { CandidateManager } from "./CandidateManager";
 import { ElectionActions } from "./ElectionActions";
@@ -103,6 +107,31 @@ export default async function ElectionDetailPage({
       .map((c) => c.id)
   );
   const suspendedCandidates = candidates.filter((c) => ineligibleIds.has(c.id));
+
+  const ballotColumns: ResponsiveColumn<(typeof ballots)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "text-fg",
+      cell: (b) => b.property.unitNumber,
+    },
+    {
+      key: "picks",
+      header: "Picks",
+      className: "text-fg-muted",
+      cell: (b) =>
+        b.abstain
+          ? "Abstained"
+          : `${b.votes.length} pick${b.votes.length === 1 ? "" : "s"}`,
+    },
+    {
+      key: "castBy",
+      header: "Cast by",
+      className: "text-xs text-fg-subtle",
+      cell: (b) => `${b.castBy?.fullName ?? "—"}${b.viaProxy ? " · via proxy" : ""}`,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -273,28 +302,7 @@ export default async function ElectionDetailPage({
             No ballots cast yet.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {ballots.map((b) => (
-                  <tr key={b.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 text-fg">{b.property.unitNumber}</td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      {b.abstain
-                        ? "Abstained"
-                        : `${b.votes.length} pick${
-                            b.votes.length === 1 ? "" : "s"
-                          }`}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-fg-subtle">
-                      {b.castBy?.fullName ?? "—"}
-                      {b.viaProxy ? " · via proxy" : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable columns={ballotColumns} rows={ballots} rowKey={(b) => b.id} hideHeader />
         )}
       </section>
     </div>

@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { peso } from "@/lib/format";
 import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
+import {
   createRatePlan,
   deleteRatePlan,
   reapplyRatePlan,
@@ -40,124 +44,128 @@ export function RatePlansManager({ plans }: { plans: Plan[] }) {
     });
   }
 
+  const editing = editingId ? plans.find((p) => p.id === editingId) : undefined;
+
+  const columns: ResponsiveColumn<Plan>[] = [
+    {
+      key: "name",
+      header: "Plan",
+      card: "title",
+      cell: (p) => p.name,
+    },
+    {
+      key: "rate",
+      header: "Monthly rate",
+      align: "right",
+      cell: (p) => peso(p.monthlyRate),
+    },
+    {
+      key: "properties",
+      header: "Properties",
+      card: "full",
+      className: "text-fg-muted",
+      cell: (p) => (
+        <>
+          {p.propertyCount}
+          {p.staleCount > 0 && (
+            <span className="ml-2 text-xs text-warning-fg">
+              {p.staleCount} on an older rate ·{" "}
+              <button
+                onClick={() =>
+                  act(
+                    () => reapplyRatePlan(p.id),
+                    "Rate re-applied to matching properties"
+                  )
+                }
+                className="underline hover:text-warning-fg"
+              >
+                re-apply
+              </button>
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Actions</span>,
+      align: "right",
+      className: "whitespace-nowrap",
+      card: "action",
+      cell: (p) => (
+        <>
+          <button
+            onClick={() => {
+              setEditingId(p.id);
+              setAdding(false);
+            }}
+            className="text-xs text-fg-muted underline hover:text-fg"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => {
+              if (
+                p.propertyCount > 0 &&
+                !confirm(
+                  `Delete "${p.name}"? ${p.propertyCount} propert${
+                    p.propertyCount === 1 ? "y" : "ies"
+                  } will move to a custom rate (keeping the current amount).`
+                )
+              )
+                return;
+              act(() => deleteRatePlan(p.id), `Deleted "${p.name}"`);
+            }}
+            className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
+          >
+            Delete
+          </button>
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-2">
       {error && <p className="text-sm text-danger-fg">{error}</p>}
       {notice && <p className="text-sm text-success-fg">{notice}</p>}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-2 text-left text-fg-muted">
-            <tr>
-              <th className="px-4 py-2.5 font-medium">Plan</th>
-              <th className="px-4 py-2.5 text-right font-medium">Monthly rate</th>
-              <th className="px-4 py-2.5 font-medium">Properties</th>
-              <th className="px-4 py-2.5 text-right font-medium">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {plans.length === 0 && !adding && (
-              <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-fg-subtle">
-                  No rate plans yet.
-                </td>
-              </tr>
-            )}
+      {editing && (
+        <div className="rounded-lg border border-border bg-surface-2 p-3">
+          <PlanForm
+            initial={editing}
+            pending={pending}
+            onCancel={() => setEditingId(null)}
+            onSubmit={(data) =>
+              act(() => updateRatePlan(editing.id, data), "Plan updated")
+            }
+          />
+        </div>
+      )}
 
-            {plans.map((p) =>
-              editingId === p.id ? (
-                <tr key={p.id} className="border-t border-border bg-surface-2">
-                  <td colSpan={4} className="px-4 py-3">
-                    <PlanForm
-                      initial={p}
-                      pending={pending}
-                      onCancel={() => setEditingId(null)}
-                      onSubmit={(data) =>
-                        act(() => updateRatePlan(p.id, data), "Plan updated")
-                      }
-                    />
-                  </td>
-                </tr>
-              ) : (
-                <tr key={p.id} className="border-t border-border align-top">
-                  <td className="px-4 py-2.5 font-medium text-fg">
-                    {p.name}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {peso(p.monthlyRate)}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {p.propertyCount}
-                    {p.staleCount > 0 && (
-                      <span className="ml-2 text-xs text-warning-fg">
-                        {p.staleCount} on an older rate ·{" "}
-                        <button
-                          onClick={() =>
-                            act(
-                              () => reapplyRatePlan(p.id),
-                              "Rate re-applied to matching properties"
-                            )
-                          }
-                          className="underline hover:text-warning-fg"
-                        >
-                          re-apply
-                        </button>
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                    <button
-                      onClick={() => {
-                        setEditingId(p.id);
-                        setAdding(false);
-                      }}
-                      className="text-xs text-fg-muted underline hover:text-fg"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (
-                          p.propertyCount > 0 &&
-                          !confirm(
-                            `Delete "${p.name}"? ${p.propertyCount} propert${
-                              p.propertyCount === 1 ? "y" : "ies"
-                            } will move to a custom rate (keeping the current amount).`
-                          )
-                        )
-                          return;
-                        act(
-                          () => deleteRatePlan(p.id),
-                          `Deleted "${p.name}"`
-                        );
-                      }}
-                      className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              )
-            )}
+      <ResponsiveTable
+        columns={columns}
+        rows={editingId ? plans.filter((p) => p.id !== editingId) : plans}
+        rowKey={(p) => p.id}
+        rowClassName={() => "align-top"}
+        empty={
+          !adding && !editing ? (
+            <div className="rounded-lg border border-border bg-surface px-4 py-6 text-center text-sm text-fg-subtle">
+              No rate plans yet.
+            </div>
+          ) : undefined
+        }
+      />
 
-            {adding && (
-              <tr className="border-t border-border bg-surface-2">
-                <td colSpan={4} className="px-4 py-3">
-                  <PlanForm
-                    pending={pending}
-                    onCancel={() => setAdding(false)}
-                    onSubmit={(data) =>
-                      act(() => createRatePlan(data), "Plan created")
-                    }
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {adding && (
+        <div className="rounded-lg border border-border bg-surface-2 p-3">
+          <PlanForm
+            pending={pending}
+            onCancel={() => setAdding(false)}
+            onSubmit={(data) => act(() => createRatePlan(data), "Plan created")}
+          />
+        </div>
+      )}
 
       {!adding && (
         <button

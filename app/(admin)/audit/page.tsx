@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export const metadata = { title: "Audit log · HOA SaaS" };
 
@@ -125,6 +129,41 @@ export default async function AuditPage() {
     take: 200,
   });
 
+  const columns: ResponsiveColumn<(typeof events)[number]>[] = [
+    {
+      key: "when",
+      header: "When",
+      className: "whitespace-nowrap text-fg-muted",
+      cell: (e) => fmt(e.createdAt),
+    },
+    {
+      key: "who",
+      header: "Who",
+      className: "text-fg",
+      cell: (e) => e.actorName,
+    },
+    {
+      key: "action",
+      header: "Action",
+      card: "title",
+      className: "text-fg",
+      cell: (e) => ACTION_LABEL[e.action] ?? e.action,
+    },
+    {
+      key: "target",
+      header: "Target",
+      className: "text-fg-muted",
+      cell: (e) => e.target ?? "—",
+    },
+    {
+      key: "detail",
+      header: "Detail",
+      card: "full",
+      className: "text-fg-subtle",
+      cell: (e) => e.detail ?? "",
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -137,38 +176,7 @@ export default async function AuditPage() {
           Nothing logged yet.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">When</th>
-                <th className="px-4 py-2.5 font-medium">Who</th>
-                <th className="px-4 py-2.5 font-medium">Action</th>
-                <th className="px-4 py-2.5 font-medium">Target</th>
-                <th className="px-4 py-2.5 font-medium">Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((e) => (
-                <tr key={e.id} className="border-t border-border">
-                  <td className="whitespace-nowrap px-4 py-2.5 text-fg-muted">
-                    {fmt(e.createdAt)}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg">{e.actorName}</td>
-                  <td className="px-4 py-2.5 text-fg">
-                    {ACTION_LABEL[e.action] ?? e.action}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {e.target ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-subtle">
-                    {e.detail ?? ""}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable columns={columns} rows={events} rowKey={(e) => e.id} />
       )}
     </div>
   );

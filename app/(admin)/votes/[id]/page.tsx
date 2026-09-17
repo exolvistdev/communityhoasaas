@@ -11,6 +11,10 @@ import {
 } from "@/lib/vote";
 import { voteSummary } from "@/lib/votes";
 import { fmtWeight } from "@/lib/vote-weights";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { VotesManager } from "../VotesManager";
 import { VoteActions, RevokeProxyButton } from "./VoteActions";
 
@@ -83,6 +87,55 @@ export default async function VoteDetailPage({
   const weighted = weightMode !== "ONE_UNIT_ONE_VOTE";
   const turnout =
     eligibleWeight > 0 ? Math.round((tally.total / eligibleWeight) * 100) : 0;
+
+  const ballotColumns: ResponsiveColumn<(typeof ballots)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "text-fg",
+      cell: (b) => b.property.unitNumber,
+    },
+    {
+      key: "choice",
+      header: "Choice",
+      className: "text-fg-muted",
+      cell: (b) => VOTE_CHOICE_LABEL[b.choice],
+    },
+    {
+      key: "castBy",
+      header: "Cast by",
+      card: "full",
+      className: "text-xs text-fg-subtle",
+      cell: (b) =>
+        `${b.castBy?.fullName ?? "—"}${b.viaProxy ? " · via proxy" : ""}${
+          b.suspended ? " · suspended (not counted)" : ""
+        }`,
+    },
+  ];
+
+  const proxyColumns: ResponsiveColumn<(typeof proxies)[number]>[] = [
+    {
+      key: "unit",
+      header: "Unit",
+      card: "title",
+      className: "text-fg",
+      cell: (p) => p.grantorProperty.unitNumber,
+    },
+    {
+      key: "holder",
+      header: "Holder",
+      className: "text-fg-muted",
+      cell: (p) => `→ ${p.holderUser.fullName}`,
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      card: "action",
+      cell: (p) => <RevokeProxyButton proxyId={p.id} />,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -194,25 +247,7 @@ export default async function VoteDetailPage({
             No ballots cast yet.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {ballots.map((b) => (
-                  <tr key={b.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 text-fg">{b.property.unitNumber}</td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      {VOTE_CHOICE_LABEL[b.choice]}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-fg-subtle">
-                      {b.castBy?.fullName ?? "—"}
-                      {b.viaProxy ? " · via proxy" : ""}
-                      {b.suspended ? " · suspended (not counted)" : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable columns={ballotColumns} rows={ballots} rowKey={(b) => b.id} hideHeader />
         )}
       </section>
 
@@ -220,25 +255,12 @@ export default async function VoteDetailPage({
       {proxies.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-fg">Active proxies</h2>
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {proxies.map((p) => (
-                  <tr key={p.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 text-fg">
-                      {p.grantorProperty.unitNumber}
-                    </td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      → {p.holderUser.fullName}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <RevokeProxyButton proxyId={p.id} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            columns={proxyColumns}
+            rows={proxies}
+            rowKey={(p) => p.id}
+            hideHeader
+          />
         </section>
       )}
     </div>

@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ElectionStatus } from "@prisma/client";
 import { addCandidate, removeCandidate, withdrawCandidate } from "../actions";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 type Candidate = {
   id: string;
@@ -59,6 +63,59 @@ export function CandidateManager({
   const field =
     "rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-brand";
 
+  const columns: ResponsiveColumn<Candidate>[] = [
+    {
+      key: "name",
+      header: "Candidate",
+      card: "title",
+      cell: (c) => (
+        <>
+          <div className={c.withdrawn ? "text-fg-subtle line-through" : "text-fg"}>
+            {c.name}
+            {c.ineligible && !c.withdrawn && (
+              <span className="ml-2 text-xs font-medium text-warning-fg">
+                behind on dues
+              </span>
+            )}
+          </div>
+          {c.bio && <div className="text-xs text-fg-subtle">{c.bio}</div>}
+        </>
+      ),
+    },
+    {
+      key: "votes",
+      header: "Votes",
+      align: "right",
+      className: "text-xs text-fg-muted tabular-nums",
+      cell: (c) =>
+        status !== "DRAFT" ? `${c.votes} vote${c.votes === 1 ? "" : "s"}` : "",
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      card: "action",
+      cell: (c) =>
+        isDraft ? (
+          <button
+            onClick={() => run(() => removeCandidate(c.id))}
+            disabled={pending}
+            className="text-xs text-danger-fg hover:underline disabled:opacity-50"
+          >
+            remove
+          </button>
+        ) : status === "OPEN" ? (
+          <button
+            onClick={() => run(() => withdrawCandidate(c.id, !c.withdrawn))}
+            disabled={pending}
+            className="text-xs text-brand-accent hover:underline disabled:opacity-50"
+          >
+            {c.withdrawn ? "reinstate" : "withdraw"}
+          </button>
+        ) : null,
+    },
+  ];
+
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-fg">
@@ -66,57 +123,12 @@ export function CandidateManager({
       </h2>
 
       {candidates.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <tbody>
-              {candidates.map((c) => (
-                <tr key={c.id} className="border-t border-border first:border-t-0">
-                  <td className="px-4 py-2">
-                    <div
-                      className={
-                        c.withdrawn ? "text-fg-subtle line-through" : "text-fg"
-                      }
-                    >
-                      {c.name}
-                      {c.ineligible && !c.withdrawn && (
-                        <span className="ml-2 text-xs font-medium text-warning-fg">
-                          behind on dues
-                        </span>
-                      )}
-                    </div>
-                    {c.bio && (
-                      <div className="text-xs text-fg-subtle">{c.bio}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-right text-xs text-fg-muted tabular-nums">
-                    {status !== "DRAFT" && `${c.votes} vote${c.votes === 1 ? "" : "s"}`}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    {isDraft ? (
-                      <button
-                        onClick={() => run(() => removeCandidate(c.id))}
-                        disabled={pending}
-                        className="text-xs text-danger-fg hover:underline disabled:opacity-50"
-                      >
-                        remove
-                      </button>
-                    ) : status === "OPEN" ? (
-                      <button
-                        onClick={() =>
-                          run(() => withdrawCandidate(c.id, !c.withdrawn))
-                        }
-                        disabled={pending}
-                        className="text-xs text-brand-accent hover:underline disabled:opacity-50"
-                      >
-                        {c.withdrawn ? "reinstate" : "withdraw"}
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          columns={columns}
+          rows={candidates}
+          rowKey={(c) => c.id}
+          hideHeader
+        />
       )}
 
       {isDraft && (

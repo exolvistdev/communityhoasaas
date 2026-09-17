@@ -3,6 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
+import {
   addHomeowner,
   inviteHomeowner,
   removeHomeowner,
@@ -45,6 +49,7 @@ export function PeopleSection({
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const noPrimary = people.length > 0 && !people.some((p) => p.isPrimary);
+  const editing = editingId ? people.find((p) => p.id === editingId) : undefined;
 
   function act(fn: () => Promise<{ ok: boolean; error?: string }>) {
     setError(null);
@@ -59,6 +64,98 @@ export function PeopleSection({
       } else setError(res.error ?? "Something went wrong");
     });
   }
+
+  const columns: ResponsiveColumn<Person>[] = [
+    {
+      key: "name",
+      header: "Name",
+      card: "title",
+      className: "font-medium",
+      cell: (p) => (
+        <>
+          {p.fullName}
+          {p.isPrimary && (
+            <span className="ml-2 rounded bg-success-subtle px-1.5 py-0.5 text-xs text-success-fg">
+              Primary
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "role",
+      header: "Role",
+      className: "text-fg-muted",
+      cell: (p) => ROLE_LABEL[p.role],
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      className: "text-fg-muted",
+      cell: (p) =>
+        p.email || p.phone ? (
+          <span>
+            {p.email}
+            {p.email && p.phone ? " · " : ""}
+            {p.phone}
+          </span>
+        ) : (
+          <span className="text-fg-subtle">—</span>
+        ),
+    },
+    {
+      key: "portal",
+      header: "Portal",
+      cell: (p) =>
+        p.hasLogin ? (
+          <span className="text-xs text-fg-muted">
+            Portal: {p.loginAccepted ? "active" : "invited"}
+          </span>
+        ) : canWrite && p.email ? (
+          <button
+            onClick={() => act(() => inviteHomeowner(p.id))}
+            className="text-xs text-fg-muted underline hover:text-fg"
+          >
+            Invite to portal
+          </button>
+        ) : null,
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Actions</span>,
+      align: "right",
+      className: "whitespace-nowrap",
+      card: "action",
+      cell: (p) =>
+        canWrite && (
+          <>
+            {!p.isPrimary && (
+              <button
+                onClick={() => act(() => setPrimaryHomeowner(p.id))}
+                className="text-xs text-fg-muted underline hover:text-fg"
+              >
+                Make primary
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setEditingId(p.id);
+                setAdding(false);
+              }}
+              className="ml-3 text-xs text-fg-muted underline hover:text-fg"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => act(() => removeHomeowner(p.id))}
+              className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
+            >
+              Remove
+            </button>
+          </>
+        ),
+    },
+  ];
 
   return (
     <section className="space-y-2">
@@ -92,130 +189,40 @@ export function PeopleSection({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-2 text-left text-fg-muted">
-            <tr>
-              <th className="px-4 py-2.5 font-medium">Name</th>
-              <th className="px-4 py-2.5 font-medium">Role</th>
-              <th className="px-4 py-2.5 font-medium">Contact</th>
-              <th className="px-4 py-2.5 font-medium"></th>
-              <th className="px-4 py-2.5 text-right font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {people.length === 0 && !adding && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-fg-subtle">
-                  No people on record.
-                </td>
-              </tr>
-            )}
+      {editing && (
+        <div className="rounded-lg border border-border bg-surface-2 p-3">
+          <PersonForm
+            initial={editing}
+            pending={pending}
+            onCancel={() => setEditingId(null)}
+            onSubmit={(data) => act(() => updateHomeowner(editing.id, data))}
+          />
+        </div>
+      )}
 
-            {people.map((p) =>
-              editingId === p.id ? (
-                <tr key={p.id} className="border-t border-border bg-surface-2">
-                  <td colSpan={5} className="px-4 py-3">
-                    <PersonForm
-                      initial={p}
-                      pending={pending}
-                      onCancel={() => setEditingId(null)}
-                      onSubmit={(data) =>
-                        act(() => updateHomeowner(p.id, data))
-                      }
-                    />
-                  </td>
-                </tr>
-              ) : (
-                <tr key={p.id} className="border-t border-border">
-                  <td className="px-4 py-2.5 font-medium text-fg">
-                    {p.fullName}
-                    {p.isPrimary && (
-                      <span className="ml-2 rounded bg-success-subtle px-1.5 py-0.5 text-xs text-success-fg">
-                        Primary
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {ROLE_LABEL[p.role]}
-                  </td>
-                  <td className="px-4 py-2.5 text-fg-muted">
-                    {p.email || p.phone ? (
-                      <span>
-                        {p.email}
-                        {p.email && p.phone ? " · " : ""}
-                        {p.phone}
-                      </span>
-                    ) : (
-                      <span className="text-fg-subtle">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {p.hasLogin ? (
-                      <span className="text-xs text-fg-muted">
-                        Portal: {p.loginAccepted ? "active" : "invited"}
-                      </span>
-                    ) : canWrite && p.email ? (
-                      <button
-                        onClick={() => act(() => inviteHomeowner(p.id))}
-                        className="text-xs text-fg-muted underline hover:text-fg"
-                      >
-                        Invite to portal
-                      </button>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                    {canWrite && (
-                      <>
-                        {!p.isPrimary && (
-                          <button
-                            onClick={() =>
-                              act(() => setPrimaryHomeowner(p.id))
-                            }
-                            className="text-xs text-fg-muted underline hover:text-fg"
-                          >
-                            Make primary
-                          </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            setEditingId(p.id);
-                            setAdding(false);
-                          }}
-                          className="ml-3 text-xs text-fg-muted underline hover:text-fg"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => act(() => removeHomeowner(p.id))}
-                          className="ml-3 text-xs text-danger-fg underline hover:text-danger-fg"
-                        >
-                          Remove
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              )
-            )}
+      <ResponsiveTable
+        columns={columns}
+        rows={editingId ? people.filter((p) => p.id !== editingId) : people}
+        rowKey={(p) => p.id}
+        empty={
+          !adding && !editing ? (
+            <div className="rounded-lg border border-border bg-surface px-4 py-6 text-center text-sm text-fg-subtle">
+              No people on record.
+            </div>
+          ) : undefined
+        }
+      />
 
-            {adding && (
-              <tr className="border-t border-border bg-surface-2">
-                <td colSpan={5} className="px-4 py-3">
-                  <PersonForm
-                    pending={pending}
-                    showMakePrimary={people.length > 0}
-                    onCancel={() => setAdding(false)}
-                    onSubmit={(data) =>
-                      act(() => addHomeowner(propertyId, data))
-                    }
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {adding && (
+        <div className="rounded-lg border border-border bg-surface-2 p-3">
+          <PersonForm
+            pending={pending}
+            showMakePrimary={people.length > 0}
+            onCancel={() => setAdding(false)}
+            onSubmit={(data) => act(() => addHomeowner(propertyId, data))}
+          />
+        </div>
+      )}
     </section>
   );
 }

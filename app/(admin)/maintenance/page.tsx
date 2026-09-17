@@ -7,6 +7,10 @@ import {
   MAINTENANCE_OPEN_STATUSES,
 } from "@/lib/maintenance";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 
 export const metadata = { title: "Maintenance · HOA SaaS" };
 
@@ -43,6 +47,65 @@ export default async function MaintenancePage() {
     MAINTENANCE_OPEN_STATUSES.includes(r.status)
   ).length;
 
+  const columns: ResponsiveColumn<(typeof rows)[number]>[] = [
+    {
+      key: "request",
+      header: "Request",
+      card: "title",
+      cell: (r) => (
+        <>
+          <Link
+            href={`/maintenance/${r.id}`}
+            className="font-medium text-fg hover:underline"
+          >
+            {r.title}
+          </Link>
+          <div className="text-xs text-fg-subtle">
+            {MAINTENANCE_CATEGORY_LABEL[r.category]}
+            {r._count.comments > 0
+              ? ` · ${r._count.comments} comment${
+                  r._count.comments === 1 ? "" : "s"
+                }`
+              : ""}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "where",
+      header: "Where",
+      className: "text-fg-muted",
+      cell: (r) => (r.isCommonArea ? "Common area" : r.property?.unitNumber ?? "—"),
+    },
+    {
+      key: "assigned",
+      header: "Assigned",
+      className: "text-fg-muted",
+      cell: (r) => r.assignedTo?.fullName ?? "—",
+    },
+    {
+      key: "updated",
+      header: "Updated",
+      className: "text-fg-muted",
+      cell: (r) => fmtDate(r.updatedAt),
+    },
+    {
+      key: "status",
+      header: "Status",
+      card: "status",
+      cell: (r) => {
+        const badge = MAINTENANCE_STATUS_BADGE[r.status];
+        return (
+          <span
+            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+          >
+            {badge.label}
+          </span>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -60,62 +123,7 @@ export default async function MaintenancePage() {
           No maintenance requests yet.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-fg-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Request</th>
-                <th className="px-4 py-2.5 font-medium">Where</th>
-                <th className="px-4 py-2.5 font-medium">Assigned</th>
-                <th className="px-4 py-2.5 font-medium">Updated</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const badge = MAINTENANCE_STATUS_BADGE[r.status];
-                return (
-                  <tr key={r.id} className="border-t border-border">
-                    <td className="px-4 py-2.5">
-                      <Link
-                        href={`/maintenance/${r.id}`}
-                        className="font-medium text-fg hover:underline"
-                      >
-                        {r.title}
-                      </Link>
-                      <div className="text-xs text-fg-subtle">
-                        {MAINTENANCE_CATEGORY_LABEL[r.category]}
-                        {r._count.comments > 0
-                          ? ` · ${r._count.comments} comment${
-                              r._count.comments === 1 ? "" : "s"
-                            }`
-                          : ""}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {r.isCommonArea
-                        ? "Common area"
-                        : r.property?.unitNumber ?? "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {r.assignedTo?.fullName ?? "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {fmtDate(r.updatedAt)}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                      >
-                        {badge.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable columns={columns} rows={rows} rowKey={(r) => r.id} />
       )}
     </div>
   );

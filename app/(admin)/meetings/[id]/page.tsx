@@ -8,6 +8,10 @@ import {
   RSVP_LABEL,
   rsvpTally,
 } from "@/lib/meeting";
+import {
+  ResponsiveTable,
+  type ResponsiveColumn,
+} from "@/components/ui/responsive-table";
 import { MeetingsManager } from "../MeetingsManager";
 import { MeetingActions } from "./MeetingActions";
 
@@ -52,6 +56,29 @@ export default async function MeetingDetailPage({
   const dtLocal = `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(
     p.minute
   )}`;
+
+  const rsvpColumns: ResponsiveColumn<(typeof meeting.rsvps)[number]>[] = [
+    {
+      key: "name",
+      header: "Name",
+      card: "title",
+      className: "text-fg",
+      cell: (r) => r.user.fullName,
+    },
+    {
+      key: "response",
+      header: "Response",
+      className: "text-fg-muted",
+      cell: (r) => RSVP_LABEL[r.response],
+    },
+    {
+      key: "note",
+      header: "Note",
+      card: "full",
+      className: "text-xs text-fg-subtle",
+      cell: (r) => r.note ?? "",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -119,23 +146,12 @@ export default async function MeetingDetailPage({
             No RSVPs yet.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full text-sm">
-              <tbody>
-                {meeting.rsvps.map((r) => (
-                  <tr key={r.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2 text-fg">{r.user.fullName}</td>
-                    <td className="px-4 py-2 text-fg-muted">
-                      {RSVP_LABEL[r.response]}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-fg-subtle">
-                      {r.note ?? ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            columns={rsvpColumns}
+            rows={meeting.rsvps}
+            rowKey={(r) => r.id}
+            hideHeader
+          />
         )}
       </section>
     </div>
