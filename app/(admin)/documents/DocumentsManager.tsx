@@ -242,7 +242,7 @@ function DocForm({
       className="space-y-3 rounded-lg border border-border bg-surface p-4"
     >
       {withFile && (
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">File</span>
           <input
             name="file"
@@ -257,7 +257,7 @@ function DocForm({
         </label>
       )}
 
-      <label className="block text-sm">
+      <label className="block min-w-0 text-sm">
         <span className="text-fg">Title</span>
         <input
           name="title"
@@ -269,7 +269,7 @@ function DocForm({
       </label>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">Category</span>
           <select
             name="category"
@@ -294,7 +294,7 @@ function DocForm({
         </label>
       </div>
 
-      <label className="block text-sm">
+      <label className="block min-w-0 text-sm">
         <span className="text-fg">Description (optional)</span>
         <textarea
           name="description"

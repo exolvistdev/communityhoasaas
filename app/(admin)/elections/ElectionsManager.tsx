@@ -107,7 +107,7 @@ export function ElectionsManager({
         </label>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Open seats</span>
             <input
               name="seats"
@@ -122,7 +122,7 @@ export function ElectionsManager({
               An odd number is typical.
             </span>
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Term (months)</span>
             <input
               name="termMonths"
@@ -137,7 +137,7 @@ export function ElectionsManager({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Opens</span>
             <input
               name="opensAt"
@@ -147,7 +147,7 @@ export function ElectionsManager({
               className={field}
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Closes</span>
             <input
               name="closesAt"

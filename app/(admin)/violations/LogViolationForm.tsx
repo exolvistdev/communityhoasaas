@@ -73,7 +73,7 @@ export function LogViolationForm({
         </label>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Category</span>
             <select
               name="category"
@@ -91,7 +91,7 @@ export function LogViolationForm({
               ))}
             </select>
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Date occurred</span>
             <input
               type="date"

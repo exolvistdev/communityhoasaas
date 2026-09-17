@@ -114,7 +114,7 @@ export function BookAmenityForm({
       </label>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">Start</span>
           <select
             value={startHour}
@@ -129,7 +129,7 @@ export function BookAmenityForm({
             ))}
           </select>
         </label>
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">Length</span>
           <select
             value={duration}

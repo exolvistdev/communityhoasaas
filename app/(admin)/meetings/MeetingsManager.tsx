@@ -76,7 +76,7 @@ export function MeetingsManager({ initial }: { initial?: Initial }) {
         </label>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Date &amp; time</span>
             <input
               name="scheduledAt"
@@ -86,7 +86,7 @@ export function MeetingsManager({ initial }: { initial?: Initial }) {
               className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Location</span>
             <input
               name="location"

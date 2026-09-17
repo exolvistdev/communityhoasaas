@@ -99,11 +99,11 @@ export function AppointForm({ pool }: { pool: { id: string; label: string }[] })
       </label>
 
       <div className="grid grid-cols-2 gap-2">
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">Term starts</span>
           <input name="termStart" type="date" required className={`mt-1 ${field} w-full`} />
         </label>
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">Term ends</span>
           <input name="termEnd" type="date" required className={`mt-1 ${field} w-full`} />
         </label>

@@ -100,7 +100,7 @@ export function VotesManager({
         </label>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Opens</span>
             <input
               name="opensAt"
@@ -110,7 +110,7 @@ export function VotesManager({
               className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Closes</span>
             <input
               name="closesAt"
@@ -123,7 +123,7 @@ export function VotesManager({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Quorum (% of units)</span>
             <input
               name="quorumPct"
@@ -135,7 +135,7 @@ export function VotesManager({
               className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Passes with</span>
             <select
               name="threshold"

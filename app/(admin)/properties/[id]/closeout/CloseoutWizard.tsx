@@ -185,7 +185,7 @@ export function CloseoutWizard({
         <div className="space-y-3 border-t border-border pt-4">
           <div className="text-sm font-medium text-fg">New owner</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm">
+            <label className="block min-w-0 text-sm">
               <span className="text-fg">Full name</span>
               <input
                 value={fullName}
@@ -193,7 +193,7 @@ export function CloseoutWizard({
                 className={field}
               />
             </label>
-            <label className="block text-sm">
+            <label className="block min-w-0 text-sm">
               <span className="text-fg">Role</span>
               <select
                 value={role}
@@ -205,7 +205,7 @@ export function CloseoutWizard({
                 <option value="RENTER">Renter</option>
               </select>
             </label>
-            <label className="block text-sm">
+            <label className="block min-w-0 text-sm">
               <span className="text-fg">Email (optional)</span>
               <input
                 type="email"
@@ -214,7 +214,7 @@ export function CloseoutWizard({
                 className={field}
               />
             </label>
-            <label className="block text-sm">
+            <label className="block min-w-0 text-sm">
               <span className="text-fg">Phone (optional)</span>
               <input
                 value={phone}
@@ -239,7 +239,7 @@ export function CloseoutWizard({
 
       {/* effective date + note */}
       <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">Effective date</span>
           <input
             type="date"
@@ -250,7 +250,7 @@ export function CloseoutWizard({
           />
         </label>
       </div>
-      <label className="block text-sm">
+      <label className="block min-w-0 text-sm">
         <span className="text-fg">Note (optional)</span>
         <input
           value={note}

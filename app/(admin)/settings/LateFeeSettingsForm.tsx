@@ -53,7 +53,7 @@ export function LateFeeSettingsForm({ policy }: { policy: LateFeePolicy }) {
         className="space-y-3 disabled:opacity-50"
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Fee type</span>
             <select
               value={p.lateFeeType}
@@ -66,7 +66,7 @@ export function LateFeeSettingsForm({ policy }: { policy: LateFeePolicy }) {
               <option value="PERCENT">Percent of the overdue balance</option>
             </select>
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">
               {p.lateFeeType === "PERCENT" ? "Percentage (%)" : "Amount (₱)"}
             </span>
@@ -81,7 +81,7 @@ export function LateFeeSettingsForm({ policy }: { policy: LateFeePolicy }) {
               className={field}
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Grace period (days)</span>
             <input
               type="number"
@@ -97,7 +97,7 @@ export function LateFeeSettingsForm({ policy }: { policy: LateFeePolicy }) {
               Days after the due date before a fee applies.
             </span>
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Charge up to</span>
             <input
               type="number"

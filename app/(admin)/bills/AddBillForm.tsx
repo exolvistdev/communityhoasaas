@@ -89,7 +89,7 @@ export function AddBillForm({
         </label>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Amount (₱)</span>
             <input
               name="amount"
@@ -100,14 +100,14 @@ export function AddBillForm({
               className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Bill no. (optional)</span>
             <input
               name="billNumber"
               className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Bill date</span>
             <input
               name="billDate"
@@ -116,7 +116,7 @@ export function AddBillForm({
               className="mt-1 w-full rounded-md border border-border px-2 py-1.5 outline-none focus:border-brand"
             />
           </label>
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Due date</span>
             <input
               name="dueDate"

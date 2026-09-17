@@ -111,7 +111,7 @@ export function EntryForm({ accounts }: { accounts: Account[] }) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
+        <label className="block min-w-0 text-sm">
           <span className="text-fg">Date</span>
           <input
             type="date"
@@ -122,7 +122,7 @@ export function EntryForm({ accounts }: { accounts: Account[] }) {
           />
         </label>
         {mode !== "advanced" && (
-          <label className="block text-sm">
+          <label className="block min-w-0 text-sm">
             <span className="text-fg">Amount (₱)</span>
             <input
               type="number"
